@@ -27,18 +27,51 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-900">NOLA Docs</h1>
+                    <a href="/" class="text-xl font-bold text-gray-900 hover:text-blue-600">NOLA Docs</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <!-- Authenticated User Menu -->
+                        <span class="text-gray-700">Welcome, {{ current_user.first_name or current_user.username }}!</span>
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                            Dashboard
+                        </a>
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('auth.admin_users') }}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                                Admin
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">
+                            Logout
+                        </a>
+                    {% else %}
+                        <!-- Guest User Menu -->
+                        <a href="{{ url_for('about') }}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                            About
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                            Login
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="mb-4">
-                    {% for message in messages %}
-                        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-2">
+                    {% for category, message in messages %}
+                        {% set alert_class = 'bg-blue-50 border-blue-200 text-blue-700' %}
+                        {% if category == 'error' %}
+                            {% set alert_class = 'bg-red-50 border-red-200 text-red-700' %}
+                        {% elif category == 'success' %}
+                            {% set alert_class = 'bg-green-50 border-green-200 text-green-700' %}
+                        {% elif category == 'warning' %}
+                            {% set alert_class = 'bg-yellow-50 border-yellow-200 text-yellow-700' %}
+                        {% endif %}
+                        <div class="{{ alert_class }} border px-4 py-3 rounded mb-2">
                             {{ message }}
                         </div>
                     {% endfor %}
