@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NOLA Docs{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Welcome to NOLA Docs!</h1>
+        <p class="mt-2 text-lg text-gray-600">Create professional educational documents</p>
+    </div>
+
+    <!-- Simple Document Creation Grid -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Create Documents</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <a href="/create-vocabulary" class="bg-red-700 text-white px-4 py-4 rounded-lg hover:bg-red-800 transition-colors text-center block">
+                Vocabulary Worksheet
+            </a>
+            
+            <a href="/create-pba" class="bg-orange-500 text-white px-4 py-4 rounded-lg hover:bg-orange-600 transition-colors text-center block">
+                PBA Worksheet
+            </a>
+            
+            <a href="/create-test" class="bg-yellow-500 text-white px-4 py-4 rounded-lg hover:bg-yellow-600 transition-colors text-center block">
+                Test Worksheet
+            </a>
+            
+            <a href="/create-generic" class="bg-green-700 text-white px-4 py-4 rounded-lg hover:bg-green-800 transition-colors text-center block">
+                Generic Worksheet
+            </a>
+            
+            <a href="/create-familybriefing" class="bg-blue-700 text-white px-4 py-4 rounded-lg hover:bg-blue-800 transition-colors text-center block">
+                Family Briefing
+            </a>
+            
+            <a href="/create-rca" class="bg-purple-700 text-white px-4 py-4 rounded-lg hover:bg-purple-800 transition-colors text-center block">
+                RCA Worksheet
+            </a>
+            
+            <a href="/create-moduleGuide" class="bg-cyan-600 text-white px-4 py-4 rounded-lg hover:bg-cyan-700 transition-colors text-center block">
+                Module Guide
+            </a>
+            
+            <a href="/create-moduleAnswerKey" class="bg-teal-700 text-white px-4 py-4 rounded-lg hover:bg-teal-800 transition-colors text-center block">
+                Module Answer Key
+            </a>
+            
+            <a href="/create-moduleActivitySheet" class="bg-gray-700 text-white px-4 py-4 rounded-lg hover:bg-gray-800 transition-colors text-center block">
+                Module Activity Sheet
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

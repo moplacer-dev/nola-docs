@@ -3,41 +3,139 @@
 {% block title %}Dashboard - NOLA Docs{% endblock %}
 
 {% block content %}
-<div class="px-4 py-6 sm:px-0">
+<div class="px-4 py-6">
     <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Welcome, {{ current_user.name }}!</h1>
-        <p class="mt-1 text-sm text-gray-600">Create professional documents with our templates.</p>
+        <h1 class="text-3xl font-bold text-gray-900">Welcome, {{ current_user.first_name or current_user.username }}!</h1>
+        <p class="mt-2 text-lg text-gray-600">Create professional educational documents with NOLA Docs</p>
     </div>
 
-    <!-- Templates Section -->
-    <div class="mb-8">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Available Templates</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {% for template in templates %}
-            <div class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm hover:border-gray-400">
-                <div class="flex items-center space-x-3">
+    <!-- Stats Section -->
+    <div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="h-10 w-10 rounded-lg bg-primary-500 flex items-center justify-center">
-                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
+                        <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                            <span class="text-white font-bold">📝</span>
                         </div>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <a href="{{ url_for('create_document', template_id=template.id) }}" class="focus:outline-none">
-                            <span class="absolute inset-0" aria-hidden="true"></span>
-                            <p class="text-sm font-medium text-gray-900">{{ template.name }}</p>
-                            <p class="text-sm text-gray-500">{{ template.description }}</p>
-                        </a>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Drafts</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_drafts }}</dd>
+                        </dl>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                            <span class="text-white font-bold">📄</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Documents Created</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_docs }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                            <span class="text-white font-bold">🎯</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Document Types</dt>
+                            <dd class="text-lg font-medium text-gray-900">10</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Recent Documents -->
+    <!-- Document Creation Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Create Documents</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <a href="/create-vocabulary" class="bg-red-700 text-white px-4 py-4 rounded-lg hover:bg-red-800 transition-colors text-center block">
+                <div class="text-lg font-medium">Vocabulary Worksheet</div>
+                <div class="text-sm opacity-90">Term definitions and exercises</div>
+            </a>
+            
+            <a href="/create-pba" class="bg-orange-500 text-white px-4 py-4 rounded-lg hover:bg-orange-600 transition-colors text-center block">
+                <div class="text-lg font-medium">PBA Worksheet</div>
+                <div class="text-sm opacity-90">Performance-based assessments</div>
+            </a>
+            
+            <a href="/create-test" class="bg-yellow-500 text-white px-4 py-4 rounded-lg hover:bg-yellow-600 transition-colors text-center block">
+                <div class="text-lg font-medium">Test Worksheet</div>
+                <div class="text-sm opacity-90">Pre and post-test worksheets</div>
+            </a>
+            
+            <a href="/create-generic" class="bg-green-700 text-white px-4 py-4 rounded-lg hover:bg-green-800 transition-colors text-center block">
+                <div class="text-lg font-medium">Generic Worksheet</div>
+                <div class="text-sm opacity-90">Flexible worksheet templates</div>
+            </a>
+            
+            <a href="/create-familybriefing" class="bg-blue-700 text-white px-4 py-4 rounded-lg hover:bg-blue-800 transition-colors text-center block">
+                <div class="text-lg font-medium">Family Briefing</div>
+                <div class="text-sm opacity-90">Parent communication documents</div>
+            </a>
+            
+            <a href="/create-rca" class="bg-purple-700 text-white px-4 py-4 rounded-lg hover:bg-purple-800 transition-colors text-center block">
+                <div class="text-lg font-medium">RCA Worksheet</div>
+                <div class="text-sm opacity-90">Research, Challenge, Application</div>
+            </a>
+            
+            <a href="/create-moduleGuide" class="bg-cyan-600 text-white px-4 py-4 rounded-lg hover:bg-cyan-700 transition-colors text-center block">
+                <div class="text-lg font-medium">Module Guide</div>
+                <div class="text-sm opacity-90">Comprehensive teaching guides</div>
+            </a>
+            
+            <a href="/create-moduleAnswerKey" class="bg-teal-700 text-white px-4 py-4 rounded-lg hover:bg-teal-800 transition-colors text-center block">
+                <div class="text-lg font-medium">Module Answer Key</div>
+                <div class="text-sm opacity-90">Complete answer references</div>
+            </a>
+            
+            <a href="/create-moduleActivitySheet" class="bg-gray-700 text-white px-4 py-4 rounded-lg hover:bg-gray-800 transition-colors text-center block">
+                <div class="text-lg font-medium">Module Activity Sheet</div>
+                <div class="text-sm opacity-90">Session planning documents</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
     {% if recent_docs %}
-    <div>
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Recent Documents</h2>
-        <div class="bg-white shadow overflow 
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Documents</h2>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul class="divide-y divide-gray-200">
+                {% for doc in recent_docs[:5] %}
+                <li class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm font-medium text-gray-900">{{ doc.filename }}</div>
+                        <div class="text-sm text-gray-500">{{ doc.created_at.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    <div class="text-sm text-gray-500">{{ doc.document_type }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %} 

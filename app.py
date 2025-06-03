@@ -711,26 +711,46 @@ class ModuleActivitySheetForm(FlaskForm):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Get user's recent drafts
-    recent_drafts = FormDraft.query.filter_by(
-        user_id=current_user.id,
-        is_current=True
-    ).order_by(FormDraft.updated_at.desc()).limit(10).all()
-    
-    # Get user's recent documents
-    recent_docs = GeneratedDocument.query.filter_by(
-        user_id=current_user.id
-    ).order_by(GeneratedDocument.created_at.desc()).limit(10).all()
-    
-    # Stats
-    total_drafts = FormDraft.query.filter_by(user_id=current_user.id, is_current=True).count()
-    total_docs = GeneratedDocument.query.filter_by(user_id=current_user.id).count()
-    
-    return render_template('dashboard.html', 
-                         recent_drafts=recent_drafts,
-                         recent_docs=recent_docs,
-                         total_drafts=total_drafts,
-                         total_docs=total_docs)
+    try:
+        # Get user's recent drafts (this will be empty for new users, which is fine)
+        recent_drafts = FormDraft.query.filter_by(
+            user_id=current_user.id,
+            is_current=True
+        ).order_by(FormDraft.updated_at.desc()).limit(10).all()
+        
+        # Get user's recent documents (this will be empty for new users, which is fine)
+        recent_docs = GeneratedDocument.query.filter_by(
+            user_id=current_user.id
+        ).order_by(GeneratedDocument.created_at.desc()).limit(10).all()
+        
+        # Stats
+        total_drafts = FormDraft.query.filter_by(user_id=current_user.id, is_current=True).count()
+        total_docs = GeneratedDocument.query.filter_by(user_id=current_user.id).count()
+        
+        # Create a simple templates list for now (since the template expects it)
+        templates = [
+            {'id': 'vocabulary', 'name': 'Vocabulary Worksheet', 'description': 'Create vocabulary worksheets'},
+            {'id': 'pba', 'name': 'PBA Worksheet', 'description': 'Performance-based assessments'},
+            {'id': 'test', 'name': 'Test Worksheet', 'description': 'Pre and post-test worksheets'},
+            {'id': 'generic', 'name': 'Generic Worksheet', 'description': 'Flexible worksheet templates'},
+            {'id': 'family', 'name': 'Family Briefing', 'description': 'Parent communication documents'},
+            {'id': 'rca', 'name': 'RCA Worksheet', 'description': 'Research, Challenge, Application'},
+            {'id': 'guide', 'name': 'Module Guide', 'description': 'Comprehensive teaching guides'},
+            {'id': 'answer', 'name': 'Module Answer Key', 'description': 'Complete answer references'},
+            {'id': 'activity', 'name': 'Module Activity Sheet', 'description': 'Session planning documents'}
+        ]
+        
+        return render_template('dashboard.html', 
+                             recent_drafts=recent_drafts,
+                             recent_docs=recent_docs,
+                             total_drafts=total_drafts,
+                             total_docs=total_docs,
+                             templates=templates)
+                             
+    except Exception as e:
+        # If there's any database error, show a simple error message
+        flash(f'Error loading dashboard: {str(e)}', 'error')
+        return render_template('simple_dashboard.html')
 
 @app.route('/')
 def index():
@@ -2783,6 +2803,123 @@ def generate_module_activity_sheet(form):
                 print(f"✓ Cleaned up temporary file: {temp_template_path}")
         except Exception as e:
             print(f"Warning: Could not clean up temporary file {temp_template_path}: {e}")
+
+@app.route('/debug/db-status')
+def debug_db_status():
+    """Debug route to check database status and create tables if needed"""
+    try:
+        # Try to create all tables
+        with app.app_context():
+            db.create_all()
+        
+        # Test database connection
+        total_users = User.query.count()
+        admin_count = User.query.filter_by(is_admin=True).count()
+        
+        # Test if we can create a simple log entry
+        test_log = ActivityLog(
+            action='database_test',
+            details={'test': True}
+        )
+        db.session.add(test_log)
+        db.session.commit()
+        
+        # Clean up test log
+        db.session.delete(test_log)
+        db.session.commit()
+        
+        return f"""
+        <h1>Database Status - OK</h1>
+        <ul>
+        <li>Database URL: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...</li>
+        <li>Total users: {total_users}</li>
+        <li>Admin users: {admin_count}</li>
+        <li>Tables created: SUCCESS</li>
+        <li>Database operations: SUCCESS</li>
+        </ul>
+        <p><a href="/setup">Go to Setup</a> | <a href="/">Home</a></p>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h1>Database Status - ERROR</h1>
+        <p><strong>Error:</strong> {str(e)}</p>
+        <p><strong>Database URL:</strong> {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...</p>
+        <p><a href="/">Home</a></p>
+        """
+
+@app.route('/create-admin-simple', methods=['GET', 'POST'])
+def create_admin_simple():
+    """Simple admin creation with better error handling"""
+    try:
+        # Ensure tables exist
+        with app.app_context():
+            db.create_all()
+        
+        if request.method == 'GET':
+            # Check if admin already exists
+            existing_admin = User.query.filter_by(is_admin=True).first()
+            if existing_admin:
+                return f"""
+                <h2>Admin Already Exists</h2>
+                <p>Email: {existing_admin.email}</p>
+                <p>Username: {existing_admin.username}</p>
+                <p><a href="/login">Go to Login</a></p>
+                """
+            
+            return """
+            <h2>Create Admin User</h2>
+            <form method="POST">
+                <p><label>Email: <input type="email" name="email" required></label></p>
+                <p><label>Username: <input type="text" name="username" required></label></p>
+                <p><label>Password: <input type="password" name="password" required></label></p>
+                <p><label>First Name: <input type="text" name="first_name"></label></p>
+                <p><label>Last Name: <input type="text" name="last_name"></label></p>
+                <p><button type="submit">Create Admin</button></p>
+            </form>
+            """
+        
+        # POST request - create admin
+        email = request.form.get('email')
+        username = request.form.get('username') 
+        password = request.form.get('password')
+        first_name = request.form.get('first_name', '')
+        last_name = request.form.get('last_name', '')
+        
+        if not email or not username or not password:
+            return "<h2>Error: Email, username and password required</h2><a href='/create-admin-simple'>Try Again</a>"
+        
+        # Check if user exists
+        if User.query.filter_by(email=email).first():
+            return f"<h2>Error: Email {email} already exists</h2><a href='/create-admin-simple'>Try Again</a>"
+        
+        # Create admin user
+        admin = User(
+            email=email,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            is_admin=True,
+            is_active=True
+        )
+        admin.set_password(password)
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        return f"""
+        <h2>Admin Created Successfully!</h2>
+        <p>Email: {email}</p>
+        <p>Username: {username}</p>
+        <p><a href="/login">Go to Login</a></p>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h2>Error Creating Admin</h2>
+        <p>{str(e)}</p>
+        <p><a href="/debug/db-status">Check Database Status</a></p>
+        """
 
 if __name__ == '__main__':
     app.run(debug=True) 
