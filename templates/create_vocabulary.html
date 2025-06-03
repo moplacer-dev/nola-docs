@@ -143,12 +143,37 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
-                    Cancel
-                </a>
-                {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
+            <div class="flex justify-between items-center space-x-4 pt-6 border-t border-gray-200">
+                <!-- Left side - Draft Management -->
+                <div class="flex space-x-3">
+                    <a href="/vocabulary-drafts" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors text-sm">
+                        📝 My Drafts
+                    </a>
+                    <a href="/my-documents" class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors text-sm">
+                        📄 My Documents
+                    </a>
+                </div>
+                
+                <!-- Right side - Actions -->
+                <div class="flex space-x-3">
+                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </a>
+                    <!-- Save Draft Button -->
+                    <button type="submit" name="action" value="save_draft" 
+                            class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors"
+                            formaction="/save-vocabulary-draft">
+                        💾 Save Draft
+                    </button>
+                    <!-- Generate Button -->
+                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
+                </div>
             </div>
+            
+            <!-- Hidden field to track if we're editing an existing draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}">
+            {% endif %}
         </form>
     </div>
 </div>

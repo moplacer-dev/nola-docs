@@ -134,6 +134,23 @@ class GeneratedDocument(db.Model):
             size /= 1024.0
         return f"{size:.1f} TB"
     
+    @property
+    def document_type_display(self):
+        """Human-readable document type"""
+        type_map = {
+            'vocabulary': 'Vocabulary Worksheet',
+            'pba': 'PBA Worksheet',
+            'pretest': 'Pre-Test Worksheet',
+            'posttest': 'Post-Test Worksheet',
+            'generic': 'Generic Worksheet',
+            'familybriefing': 'Family Briefing',
+            'rca': 'RCA Worksheet',
+            'moduleGuide': 'Module Guide',
+            'moduleAnswerKey': 'Module Answer Key',
+            'moduleActivitySheet': 'Module Activity Sheet'
+        }
+        return type_map.get(self.document_type, self.document_type.title())
+    
     def __repr__(self):
         return f'<GeneratedDocument {self.filename}>'
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FieldList, FormField, IntegerField, HiddenField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
@@ -777,11 +777,23 @@ def create_vocabulary():
         # Generate the document
         try:
             print("Attempting to generate document...")
-            doc_path = generate_vocabulary_worksheet(form)
+            doc_path, filename = generate_vocabulary_worksheet(form)
             print(f"Document generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='vocabulary',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_acronym.data,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('Worksheet generated successfully!', 'success')
-            # For now, just show success - we'll add file download later
-            return redirect(url_for('create_vocabulary'))
+            return redirect(url_for('download_document', doc_id=doc_record.id))
         except Exception as e:
             print(f"Error generating document: {e}")
             flash(f'Error generating worksheet: {str(e)}', 'error')
@@ -1069,7 +1081,7 @@ def generate_vocabulary_worksheet(form):
         doc.save(output_path)
         
         print("Vocabulary document saved successfully!")
-        return output_path
+        return output_path, filename
         
     finally:
         # Clean up the temporary file
@@ -1569,7 +1581,7 @@ def generate_generic_worksheet(form):
         doc.save(output_path)
         
         print("Generic document saved successfully!")
-        return output_path
+        return output_path, filename
         
     finally:
         # Clean up the temporary files
@@ -2920,6 +2932,152 @@ def create_admin_simple():
         <p>{str(e)}</p>
         <p><a href="/debug/db-status">Check Database Status</a></p>
         """
+
+# New routes for save/load/download functionality
+@app.route('/save-vocabulary-draft', methods=['POST'])
+@login_required
+def save_vocabulary_draft():
+    """Save vocabulary worksheet as draft"""
+    form = VocabularyWorksheetForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Prepare form data for JSON storage
+            form_data = {
+                'module_acronym': form.module_acronym.data,
+                'words': [{'word': word.word.data} for word in form.words if word.word.data]
+            }
+            
+            # Check if this is updating an existing draft
+            draft_id = request.form.get('draft_id')
+            if draft_id:
+                draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
+                if draft:
+                    # Update existing draft
+                    draft.form_data = form_data
+                    draft.updated_at = datetime.utcnow()
+                else:
+                    flash('Draft not found', 'error')
+                    return redirect(url_for('create_vocabulary'))
+            else:
+                # Create new draft
+                title = f"Vocabulary Worksheet - {form.module_acronym.data}" if form.module_acronym.data else "Vocabulary Worksheet - Untitled"
+                draft = FormDraft(
+                    user_id=current_user.id,
+                    form_type='vocabulary',
+                    title=title,
+                    module_acronym=form.module_acronym.data,
+                    form_data=form_data
+                )
+                db.session.add(draft)
+            
+            db.session.commit()
+            flash('Draft saved successfully!', 'success')
+            
+        except Exception as e:
+            print(f"Error saving draft: {e}")
+            flash(f'Error saving draft: {str(e)}', 'error')
+    else:
+        flash('Please fix form errors before saving', 'error')
+    
+    return redirect(url_for('create_vocabulary'))
+
+@app.route('/load-vocabulary-draft/<int:draft_id>')
+@login_required
+def load_vocabulary_draft(draft_id):
+    """Load vocabulary worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='vocabulary').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_vocabulary'))
+    
+    try:
+        # Create form and populate with draft data
+        form = VocabularyWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate form fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate vocabulary words
+        words_data = form_data.get('words', [])
+        for i, word_data in enumerate(words_data):
+            if i < len(form.words):
+                form.words[i].word.data = word_data.get('word', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_vocabulary.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_vocabulary'))
+
+@app.route('/vocabulary-drafts')
+@login_required
+def vocabulary_drafts():
+    """List user's vocabulary worksheet drafts"""
+    drafts = FormDraft.query.filter_by(
+        user_id=current_user.id, 
+        form_type='vocabulary',
+        is_current=True
+    ).order_by(FormDraft.updated_at.desc()).all()
+    
+    return render_template('vocabulary_drafts.html', drafts=drafts)
+
+@app.route('/delete-vocabulary-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_vocabulary_draft(draft_id):
+    """Delete vocabulary worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='vocabulary').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('vocabulary_drafts'))
+
+@app.route('/download/<int:doc_id>')
+@login_required
+def download_document(doc_id):
+    """Download a generated document"""
+    document = GeneratedDocument.query.filter_by(id=doc_id, user_id=current_user.id).first()
+    
+    if not document:
+        flash('Document not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check if file exists
+    if not os.path.exists(document.file_path):
+        flash('Document file not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Track download
+    document.increment_download()
+    db.session.commit()
+    
+    # Activity logging
+    ActivityLog.log_activity('document_downloaded', current_user.id, 
+                            {'document_type': document.document_type, 'filename': document.filename}, 
+                            request)
+    db.session.commit()
+    
+    # Return file for download
+    return send_file(document.file_path, as_attachment=True, download_name=document.filename)
+
+@app.route('/my-documents')
+@login_required
+def my_documents():
+    """List user's generated documents"""
+    documents = GeneratedDocument.query.filter_by(
+        user_id=current_user.id
+    ).order_by(GeneratedDocument.created_at.desc()).all()
+    
+    return render_template('my_documents.html', documents=documents)
 
 if __name__ == '__main__':
     app.run(debug=True) 

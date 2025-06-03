@@ -66,6 +66,40 @@
         </div>
     </div>
 
+    <!-- Phase 2: Document Management Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">📁 Document Management</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <a href="/vocabulary-drafts" class="bg-green-600 text-white px-4 py-4 rounded-lg hover:bg-green-700 transition-colors text-center block">
+                <div class="text-lg font-medium">📝 My Drafts</div>
+                <div class="text-sm opacity-90">Saved vocabulary worksheets</div>
+                {% if total_drafts > 0 %}
+                    <div class="text-xs mt-1 bg-green-500 rounded-full px-2 py-1 inline-block">{{ total_drafts }} saved</div>
+                {% endif %}
+            </a>
+            
+            <a href="/my-documents" class="bg-blue-600 text-white px-4 py-4 rounded-lg hover:bg-blue-700 transition-colors text-center block">
+                <div class="text-lg font-medium">📄 My Documents</div>
+                <div class="text-sm opacity-90">Download generated files</div>
+                {% if total_docs > 0 %}
+                    <div class="text-xs mt-1 bg-blue-500 rounded-full px-2 py-1 inline-block">{{ total_docs }} documents</div>
+                {% endif %}
+            </a>
+            
+            <a href="/create-vocabulary" class="bg-emerald-600 text-white px-4 py-4 rounded-lg hover:bg-emerald-700 transition-colors text-center block">
+                <div class="text-lg font-medium">💾 Quick Start</div>
+                <div class="text-sm opacity-90">Vocabulary worksheet</div>
+                <div class="text-xs mt-1 opacity-75">Save as you work</div>
+            </a>
+            
+            <a href="/" class="bg-gray-600 text-white px-4 py-4 rounded-lg hover:bg-gray-700 transition-colors text-center block">
+                <div class="text-lg font-medium">🔍 All Templates</div>
+                <div class="text-sm opacity-90">Browse all document types</div>
+                <div class="text-xs mt-1 opacity-75">10 templates available</div>
+            </a>
+        </div>
+    </div>
+
     <!-- Document Creation Section -->
     <div class="mb-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Create Documents</h2>

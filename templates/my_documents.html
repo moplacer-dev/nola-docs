@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Documents - NOLA Docs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-6xl mx-auto py-8 px-4">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <a href="/dashboard" class="text-blue-600 hover:text-blue-700 flex items-center gap-2 mb-2">
+                    ← Back to Dashboard
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900">My Documents</h1>
+                <p class="text-gray-600 mt-2">Download and manage your generated documents</p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="/create-vocabulary" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm">
+                    + New Vocabulary
+                </a>
+                <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                    📝 All Templates
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Documents List -->
+    <div class="bg-white rounded-lg shadow-md">
+        {% if documents %}
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Generated Documents ({{ documents|length }})</h2>
+            </div>
+            <div class="divide-y divide-gray-200">
+                {% for doc in documents %}
+                    <div class="px-6 py-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-lg font-medium text-gray-900">{{ doc.filename }}</h3>
+                                    <!-- Document Type Badge -->
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if doc.document_type == 'vocabulary' %}bg-green-100 text-green-800
+                                        {% elif doc.document_type == 'pba' %}bg-purple-100 text-purple-800
+                                        {% elif doc.document_type == 'generic' %}bg-orange-100 text-orange-800
+                                        {% elif doc.document_type == 'familybriefing' %}bg-indigo-100 text-indigo-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ doc.document_type_display }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-6 text-sm text-gray-500">
+                                    <span>📝 Module: {{ doc.module_acronym or 'Not specified' }}</span>
+                                    <span>📅 Created: {{ doc.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                    <span>📏 Size: {{ doc.file_size_human }}</span>
+                                    <span>📥 Downloads: {{ doc.download_count }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <a href="/download/{{ doc.id }}" 
+                                   class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                    📥 Download
+                                </a>
+                                {% if doc.source_draft %}
+                                    <a href="/load-vocabulary-draft/{{ doc.source_draft.id }}" 
+                                       class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors text-sm">
+                                        ✏️ Edit
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Info -->
+                        {% if doc.last_downloaded %}
+                            <div class="mt-2 text-sm text-gray-500">
+                                Last downloaded: {{ doc.last_downloaded.strftime('%B %d, %Y at %I:%M %p') }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="px-6 py-12 text-center">
+                <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
+                <p class="text-gray-600 mb-6">You haven't generated any documents yet.</p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a href="/create-vocabulary" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+                        Create Vocabulary Worksheet
+                    </a>
+                    <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                        Browse All Templates
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Stats -->
+    {% if documents %}
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <div class="text-2xl font-bold text-blue-600">{{ documents|length }}</div>
+                <div class="text-sm text-gray-600">Total Documents</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <div class="text-2xl font-bold text-green-600">{{ documents|selectattr('document_type', 'equalto', 'vocabulary')|list|length }}</div>
+                <div class="text-sm text-gray-600">Vocabulary Worksheets</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <div class="text-2xl font-bold text-purple-600">{{ documents|sum(attribute='download_count') }}</div>
+                <div class="text-sm text-gray-600">Total Downloads</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <div class="text-2xl font-bold text-orange-600">{{ (documents|sum(attribute='file_size') / 1024 / 1024)|round(1) }} MB</div>
+                <div class="text-sm text-gray-600">Total Size</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Navigation Links -->
+    <div class="mt-8 flex justify-center space-x-6">
+        <a href="/vocabulary-drafts" class="text-green-600 hover:text-green-700">← View Vocabulary Drafts</a>
+        <a href="/dashboard" class="text-blue-600 hover:text-blue-700">Dashboard</a>
+    </div>
+</div>
+</body>
+</html> 
