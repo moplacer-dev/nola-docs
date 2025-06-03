@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create RCA Worksheet - NOLA Docs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="/" class="text-blue-600 hover:text-blue-700">&larr; Back to Home</a>
+            <h1 class="text-3xl font-bold text-gray-900 mt-4">Create RCA Worksheet</h1>
+            <p class="text-gray-600 mt-2">Enter the module acronym, session number, and questions to generate an RCA (Research, Challenge & Application) worksheet.</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <form method="POST" id="rca-form" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                
+                <!-- Section Header -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Worksheet Information</h2>
+                    
+                    <div class="mb-6">
+                        {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.module_acronym.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-6">
+                        {{ form.session_number.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.session_number.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.session_number.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- RCA Questions Section -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">RCA Questions</h2>
+                    <p class="text-sm text-gray-600 mb-8">Enter one question for each section: Research, Challenge, and Application.</p>
+                    
+                    <!-- Research Question (Question 1) -->
+                    <div class="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-4">🔍 Research Question</h3>
+                        <div class="question-entry">
+                            {% set research_form = form.questions[0] %}
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
+                                {{ research_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter research-related question") }}
+                                {% if research_form.question_text.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ research_form.question_text.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                    {{ research_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                    {{ research_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                    {{ research_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                    {{ research_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div class="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">🖼️ Optional Image</h3>
+                        <p class="text-sm text-gray-600 mb-4">Add an image that students will reference for all three questions (e.g., diagram, chart, or graph).</p>
+                        
+                        <div class="mb-4">
+                            {{ form.image_file.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.image_file(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", accept=".jpg,.jpeg,.png,.gif") }}
+                            {% if form.image_file.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.image_file.errors[0] }}</p>
+                            {% endif %}
+                            <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF (max 16MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- Challenge Question (Question 2) -->
+                    <div class="mb-8 p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <h3 class="text-lg font-semibold text-yellow-900 mb-4">🎯 Challenge Question</h3>
+                        <div class="question-entry">
+                            {% set challenge_form = form.questions[1] %}
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
+                                {{ challenge_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter challenge-related question") }}
+                                {% if challenge_form.question_text.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ challenge_form.question_text.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                    {{ challenge_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                    {{ challenge_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                    {{ challenge_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                    {{ challenge_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Application Question (Question 3) -->
+                    <div class="mb-8 p-6 bg-green-50 rounded-lg border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-900 mb-4">⚡ Application Question</h3>
+                        <div class="question-entry">
+                            {% set application_form = form.questions[2] %}
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
+                                {{ application_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter application-related question") }}
+                                {% if application_form.question_text.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ application_form.question_text.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                    {{ application_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                    {{ application_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                    {{ application_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                    {{ application_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end space-x-4">
+                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </a>
+                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html> 

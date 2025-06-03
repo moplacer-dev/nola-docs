@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Module Guide - NOLA Docs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.expanded {
+            max-height: none;
+            overflow: visible;
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        .accordion-icon.expanded {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="/" class="text-blue-600 hover:text-blue-700">&larr; Back to Home</a>
+            <h1 class="text-3xl font-bold text-gray-900 mt-4">Create Module Guide</h1>
+            <p class="text-gray-600 mt-2">Enter information from Teacher Tips, Session Notes, and other teacher-facing documents to generate a Module Guide.</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <form method="POST" id="module-guide-form">
+                {{ form.hidden_tag() }}
+                
+                <!-- Module Information (for filename) -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
+                    
+                    <div class="mb-6">
+                        {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.module_acronym.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Teacher Tips Section (Overview & Objectives) - Expanded by default -->
+                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="overview">
+                        <h2 class="text-xl font-semibold text-gray-800">📚 Overview and Objectives</h2>
+                        <svg class="accordion-icon expanded w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="accordion-content expanded" id="overview-content">
+                        <div class="p-6">
+                            <!-- Teacher Tips Statement -->
+                            <div class="mb-6">
+                                {{ form.teachertips_statement.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.teachertips_statement(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24", rows="4") }}
+                                {% if form.teachertips_statement.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.teachertips_statement.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Standards -->
+                            <div class="mb-6">
+                                <h3 class="text-lg font-medium text-gray-700 mb-4">Standards</h3>
+                                <p class="text-sm text-gray-600 mb-4">Enter the standards from the Teacher Tips document. Leave unused fields blank.</p>
+                                
+                                <div id="standards-container" class="space-y-4">
+                                    {% for standard_form in form.standards %}
+                                        <div class="standard-entry">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Standard {{ loop.index }}</label>
+                                            {{ standard_form.standard(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter standard") }}
+                                            {% if standard_form.standard.errors %}
+                                                <p class="mt-1 text-sm text-red-600">{{ standard_form.standard.errors[0] }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vocabulary Section - Collapsed -->
+                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="vocabulary">
+                        <h2 class="text-xl font-semibold text-gray-800">📝 Vocabulary Terms</h2>
+                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="accordion-content" id="vocabulary-content">
+                        <div class="p-6">
+                            <p class="text-sm text-gray-600 mb-6">Enter the vocabulary terms for this module. Leave unused fields blank.</p>
+                            
+                            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <div id="vocab-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {% for vocab_form in form.vocab_terms %}
+                                        <div class="vocab-entry">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Term {{ loop.index }}</label>
+                                            {{ vocab_form.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter vocabulary term") }}
+                                            {% if vocab_form.term.errors %}
+                                                <p class="mt-1 text-sm text-red-600">{{ vocab_form.term.errors[0] }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Related Careers Section - Collapsed -->
+                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="careers">
+                        <h2 class="text-xl font-semibold text-gray-800">💼 Related Careers</h2>
+                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="accordion-content" id="careers-content">
+                        <div class="p-6">
+                            <p class="text-sm text-gray-600 mb-6">Enter careers related to this module. Leave unused fields blank.</p>
+                            
+                            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <div id="careers-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {% for career_form in form.careers %}
+                                        <div class="career-entry">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Career {{ loop.index }}</label>
+                                            {{ career_form.career(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter related career") }}
+                                            {% if career_form.career.errors %}
+                                                <p class="mt-1 text-sm text-red-600">{{ career_form.career.errors[0] }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Notes Section -->
+                <div class="mb-6">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">📓 Session Notes</h2>
+                        <p class="text-sm text-gray-600 mt-2">Enter detailed information for each of the 7 sessions.</p>
+                    </div>
+                    
+                    {% for session_form in form.sessions %}
+                        <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+                            <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="session{{ loop.index }}">
+                                <h3 class="text-lg font-semibold text-gray-800">Session {{ loop.index }}</h3>
+                                <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                            
+                            <div class="accordion-content" id="session{{ loop.index }}-content">
+                                <div class="p-6">
+                                    <!-- Focus -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Session Focus</label>
+                                        {{ session_form.focus(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the main focus for this session") }}
+                                        {% if session_form.focus.errors %}
+                                            <p class="mt-1 text-sm text-red-600">{{ session_form.focus.errors[0] }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Goals -->
+                                    <div class="mb-4">
+                                        <h4 class="text-md font-medium text-gray-700 mb-2">Goals</h4>
+                                        <div class="space-y-2">
+                                            {% for goal_form in session_form.goals %}
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-600 w-4">{{ loop.index }}.</span>
+                                                    {{ goal_form.goal(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter a goal") }}
+                                                </div>
+                                                {% if goal_form.goal.errors %}
+                                                    <p class="mt-1 text-sm text-red-600 ml-6">{{ goal_form.goal.errors[0] }}</p>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Materials -->
+                                    <div class="mb-4">
+                                        <h4 class="text-md font-medium text-gray-700 mb-2">Materials</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            {% for i in range(1, 16) %}
+                                                {% set material_field = session_form['material' + i|string] %}
+                                                <div>
+                                                    {{ material_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm", placeholder="Material " + i|string) }}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Teacher Preparations -->
+                                    <div class="mb-4">
+                                        <h4 class="text-md font-medium text-gray-700 mb-2">Teacher Preparations</h4>
+                                        <div class="space-y-2">
+                                            {% for prep_form in session_form.preparations %}
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-600">•</span>
+                                                    {{ prep_form.prep(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter a preparation item") }}
+                                                </div>
+                                                {% if prep_form.prep.errors %}
+                                                    <p class="mt-1 text-sm text-red-600 ml-6">{{ prep_form.prep.errors[0] }}</p>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Performance Based Assessments -->
+                                    <div class="mb-4">
+                                        <h4 class="text-md font-medium text-gray-700 mb-2">Performance Based Assessments</h4>
+                                        <div class="space-y-2">
+                                            {% for assessment_form in session_form.assessments %}
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-600">{{ loop.index }}.</span>
+                                                    {{ assessment_form.assessment(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter an assessment") }}
+                                                </div>
+                                                {% if assessment_form.assessment.errors %}
+                                                    <p class="mt-1 text-sm text-red-600 ml-6">{{ assessment_form.assessment.errors[0] }}</p>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Additional Resources Section - Collapsed -->
+                <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="resources">
+                        <h2 class="text-xl font-semibold text-gray-800">📚 Additional Resources</h2>
+                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="accordion-content" id="resources-content">
+                        <div class="p-6">
+                            <p class="text-sm text-gray-600 mb-6">Enter additional resources and maintenance information for this module.</p>
+                            
+                            <!-- Enrichment Activities -->
+                            <div class="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-700 mb-4">Enrichment Activities</h3>
+                                <div class="space-y-2">
+                                    {% for activity_form in form.enrichment_activities %}
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm text-gray-600">•</span>
+                                            {{ activity_form.activity(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter an enrichment activity") }}
+                                        </div>
+                                        {% if activity_form.activity.errors %}
+                                            <p class="mt-1 text-sm text-red-600 ml-6">{{ activity_form.activity.errors[0] }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- Module Maintenance and Setup -->
+                            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-700 mb-4">Module Maintenance and Setup</h3>
+                                
+                                <!-- Locally Sourced Materials -->
+                                <div class="mb-6">
+                                    <h4 class="text-md font-medium text-gray-700 mb-2">Locally Sourced Materials</h4>
+                                    <div class="space-y-2">
+                                        {% for material_form in form.locally_sourced_materials %}
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm text-gray-600">•</span>
+                                                {{ material_form.material(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter a locally sourced material") }}
+                                            </div>
+                                            {% if material_form.material.errors %}
+                                                <p class="mt-1 text-sm text-red-600 ml-6">{{ material_form.material.errors[0] }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Maintenance -->
+                                <div class="mb-6">
+                                    <h4 class="text-md font-medium text-gray-700 mb-2">Maintenance</h4>
+                                    <div class="space-y-2">
+                                        {% for item_form in form.maintenance_items %}
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm text-gray-600">•</span>
+                                                {{ item_form.item(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter a maintenance item") }}
+                                            </div>
+                                            {% if item_form.item.errors %}
+                                                <p class="mt-1 text-sm text-red-600 ml-6">{{ item_form.item.errors[0] }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Assembly Instructions -->
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-700 mb-2">Assembly Instructions</h4>
+                                    <div class="space-y-2">
+                                        {% for instruction_form in form.assembly_instructions %}
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm text-gray-600">•</span>
+                                                {{ instruction_form.instruction(class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter an assembly instruction") }}
+                                            </div>
+                                            {% if instruction_form.instruction.errors %}
+                                                <p class="mt-1 text-sm text-red-600 ml-6">{{ instruction_form.instruction.errors[0] }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Recommended Websites -->
+                            <div class="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-700 mb-4">Recommended Websites</h3>
+                                <div class="space-y-4">
+                                    {% for website_form in form.recommended_websites %}
+                                        <div class="bg-white p-4 rounded-md border border-gray-200">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Website Title</label>
+                                                    {{ website_form.title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="e.g., Khan Academy") }}
+                                                    {% if website_form.title.errors %}
+                                                        <p class="mt-1 text-sm text-red-600">{{ website_form.title.errors[0] }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                                                    {{ website_form.url(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="e.g., https://khanacademy.org") }}
+                                                    {% if website_form.url.errors %}
+                                                        <p class="mt-1 text-sm text-red-600">{{ website_form.url.errors[0] }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end space-x-4">
+                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </a>
+                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Accordion JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all accordion headers
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const section = this.getAttribute('data-section');
+                    const content = document.getElementById(section + '-content');
+                    const icon = this.querySelector('.accordion-icon');
+                    
+                    // Toggle expanded class
+                    content.classList.toggle('expanded');
+                    icon.classList.toggle('expanded');
+                });
+            });
+            
+            // Expand/Collapse All functionality (optional)
+            const expandAllBtn = document.createElement('button');
+            expandAllBtn.textContent = 'Expand All';
+            expandAllBtn.className = 'text-sm text-blue-600 hover:text-blue-700 mb-4';
+            expandAllBtn.type = 'button';
+            
+            const formContainer = document.querySelector('.bg-white.rounded-lg.shadow-md.p-8');
+            const firstSection = formContainer.querySelector('.mb-6.border');
+            
+            expandAllBtn.addEventListener('click', function() {
+                const allContents = document.querySelectorAll('.accordion-content');
+                const allIcons = document.querySelectorAll('.accordion-icon');
+                const isExpanding = this.textContent === 'Expand All';
+                
+                allContents.forEach(content => {
+                    if (isExpanding) {
+                        content.classList.add('expanded');
+                    } else {
+                        content.classList.remove('expanded');
+                    }
+                });
+                
+                allIcons.forEach(icon => {
+                    if (isExpanding) {
+                        icon.classList.add('expanded');
+                    } else {
+                        icon.classList.remove('expanded');
+                    }
+                });
+                
+                // Keep Overview & Objectives always expanded if collapsing all
+                if (!isExpanding) {
+                    document.getElementById('overview-content').classList.add('expanded');
+                    document.querySelector('[data-section="overview"] .accordion-icon').classList.add('expanded');
+                }
+                
+                this.textContent = isExpanding ? 'Collapse All' : 'Expand All';
+            });
+            
+            // Insert the expand/collapse all button before the first section
+            formContainer.insertBefore(expandAllBtn, firstSection);
+        });
+    </script>
+</body>
+</html> 

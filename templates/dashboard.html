@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NOLA Docs{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Welcome, {{ current_user.name }}!</h1>
+        <p class="mt-1 text-sm text-gray-600">Create professional documents with our templates.</p>
+    </div>
+
+    <!-- Templates Section -->
+    <div class="mb-8">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Available Templates</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {% for template in templates %}
+            <div class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm hover:border-gray-400">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 rounded-lg bg-primary-500 flex items-center justify-center">
+                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <a href="{{ url_for('create_document', template_id=template.id) }}" class="focus:outline-none">
+                            <span class="absolute inset-0" aria-hidden="true"></span>
+                            <p class="text-sm font-medium text-gray-900">{{ template.name }}</p>
+                            <p class="text-sm text-gray-500">{{ template.description }}</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Documents -->
+    {% if recent_docs %}
+    <div>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Recent Documents</h2>
+        <div class="bg-white shadow overflow 

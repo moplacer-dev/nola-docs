@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: nola-docs
+    env: python
+    region: oregon
+    buildCommand: |
+      pip install -r requirements.txt
+      flask db upgrade
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nola-docs-db
+          property: connectionString
+    disk:
+      name: app-data
+      mountPath: /var/data
+      sizeGB: 2
+
+databases:
+  - name: nola-docs-db
+    databaseName: nola_docs
+    user: nola_docs_user
+    region: oregon 
