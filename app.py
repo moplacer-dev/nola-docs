@@ -741,6 +741,7 @@ def about():
     return render_template('about.html')
 
 @app.route('/create-vocabulary', methods=['GET', 'POST'])
+@login_required
 def create_vocabulary():
     form = VocabularyWorksheetForm()
     
@@ -768,6 +769,7 @@ def create_vocabulary():
     return render_template('create_vocabulary.html', form=form)
 
 @app.route('/create-pba', methods=['GET', 'POST'])
+@login_required
 def create_pba():
     form = PBAWorksheetForm()
     
@@ -794,6 +796,7 @@ def create_pba():
     return render_template('create_pba.html', form=form)
 
 @app.route('/create-test', methods=['GET', 'POST'])
+@login_required
 def create_test():
     form = TestWorksheetForm()
     
@@ -828,6 +831,7 @@ def create_test():
     return render_template('create_test.html', form=form)
 
 @app.route('/create-generic', methods=['GET', 'POST'])
+@login_required
 def create_generic():
     form = GenericWorksheetForm()
     
@@ -854,6 +858,7 @@ def create_generic():
     return render_template('create_generic.html', form=form)
 
 @app.route('/create-familybriefing', methods=['GET', 'POST'])
+@login_required
 def create_familybriefing():
     form = FamilyBriefingForm()
     
@@ -880,6 +885,7 @@ def create_familybriefing():
     return render_template('create_familybriefing.html', form=form)
 
 @app.route('/create-rca', methods=['GET', 'POST'])
+@login_required
 def create_rca():
     form = RCAWorksheetForm()
     
@@ -906,6 +912,7 @@ def create_rca():
     return render_template('create_rca.html', form=form)
 
 @app.route('/create-moduleGuide', methods=['GET', 'POST'])
+@login_required
 def create_module_guide():
     form = ModuleGuideForm()
     
@@ -932,6 +939,7 @@ def create_module_guide():
     return render_template('create_moduleGuide.html', form=form)
 
 @app.route('/create-moduleAnswerKey', methods=['GET', 'POST'])
+@login_required
 def create_module_answer_key():
     form = ModuleAnswerKeyForm()
     
@@ -958,6 +966,7 @@ def create_module_answer_key():
     return render_template('create_moduleAnswerKey.html', form=form)
 
 @app.route('/create-moduleActivitySheet', methods=['GET', 'POST'])
+@login_required
 def create_module_activity_sheet():
     form = ModuleActivitySheetForm()
     
