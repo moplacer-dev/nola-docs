@@ -6,6 +6,67 @@ from datetime import datetime
 
 auth = Blueprint('auth', __name__)
 
+@auth.route('/setup', methods=['GET', 'POST'])
+def setup():
+    """Initial setup route - only accessible when no admin exists"""
+    # Check if any admin already exists
+    existing_admin = User.query.filter_by(is_admin=True).first()
+    if existing_admin:
+        flash('Admin user already exists. Please use the login page.', 'info')
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        first_name = request.form.get('first_name', '')
+        last_name = request.form.get('last_name', '')
+        
+        # Validate required fields
+        if not email or not username or not password:
+            flash('Email, username, and password are required.', 'error')
+            return render_template('auth/setup.html')
+        
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+            return render_template('auth/setup.html')
+        
+        # Check if username already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already taken', 'error')
+            return render_template('auth/setup.html')
+        
+        try:
+            # Create admin user
+            admin = User(
+                email=email,
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                is_admin=True,
+                is_active=True
+            )
+            admin.set_password(password)
+            
+            db.session.add(admin)
+            db.session.commit()
+            
+            # Log the admin creation
+            ActivityLog.log_activity('admin_created', admin.id, 
+                                    {'setup_via': 'web_interface'}, request)
+            db.session.commit()
+            
+            flash('Admin user created successfully! You can now log in.', 'success')
+            return redirect(url_for('auth.login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating admin user: {str(e)}', 'error')
+            return render_template('auth/setup.html')
+    
+    return render_template('auth/setup.html')
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
