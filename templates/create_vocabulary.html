@@ -161,12 +161,14 @@
                     </a>
                     <!-- Save Draft Button -->
                     <button type="submit" name="action" value="save_draft" 
-                            class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors"
-                            formaction="/save-vocabulary-draft">
+                            class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
                         💾 Save Draft
                     </button>
                     <!-- Generate Button -->
-                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
+                    <button type="submit" name="action" value="generate" 
+                            class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                        Generate Worksheet
+                    </button>
                 </div>
             </div>
             

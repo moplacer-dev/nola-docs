@@ -771,32 +771,81 @@ def create_vocabulary():
         print(f"Form valid: {form.validate_on_submit()}")
         if form.errors:
             print(f"Form errors: {form.errors}")
-    
-    if form.validate_on_submit():
-        print("Form validation passed!")
-        # Generate the document
-        try:
-            print("Attempting to generate document...")
-            doc_path, filename = generate_vocabulary_worksheet(form)
-            print(f"Document generated at: {doc_path}")
+        
+        # Check which action was requested
+        action = request.form.get('action', 'generate')
+        print(f"Action requested: {action}")
+        
+        if form.validate_on_submit():
+            if action == 'save_draft':
+                # Handle draft saving
+                try:
+                    # Prepare form data for JSON storage
+                    form_data = {
+                        'module_acronym': form.module_acronym.data,
+                        'words': [{'word': word.word.data} for word in form.words if word.word.data]
+                    }
+                    
+                    # Check if this is updating an existing draft
+                    draft_id = request.form.get('draft_id')
+                    if draft_id:
+                        draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
+                        if draft:
+                            # Update existing draft
+                            draft.form_data = form_data
+                            draft.updated_at = datetime.utcnow()
+                        else:
+                            flash('Draft not found', 'error')
+                            return render_template('create_vocabulary.html', form=form)
+                    else:
+                        # Create new draft
+                        title = f"Vocabulary Worksheet - {form.module_acronym.data}" if form.module_acronym.data else "Vocabulary Worksheet - Untitled"
+                        draft = FormDraft(
+                            user_id=current_user.id,
+                            form_type='vocabulary',
+                            title=title,
+                            module_acronym=form.module_acronym.data,
+                            form_data=form_data
+                        )
+                        db.session.add(draft)
+                    
+                    db.session.commit()
+                    flash('Draft saved successfully!', 'success')
+                    return render_template('create_vocabulary.html', form=form, draft_id=draft.id)
+                    
+                except Exception as e:
+                    print(f"Error saving draft: {e}")
+                    flash(f'Error saving draft: {str(e)}', 'error')
+                    return render_template('create_vocabulary.html', form=form)
             
-            # Save document info to database
-            doc_record = GeneratedDocument(
-                user_id=current_user.id,
-                document_type='vocabulary',
-                filename=filename,
-                file_path=doc_path,
-                module_acronym=form.module_acronym.data,
-                file_size=os.path.getsize(doc_path)
-            )
-            db.session.add(doc_record)
-            db.session.commit()
-            
-            flash('Worksheet generated successfully!', 'success')
-            return redirect(url_for('download_document', doc_id=doc_record.id))
-        except Exception as e:
-            print(f"Error generating document: {e}")
-            flash(f'Error generating worksheet: {str(e)}', 'error')
+            else:  # action == 'generate' or default
+                # Handle document generation
+                print("Form validation passed!")
+                try:
+                    print("Attempting to generate document...")
+                    doc_path, filename = generate_vocabulary_worksheet(form)
+                    print(f"Document generated at: {doc_path}")
+                    
+                    # Save document info to database
+                    doc_record = GeneratedDocument(
+                        user_id=current_user.id,
+                        document_type='vocabulary',
+                        filename=filename,
+                        file_path=doc_path,
+                        module_acronym=form.module_acronym.data,
+                        file_size=os.path.getsize(doc_path)
+                    )
+                    db.session.add(doc_record)
+                    db.session.commit()
+                    
+                    flash('Worksheet generated successfully!', 'success')
+                    return redirect(url_for('download_document', doc_id=doc_record.id))
+                except Exception as e:
+                    print(f"Error generating document: {e}")
+                    flash(f'Error generating worksheet: {str(e)}', 'error')
+        else:
+            if action == 'save_draft':
+                flash('Please fix form errors before saving', 'error')
     
     return render_template('create_vocabulary.html', form=form)
 
@@ -2531,7 +2580,7 @@ def generate_module_answer_key(form):
                                             break
                                 except (ValueError, IndexError):
                                     continue
-                    
+                
                     if image_file and image_file.filename:
                         # Save the uploaded file temporarily
                         filename = secure_filename(image_file.filename)
@@ -2645,9 +2694,14 @@ def generate_module_answer_key(form):
                         # Add spacing after question
                         worksheet_keys_subdoc.add_paragraph()
                         overall_question_counter += 1
+                
+                # Add spacing between worksheets
+                if worksheet_index < len(form.worksheet_answer_keys.data) - 1:
+                    worksheet_keys_subdoc.add_paragraph()
+                    worksheet_keys_subdoc.add_paragraph()
             
-            # Add spacing between worksheets
-            if worksheet_index < len(form.worksheet_answer_keys.data) - 1:
+            # Add spacing between fields within a worksheet
+            if field_index < len(worksheet_data.get('dynamic_content', [])) - 1:
                 worksheet_keys_subdoc.add_paragraph()
                 worksheet_keys_subdoc.add_paragraph()
         
