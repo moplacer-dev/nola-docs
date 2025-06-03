@@ -2860,6 +2860,56 @@ def debug_db_status():
         <p><a href="/">Home</a></p>
         """
 
+@app.route('/force-db-init')
+def force_db_init():
+    """Force database initialization - EMERGENCY USE ONLY"""
+    try:
+        # Drop and recreate all tables (CAREFUL!)
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+        
+        return f"""
+        <h1>🚨 Database Reinitialized</h1>
+        <p><strong>WARNING:</strong> All data has been reset!</p>
+        <p>You need to recreate your admin user.</p>
+        <p><a href="/create-admin-simple">Create Admin User</a></p>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h1>Database Initialization - ERROR</h1>
+        <p><strong>Error:</strong> {str(e)}</p>
+        <p><a href="/debug/db-status">Check Database Status</a></p>
+        """
+
+@app.route('/migrate-db')
+def migrate_db():
+    """Safely migrate database - add missing tables only"""
+    try:
+        # Create only missing tables (safe operation)
+        with app.app_context():
+            db.create_all()
+        
+        # Test that we can query existing users
+        total_users = User.query.count()
+        
+        return f"""
+        <h1>✅ Database Migration Complete</h1>
+        <p><strong>Status:</strong> Missing tables created successfully</p>
+        <p><strong>Existing users preserved:</strong> {total_users} users found</p>
+        <p>Your login should now work!</p>
+        <p><a href="/login">Try Login Again</a> | <a href="/">Home</a></p>
+        """
+        
+    except Exception as e:
+        return f"""
+        <h1>Database Migration - ERROR</h1>
+        <p><strong>Error:</strong> {str(e)}</p>
+        <p><strong>Try force reset:</strong> <a href="/force-db-init">Force DB Reinitialization</a></p>
+        <p><a href="/debug/db-status">Check Database Status</a></p>
+        """
+
 @app.route('/create-admin-simple', methods=['GET', 'POST'])
 def create_admin_simple():
     """Simple admin creation with better error handling"""
