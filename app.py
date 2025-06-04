@@ -3526,4 +3526,26 @@ def autosave_pba_draft():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
+    # Create default admin if none exists (for development/initial setup)
+    with app.app_context():
+        try:
+            # Check if any admin exists
+            if not User.query.filter_by(is_admin=True).first():
+                # Create default admin
+                default_admin = User(
+                    email='admin@nola.docs',
+                    username='admin',
+                    first_name='Admin',
+                    last_name='User',
+                    is_admin=True,
+                    is_active=True
+                )
+                default_admin.set_password('admin123')  # Change this password!
+                
+                db.session.add(default_admin)
+                db.session.commit()
+                print("✅ Default admin created: admin@nola.docs / admin123")
+        except Exception as e:
+            print(f"Note: {e}")
+    
     app.run(debug=True) 
