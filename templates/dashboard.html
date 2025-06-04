@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - NOLA Docs{% endblock %}
+{% block title %}Dashboard - NOLA.docs{% endblock %}
 
 {% block content %}
 <div class="px-4 py-6">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Welcome, {{ current_user.first_name or current_user.username }}!</h1>
-        <p class="mt-2 text-lg text-gray-600">Create professional educational documents with NOLA Docs</p>
+        <p class="mt-2 text-lg text-gray-600">Manage your documents and track your progress</p>
     </div>
 
     <!-- Stats Section -->
-    <div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
                 <div class="flex items-center">
@@ -52,12 +52,30 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                            <span class="text-white font-bold">📥</span>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Downloads</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_downloads or 0 }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
                             <span class="text-white font-bold">🎯</span>
                         </div>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Document Types</dt>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Templates Available</dt>
                             <dd class="text-lg font-medium text-gray-900">10</dd>
                         </dl>
                     </div>
@@ -66,9 +84,9 @@
         </div>
     </div>
 
-    <!-- Phase 2: Document Management Section -->
+    <!-- Quick Actions Section -->
     <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">📁 Document Management</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">📁 Quick Actions</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <a href="/vocabulary-drafts" class="bg-green-600 text-white px-4 py-4 rounded-lg hover:bg-green-700 transition-colors text-center block">
                 <div class="text-lg font-medium">📝 My Drafts</div>
@@ -87,66 +105,15 @@
             </a>
             
             <a href="/create-vocabulary" class="bg-emerald-600 text-white px-4 py-4 rounded-lg hover:bg-emerald-700 transition-colors text-center block">
-                <div class="text-lg font-medium">💾 Quick Start</div>
-                <div class="text-sm opacity-90">Vocabulary worksheet</div>
-                <div class="text-xs mt-1 opacity-75">Save as you work</div>
+                <div class="text-lg font-medium">⚡ Quick Start</div>
+                <div class="text-sm opacity-90">Create vocabulary worksheet</div>
+                <div class="text-xs mt-1 opacity-75">Most popular template</div>
             </a>
             
             <a href="/" class="bg-gray-600 text-white px-4 py-4 rounded-lg hover:bg-gray-700 transition-colors text-center block">
-                <div class="text-lg font-medium">🔍 All Templates</div>
-                <div class="text-sm opacity-90">Browse all document types</div>
+                <div class="text-lg font-medium">🔍 Browse Templates</div>
+                <div class="text-sm opacity-90">View all document types</div>
                 <div class="text-xs mt-1 opacity-75">10 templates available</div>
-            </a>
-        </div>
-    </div>
-
-    <!-- Document Creation Section -->
-    <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Create Documents</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <a href="/create-vocabulary" class="bg-red-700 text-white px-4 py-4 rounded-lg hover:bg-red-800 transition-colors text-center block">
-                <div class="text-lg font-medium">Vocabulary Worksheet</div>
-                <div class="text-sm opacity-90">Term definitions and exercises</div>
-            </a>
-            
-            <a href="/create-pba" class="bg-orange-500 text-white px-4 py-4 rounded-lg hover:bg-orange-600 transition-colors text-center block">
-                <div class="text-lg font-medium">PBA Worksheet</div>
-                <div class="text-sm opacity-90">Performance-based assessments</div>
-            </a>
-            
-            <a href="/create-test" class="bg-yellow-500 text-white px-4 py-4 rounded-lg hover:bg-yellow-600 transition-colors text-center block">
-                <div class="text-lg font-medium">Test Worksheet</div>
-                <div class="text-sm opacity-90">Pre and post-test worksheets</div>
-            </a>
-            
-            <a href="/create-generic" class="bg-green-700 text-white px-4 py-4 rounded-lg hover:bg-green-800 transition-colors text-center block">
-                <div class="text-lg font-medium">Generic Worksheet</div>
-                <div class="text-sm opacity-90">Flexible worksheet templates</div>
-            </a>
-            
-            <a href="/create-familybriefing" class="bg-blue-700 text-white px-4 py-4 rounded-lg hover:bg-blue-800 transition-colors text-center block">
-                <div class="text-lg font-medium">Family Briefing</div>
-                <div class="text-sm opacity-90">Parent communication documents</div>
-            </a>
-            
-            <a href="/create-rca" class="bg-purple-700 text-white px-4 py-4 rounded-lg hover:bg-purple-800 transition-colors text-center block">
-                <div class="text-lg font-medium">RCA Worksheet</div>
-                <div class="text-sm opacity-90">Research, Challenge, Application</div>
-            </a>
-            
-            <a href="/create-moduleGuide" class="bg-cyan-600 text-white px-4 py-4 rounded-lg hover:bg-cyan-700 transition-colors text-center block">
-                <div class="text-lg font-medium">Module Guide</div>
-                <div class="text-sm opacity-90">Comprehensive teaching guides</div>
-            </a>
-            
-            <a href="/create-moduleAnswerKey" class="bg-teal-700 text-white px-4 py-4 rounded-lg hover:bg-teal-800 transition-colors text-center block">
-                <div class="text-lg font-medium">Module Answer Key</div>
-                <div class="text-sm opacity-90">Complete answer references</div>
-            </a>
-            
-            <a href="/create-moduleActivitySheet" class="bg-gray-700 text-white px-4 py-4 rounded-lg hover:bg-gray-800 transition-colors text-center block">
-                <div class="text-lg font-medium">Module Activity Sheet</div>
-                <div class="text-sm opacity-90">Session planning documents</div>
             </a>
         </div>
     </div>
@@ -154,22 +121,103 @@
     <!-- Recent Activity Section -->
     {% if recent_docs %}
     <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Documents</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">📋 Recent Documents</h2>
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
             <ul class="divide-y divide-gray-200">
                 {% for doc in recent_docs[:5] %}
-                <li class="px-6 py-4">
+                <li class="px-6 py-4 hover:bg-gray-50">
                     <div class="flex items-center justify-between">
-                        <div class="text-sm font-medium text-gray-900">{{ doc.filename }}</div>
-                        <div class="text-sm text-gray-500">{{ doc.created_at.strftime('%b %d, %Y') }}</div>
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-sm font-medium text-gray-900">{{ doc.filename }}</div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ doc.document_type }}
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                Created {{ doc.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                {% if doc.download_count > 0 %}
+                                    • Downloaded {{ doc.download_count }} time{{ 's' if doc.download_count != 1 else '' }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="/download/{{ doc.id }}" 
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                Download
+                            </a>
+                        </div>
                     </div>
-                    <div class="text-sm text-gray-500">{{ doc.document_type }}</div>
                 </li>
                 {% endfor %}
             </ul>
+            {% if recent_docs|length > 5 %}
+                <div class="bg-gray-50 px-6 py-3">
+                    <a href="/my-documents" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        View all {{ total_docs }} documents →
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="mb-8">
+        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Ready to create your first document?</h3>
+            <p class="text-gray-600 mb-6">Get started by creating a vocabulary worksheet or exploring other templates.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/create-vocabulary" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+                    Create Vocabulary Worksheet
+                </a>
+                <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                    Browse All Templates
+                </a>
+            </div>
         </div>
     </div>
     {% endif %}
+
+    <!-- Profile Summary -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">👤 Profile Summary</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <div class="text-sm text-gray-600">Account Information</div>
+                <div class="mt-2">
+                    <div class="text-sm">
+                        <span class="font-medium">Name:</span> {{ current_user.first_name or 'Not set' }} {{ current_user.last_name or '' }}
+                    </div>
+                    <div class="text-sm mt-1">
+                        <span class="font-medium">Email:</span> {{ current_user.email }}
+                    </div>
+                    <div class="text-sm mt-1">
+                        <span class="font-medium">Username:</span> {{ current_user.username }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="text-sm text-gray-600">Account Activity</div>
+                <div class="mt-2">
+                    <div class="text-sm">
+                        <span class="font-medium">Member since:</span> {{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Unknown' }}
+                    </div>
+                    {% if current_user.is_admin %}
+                        <div class="text-sm mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Administrator
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 {% endblock %} 

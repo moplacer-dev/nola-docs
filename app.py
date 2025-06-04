@@ -735,25 +735,16 @@ def dashboard():
         total_drafts = FormDraft.query.filter_by(user_id=current_user.id, is_current=True).count()
         total_docs = GeneratedDocument.query.filter_by(user_id=current_user.id).count()
         
-        # Create a simple templates list for now (since the template expects it)
-        templates = [
-            {'id': 'vocabulary', 'name': 'Vocabulary Worksheet', 'description': 'Create vocabulary worksheets'},
-            {'id': 'pba', 'name': 'PBA Worksheet', 'description': 'Performance-based assessments'},
-            {'id': 'test', 'name': 'Test Worksheet', 'description': 'Pre and post-test worksheets'},
-            {'id': 'generic', 'name': 'Generic Worksheet', 'description': 'Flexible worksheet templates'},
-            {'id': 'family', 'name': 'Family Briefing', 'description': 'Parent communication documents'},
-            {'id': 'rca', 'name': 'RCA Worksheet', 'description': 'Research, Challenge, Application'},
-            {'id': 'guide', 'name': 'Module Guide', 'description': 'Comprehensive teaching guides'},
-            {'id': 'answer', 'name': 'Module Answer Key', 'description': 'Complete answer references'},
-            {'id': 'activity', 'name': 'Module Activity Sheet', 'description': 'Session planning documents'}
-        ]
+        # Calculate total downloads across all user documents
+        user_docs = GeneratedDocument.query.filter_by(user_id=current_user.id).all()
+        total_downloads = sum(doc.download_count for doc in user_docs)
         
         return render_template('dashboard.html', 
                              recent_drafts=recent_drafts,
                              recent_docs=recent_docs,
                              total_drafts=total_drafts,
                              total_docs=total_docs,
-                             templates=templates)
+                             total_downloads=total_downloads)
                              
     except Exception as e:
         # If there's any database error, show a simple error message
@@ -847,7 +838,7 @@ def create_vocabulary():
                     db.session.commit()
                     
                     flash('Worksheet generated successfully!', 'success')
-                    return redirect(url_for('download_document', doc_id=doc_record.id))
+                    return redirect(url_for('my_documents'))
                 except Exception as e:
                     print(f"Error generating document: {e}")
                     flash(f'Error generating worksheet: {str(e)}', 'error')
@@ -3021,59 +3012,6 @@ def create_admin_simple():
         """
 
 # New routes for save/load/download functionality
-@app.route('/save-vocabulary-draft', methods=['POST'])
-@login_required
-def save_vocabulary_draft():
-    """Save vocabulary worksheet as draft"""
-    form = VocabularyWorksheetForm()
-    
-    if form.validate_on_submit():
-        try:
-            # Prepare form data for JSON storage
-            form_data = {
-                'module_acronym': form.module_acronym.data,
-                'words': [{'word': word.word.data} for word in form.words if word.word.data]
-            }
-            
-            # Check if this is updating an existing draft
-            draft_id = request.form.get('draft_id')
-            if draft_id:
-                draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
-                if draft:
-                    # Update existing draft
-                    draft.form_data = form_data
-                    draft.updated_at = datetime.utcnow()
-                else:
-                    flash('Draft not found', 'error')
-                    return redirect(url_for('create_vocabulary'))
-            else:
-                # Create new draft
-                title = f"Vocabulary Worksheet - {form.module_acronym.data}" if form.module_acronym.data else "Vocabulary Worksheet - Untitled"
-                draft = FormDraft(
-                    user_id=current_user.id,
-                    form_type='vocabulary',
-                    title=title,
-                    module_acronym=form.module_acronym.data,
-                    form_data=form_data
-                )
-                db.session.add(draft)
-            
-            db.session.commit()
-            flash('Draft saved successfully!', 'success')
-            
-        except Exception as e:
-            print(f"Error saving draft: {e}")
-            flash(f'Error saving draft: {str(e)}', 'error')
-    else:
-        flash('Please fix form errors before saving', 'error')
-    
-    return redirect(url_for('create_vocabulary'))
-
-@app.route('/load-vocabulary-draft/<int:draft_id>')
-@login_required
-def load_vocabulary_draft(draft_id):
-    """Load vocabulary worksheet draft"""
-    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='vocabulary').first()
     
     if not draft:
         flash('Draft not found', 'error')
@@ -3165,6 +3103,39 @@ def my_documents():
     ).order_by(GeneratedDocument.created_at.desc()).all()
     
     return render_template('my_documents.html', documents=documents)
+
+# Routes for vocabulary draft management (moved here to avoid conflicts)
+@app.route('/load-vocabulary-draft/<int:draft_id>')
+@login_required
+def load_vocabulary_draft(draft_id):
+    """Load vocabulary worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='vocabulary').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_vocabulary'))
+    
+    try:
+        # Create form and populate with draft data
+        form = VocabularyWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate form fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate vocabulary words
+        words_data = form_data.get('words', [])
+        for i, word_data in enumerate(words_data):
+            if i < len(form.words):
+                form.words[i].word.data = word_data.get('word', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_vocabulary.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_vocabulary'))
 
 if __name__ == '__main__':
     app.run(debug=True) 
