@@ -11,7 +11,7 @@
 
     <!-- Stats Section -->
     <div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <a href="/drafts" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -21,15 +21,15 @@
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Total Drafts</dt>
+                            <dt class="text-sm font-medium text-gray-500 truncate">My Drafts</dt>
                             <dd class="text-lg font-medium text-gray-900">{{ total_drafts }}</dd>
                         </dl>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <a href="/my-documents" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -39,13 +39,13 @@
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Documents Created</dt>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Generated Documents</dt>
                             <dd class="text-lg font-medium text-gray-900">{{ total_docs }}</dd>
                         </dl>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
 
         <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
@@ -65,7 +65,7 @@
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <a href="/" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow cursor-pointer">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -81,41 +81,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions Section -->
-    <div class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">📁 Quick Actions</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <a href="/vocabulary-drafts" class="bg-green-600 text-white px-4 py-4 rounded-lg hover:bg-green-700 transition-colors text-center block">
-                <div class="text-lg font-medium">📝 My Drafts</div>
-                <div class="text-sm opacity-90">Saved vocabulary worksheets</div>
-                {% if total_drafts > 0 %}
-                    <div class="text-xs mt-1 bg-green-500 rounded-full px-2 py-1 inline-block">{{ total_drafts }} saved</div>
-                {% endif %}
-            </a>
-            
-            <a href="/my-documents" class="bg-blue-600 text-white px-4 py-4 rounded-lg hover:bg-blue-700 transition-colors text-center block">
-                <div class="text-lg font-medium">📄 My Documents</div>
-                <div class="text-sm opacity-90">Download generated files</div>
-                {% if total_docs > 0 %}
-                    <div class="text-xs mt-1 bg-blue-500 rounded-full px-2 py-1 inline-block">{{ total_docs }} documents</div>
-                {% endif %}
-            </a>
-            
-            <a href="/create-vocabulary" class="bg-emerald-600 text-white px-4 py-4 rounded-lg hover:bg-emerald-700 transition-colors text-center block">
-                <div class="text-lg font-medium">⚡ Quick Start</div>
-                <div class="text-sm opacity-90">Create vocabulary worksheet</div>
-                <div class="text-xs mt-1 opacity-75">Most popular template</div>
-            </a>
-            
-            <a href="/" class="bg-gray-600 text-white px-4 py-4 rounded-lg hover:bg-gray-700 transition-colors text-center block">
-                <div class="text-lg font-medium">🔍 Browse Templates</div>
-                <div class="text-sm opacity-90">View all document types</div>
-                <div class="text-xs mt-1 opacity-75">10 templates available</div>
-            </a>
-        </div>
+        </a>
     </div>
 
     <!-- Recent Activity Section -->
@@ -170,15 +136,7 @@
                 </svg>
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Ready to create your first document?</h3>
-            <p class="text-gray-600 mb-6">Get started by creating a vocabulary worksheet or exploring other templates.</p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="/create-vocabulary" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                    Create Vocabulary Worksheet
-                </a>
-                <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
-                    Browse All Templates
-                </a>
-            </div>
+            <p class="text-gray-600 mb-6">Get started by creating documents using the navigation above.</p>
         </div>
     </div>
     {% endif %}

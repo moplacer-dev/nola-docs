@@ -1,111 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Vocabulary Worksheet - NOLA.docs</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Math Symbols Toolbar Styles */
-        .math-toolbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 2px solid #e5e7eb;
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-            transform: translateY(100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 1000;
-        }
-        
-        .math-toolbar.active {
-            transform: translateY(0);
-        }
-        
-        .math-toolbar-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #3b82f6;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 50px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            z-index: 999;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .math-toolbar-toggle:hover {
-            background: #2563eb;
-        }
-        
-        .symbol-category {
-            border-right: 1px solid #e5e7eb;
-            padding: 12px;
-        }
-        
-        .symbol-category:last-child {
-            border-right: none;
-        }
-        
-        .symbol-btn {
-            width: 40px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            cursor: pointer;
-            margin: 2px;
-            border-radius: 4px;
-            font-size: 18px;
-            transition: all 0.2s;
-        }
-        
-        .symbol-btn:hover {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        
-        .active-input {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+{% extends "base.html" %}
+
+{% block title %}Create Vocabulary Worksheet - NOLA.docs{% endblock %}
+
+{% block content %}
+<style>
+    /* Math Symbols Toolbar Styles */
+    .math-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+    }
+    
+    .math-toolbar.active {
+        transform: translateY(0);
+    }
+    
+    .math-toolbar-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 999;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .math-toolbar-toggle:hover {
+        background: #2563eb;
+    }
+    
+    .symbol-category {
+        border-right: 1px solid #e5e7eb;
+        padding: 12px;
+    }
+    
+    .symbol-category:last-child {
+        border-right: none;
+    }
+    
+    .symbol-btn {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        cursor: pointer;
+        margin: 2px;
+        border-radius: 4px;
+        font-size: 18px;
+        transition: all 0.2s;
+    }
+    
+    .symbol-btn:hover {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+    
+    .active-input {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Draft saved</span>
+</div>
+
 <div class="max-w-4xl mx-auto py-8 px-4 pb-24">
     <!-- Header -->
     <div class="mb-8">
-        <a href="/" class="text-blue-600 hover:text-blue-700 flex items-center gap-2 mb-4">
-            ← Back to Home
-        </a>
         <h1 class="text-3xl font-bold text-gray-900">Create Vocabulary Worksheet</h1>
-        <p class="text-gray-600 mt-2">Enter the module acronym and vocabulary terms to generate a worksheet.</p>
+        <p class="text-gray-600 mt-2">Enter the module acronym and vocabulary terms to generate a worksheet. <strong>Your progress is automatically saved as you type.</strong></p>
     </div>
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <!-- Form Card -->
     <div class="bg-white rounded-lg shadow-md p-8">
-        <form method="POST" id="vocab-form">
+        <form method="POST" action="{{ url_for('create_vocabulary') }}" id="vocab-form">
             {{ form.hidden_tag() }}
             
             <!-- Module Information Section -->
@@ -114,7 +136,9 @@
                 
                 <div class="mb-6">
                     {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                    {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                    {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        id="module_acronym", 
+                        data_autosave="true") }}
                     {% if form.module_acronym.errors %}
                         <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
                     {% endif %}
@@ -133,7 +157,10 @@
                     {% for word_form in form.words %}
                         <div class="mb-0">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Term {{ loop.index }}</label>
-                            {{ word_form.word(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter vocabulary term") }}
+                            {{ word_form.word(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                placeholder="Enter vocabulary term",
+                                data_autosave="true",
+                                data_word_index=loop.index0) }}
                             {% if word_form.word.errors %}
                                 <p class="mt-1 text-sm text-red-600">{{ word_form.word.errors[0] }}</p>
                             {% endif %}
@@ -143,44 +170,157 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="flex justify-between items-center space-x-4 pt-6 border-t border-gray-200">
-                <!-- Left side - Draft Management -->
-                <div class="flex space-x-3">
-                    <a href="/vocabulary-drafts" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors text-sm">
-                        📝 My Drafts
-                    </a>
-                    <a href="/my-documents" class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors text-sm">
-                        📄 My Documents
-                    </a>
-                </div>
-                
-                <!-- Right side - Actions -->
-                <div class="flex space-x-3">
-                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
-                        Cancel
-                    </a>
-                    <!-- Save Draft Button -->
-                    <button type="submit" name="action" value="save_draft" 
-                            class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
-                        💾 Save Draft
-                    </button>
-                    <!-- Generate Button -->
-                    <button type="submit" name="action" value="generate" 
-                            class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
-                        Generate Worksheet
-                    </button>
-                </div>
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <!-- Only Generate Button -->
+                <button type="submit" name="action" value="generate" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                    Generate Worksheet
+                </button>
             </div>
             
             <!-- Hidden field to track if we're editing an existing draft -->
             {% if draft_id %}
-                <input type="hidden" name="draft_id" value="{{ draft_id }}">
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
             {% endif %}
         </form>
     </div>
 </div>
 
 <script>
+    // Autosave functionality
+    class VocabularyAutosave {
+        constructor() {
+            this.autosaveTimeout = null;
+            this.autosaveDelay = 2000; // 2 seconds after user stops typing
+            this.currentDraftId = document.getElementById('current_draft_id').value || null;
+            this.isAutosaving = false;
+            this.lastSaveData = null;
+            
+            this.initializeEventListeners();
+            this.showAutosaveStatus('Ready to autosave', 'saved');
+        }
+        
+        initializeEventListeners() {
+            // Listen for changes on autosave-enabled fields
+            const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
+            
+            autosaveFields.forEach(field => {
+                field.addEventListener('input', () => {
+                    this.scheduleAutosave();
+                });
+                
+                field.addEventListener('blur', () => {
+                    // Save immediately when user leaves a field
+                    this.performAutosave();
+                });
+            });
+        }
+        
+        scheduleAutosave() {
+            // Clear existing timeout
+            if (this.autosaveTimeout) {
+                clearTimeout(this.autosaveTimeout);
+            }
+            
+            // Schedule new autosave
+            this.autosaveTimeout = setTimeout(() => {
+                this.performAutosave();
+            }, this.autosaveDelay);
+        }
+        
+        async performAutosave() {
+            if (this.isAutosaving) {
+                return; // Already autosaving
+            }
+            
+            // Collect form data
+            const formData = this.collectFormData();
+            
+            // Check if data has changed
+            if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
+                return; // No changes to save
+            }
+            
+            this.isAutosaving = true;
+            this.showAutosaveStatus('Saving...', 'saving');
+            
+            try {
+                // Add draft_id to the data
+                formData.draft_id = this.currentDraftId;
+                
+                const response = await fetch('/autosave-vocabulary-draft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update current draft ID if this was a new draft
+                    if (result.draft_id && !this.currentDraftId) {
+                        this.currentDraftId = result.draft_id;
+                        document.getElementById('current_draft_id').value = result.draft_id;
+                    }
+                    
+                    this.lastSaveData = formData;
+                    this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+                } else {
+                    this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Autosave error:', error);
+                this.showAutosaveStatus('Save failed - check connection', 'error');
+            } finally {
+                this.isAutosaving = false;
+            }
+        }
+        
+        collectFormData() {
+            const moduleAcronym = document.getElementById('module_acronym').value;
+            const words = [];
+            
+            // Collect all vocabulary words
+            const wordFields = document.querySelectorAll('[data-word-index]');
+            wordFields.forEach(field => {
+                const wordIndex = parseInt(field.dataset.wordIndex);
+                words[wordIndex] = { word: field.value.trim() };
+            });
+            
+            return {
+                module_acronym: moduleAcronym,
+                words: words
+            };
+        }
+        
+        showAutosaveStatus(message, type) {
+            const statusElement = document.getElementById('autosave-status');
+            const textElement = document.getElementById('autosave-text');
+            
+            // Update text and styling
+            textElement.textContent = message;
+            statusElement.className = `autosave-status ${type}`;
+            
+            // Show the status
+            setTimeout(() => {
+                statusElement.classList.remove('hidden');
+            }, 10);
+            
+            // Auto-hide after 3 seconds (except for errors)
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusElement.classList.add('hidden');
+                }, 3000);
+            }
+        }
+    }
+    
     // Math Symbols Toolbar functionality
     let activeInput = null;
     
@@ -219,10 +359,19 @@
         activeInput.value = text.substring(0, start) + symbol + text.substring(end);
         activeInput.selectionStart = activeInput.selectionEnd = start + symbol.length;
         activeInput.focus();
+        
+        // Trigger autosave if this field has autosave enabled
+        if (activeInput.dataset.autosave === 'true') {
+            window.autosaveInstance.scheduleAutosave();
+        }
     }
     
-    // Initialize symbol buttons
+    // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize autosave
+        window.autosaveInstance = new VocabularyAutosave();
+        
+        // Initialize symbol buttons
         document.querySelectorAll('.symbol-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 insertSymbol(this.textContent);
@@ -365,5 +514,4 @@
     ∑ Math Symbols
 </button>
 
-</body>
-</html> 
+{% endblock %} 

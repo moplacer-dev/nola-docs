@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FieldList, FormField, IntegerField, HiddenField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
@@ -759,6 +759,68 @@ def index():
 def about():
     return render_template('about.html')
 
+@app.route('/autosave-vocabulary-draft', methods=['POST'])
+@login_required
+def autosave_vocabulary_draft():
+    """AJAX endpoint for autosaving vocabulary draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'words': []
+        }
+        
+        # Process vocabulary words
+        words_data = data.get('words', [])
+        for word_data in words_data:
+            word_text = word_data.get('word', '').strip()
+            if word_text:  # Only include non-empty words
+                form_data['words'].append({'word': word_text})
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='vocabulary').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title if module acronym changed
+                if form_data['module_acronym']:
+                    draft.title = f"Vocabulary Worksheet - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Vocabulary Worksheet - {form_data['module_acronym']}" if form_data['module_acronym'] else "Vocabulary Worksheet - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='vocabulary',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/create-vocabulary', methods=['GET', 'POST'])
 @login_required
 def create_vocabulary():
@@ -860,18 +922,33 @@ def create_pba():
         if form.errors:
             print(f"Form errors: {form.errors}")
     
-    if form.validate_on_submit():
-        print("PBA form validation passed!")
-        # Generate the document
-        try:
-            print("Attempting to generate PBA worksheet...")
-            doc_path = generate_pba_worksheet(form)
-            print(f"PBA worksheet generated at: {doc_path}")
-            flash('PBA worksheet generated successfully!', 'success')
-            return redirect(url_for('create_pba'))
-        except Exception as e:
-            print(f"Error generating PBA worksheet: {e}")
-            flash(f'Error generating PBA worksheet: {str(e)}', 'error')
+        # Only handle document generation now - autosave handles saving
+        if form.validate_on_submit():
+            print("PBA form validation passed!")
+            try:
+                print("Attempting to generate PBA worksheet...")
+                doc_path = generate_pba_worksheet(form)
+                filename = os.path.basename(doc_path)
+                
+                print(f"PBA worksheet generated at: {doc_path}")
+                
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='pba',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                flash('PBA worksheet generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"Error generating PBA worksheet: {e}")
+                flash(f'Error generating PBA worksheet: {str(e)}', 'error')
     
     return render_template('create_pba.html', form=form)
 
@@ -887,26 +964,43 @@ def create_test():
         print(f"Form valid: {form.validate_on_submit()}")
         if form.errors:
             print(f"Form errors: {form.errors}")
-    
-    if form.validate_on_submit():
-        print("Test form validation passed!")
-        # Generate the document based on the selected test type
-        try:
-            test_type = form.test_type.data
-            if test_type == 'pre':
-                print("Attempting to generate pre-test worksheet...")
-                doc_path = generate_pretest_worksheet(form)
-                flash('Pre-Test worksheet generated successfully!', 'success')
-            else:  # test_type == 'post'
-                print("Attempting to generate post-test worksheet...")
-                doc_path = generate_posttest_worksheet(form)
-                flash('Post-Test worksheet generated successfully!', 'success')
-            
-            print(f"Test worksheet generated at: {doc_path}")
-            return redirect(url_for('create_test'))
-        except Exception as e:
-            print(f"Error generating test worksheet: {e}")
-            flash(f'Error generating test worksheet: {str(e)}', 'error')
+        
+        # Only handle document generation now - autosave handles saving
+        if form.validate_on_submit():
+            print("Test form validation passed!")
+            try:
+                test_type = form.test_type.data
+                if test_type == 'pre':
+                    print("Attempting to generate pre-test worksheet...")
+                    doc_path = generate_pretest_worksheet(form)
+                    filename = os.path.basename(doc_path)
+                    document_type = 'pretest'
+                    flash('Pre-Test worksheet generated successfully!', 'success')
+                else:  # test_type == 'post'
+                    print("Attempting to generate post-test worksheet...")
+                    doc_path = generate_posttest_worksheet(form)
+                    filename = os.path.basename(doc_path)
+                    document_type = 'posttest'
+                    flash('Post-Test worksheet generated successfully!', 'success')
+                
+                print(f"Test worksheet generated at: {doc_path}")
+                
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type=document_type,
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"Error generating test worksheet: {e}")
+                flash(f'Error generating test worksheet: {str(e)}', 'error')
     
     return render_template('create_test.html', form=form)
 
@@ -2580,22 +2674,22 @@ def generate_module_answer_key(form):
                                 except (ValueError, IndexError):
                                     continue
                 
-                    if image_file and image_file.filename:
-                        # Save the uploaded file temporarily
-                        filename = secure_filename(image_file.filename)
-                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                        unique_filename = f"{timestamp}_{filename}"
-                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                        
-                        # Save the file
-                        image_file.save(filepath)
-                        saved_images.append(filepath)  # Track for cleanup
-                        
-                        # Add image to subdocument with fixed width of 4 inches
-                        p = worksheet_keys_subdoc.add_paragraph()
-                        run = p.add_run()
-                        run.add_picture(filepath, width=Inches(4))
-                        p.alignment = 1  # Center alignment
+                if image_file and image_file.filename:
+                    # Save the uploaded file temporarily
+                    filename = secure_filename(image_file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{filename}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    
+                    # Save the file
+                    image_file.save(filepath)
+                    saved_images.append(filepath)  # Track for cleanup
+                    
+                    # Add image to subdocument with fixed width of 4 inches
+                    p = worksheet_keys_subdoc.add_paragraph()
+                    run = p.add_run()
+                    run.add_picture(filepath, width=Inches(4))
+                    p.alignment = 1  # Center alignment
                 
                 elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
                     question_text = (field_data.get('question_text') or '').strip()
@@ -3064,7 +3158,7 @@ def delete_vocabulary_draft(draft_id):
         db.session.commit()
         flash('Draft deleted successfully!', 'success')
     
-    return redirect(url_for('vocabulary_drafts'))
+    return redirect(url_for('drafts'))
 
 @app.route('/download/<int:doc_id>')
 @login_required
@@ -3136,6 +3230,300 @@ def load_vocabulary_draft(draft_id):
         print(f"Error loading draft: {e}")
         flash(f'Error loading draft: {str(e)}', 'error')
         return redirect(url_for('create_vocabulary'))
+
+@app.route('/drafts')
+@login_required
+def drafts():
+    """List all user's drafts (all document types)"""
+    drafts = FormDraft.query.filter_by(
+        user_id=current_user.id,
+        is_current=True
+    ).order_by(FormDraft.updated_at.desc()).all()
+    
+    return render_template('drafts.html', drafts=drafts)
+
+@app.route('/delete-document/<int:doc_id>', methods=['POST'])
+@login_required
+def delete_document(doc_id):
+    """Delete a generated document"""
+    document = GeneratedDocument.query.filter_by(id=doc_id, user_id=current_user.id).first()
+    
+    if not document:
+        flash('Document not found', 'error')
+        return redirect(url_for('my_documents'))
+    
+    try:
+        # Delete the physical file if it exists
+        if document.file_path and os.path.exists(document.file_path):
+            os.remove(document.file_path)
+            print(f"✓ Deleted file: {document.file_path}")
+        
+        # Store filename for success message
+        filename = document.filename
+        
+        # Delete the database record
+        db.session.delete(document)
+        db.session.commit()
+        
+        flash(f'Document "{filename}" removed successfully!', 'success')
+        
+    except Exception as e:
+        print(f"Error deleting document: {e}")
+        flash(f'Error removing document: {str(e)}', 'error')
+    
+    return redirect(url_for('my_documents'))
+
+@app.route('/autosave-test-draft', methods=['POST'])
+@login_required
+def autosave_test_draft():
+    """AJAX endpoint for autosaving test draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'test_type': data.get('test_type', 'pre'),
+            'questions': []
+        }
+        
+        # Process test questions
+        questions_data = data.get('questions', [])
+        for question_data in questions_data:
+            question_text = question_data.get('question_text', '').strip()
+            choice_a = question_data.get('choice_a', '').strip()
+            choice_b = question_data.get('choice_b', '').strip()
+            choice_c = question_data.get('choice_c', '').strip()
+            choice_d = question_data.get('choice_d', '').strip()
+            
+            # Only include questions with some content
+            if question_text or choice_a or choice_b or choice_c or choice_d:
+                form_data['questions'].append({
+                    'question_text': question_text,
+                    'choice_a': choice_a,
+                    'choice_b': choice_b,
+                    'choice_c': choice_c,
+                    'choice_d': choice_d
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='test').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title if module acronym or test type changed
+                test_type_display = "Pre-Test" if form_data['test_type'] == 'pre' else "Post-Test"
+                if form_data['module_acronym']:
+                    draft.title = f"{test_type_display} Worksheet - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            test_type_display = "Pre-Test" if form_data['test_type'] == 'pre' else "Post-Test"
+            title = f"{test_type_display} Worksheet - {form_data['module_acronym']}" if form_data['module_acronym'] else f"{test_type_display} Worksheet - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='test',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in test autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-test-draft/<int:draft_id>')
+@login_required
+def load_test_draft(draft_id):
+    """Load test worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='test').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_test'))
+    
+    try:
+        # Create form and populate with draft data
+        form = TestWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate form fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        form.test_type.data = form_data.get('test_type', 'pre')
+        
+        # Populate test questions
+        questions_data = form_data.get('questions', [])
+        for i, question_data in enumerate(questions_data):
+            if i < len(form.questions):
+                form.questions[i].question_text.data = question_data.get('question_text', '')
+                form.questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.questions[i].choice_d.data = question_data.get('choice_d', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_test.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading test draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_test'))
+
+@app.route('/delete-test-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_test_draft(draft_id):
+    """Delete test worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='test').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+@app.route('/load-pba-draft/<int:draft_id>')
+@login_required
+def load_pba_draft(draft_id):
+    """Load PBA worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='pba').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_pba'))
+    
+    try:
+        # Create form and populate with draft data
+        form = PBAWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        form.session_number.data = form_data.get('session_number', '')
+        form.section_header.data = form_data.get('section_header', '')
+        
+        # Populate assessment fields
+        assessments_data = form_data.get('assessments', [])
+        for i, assessment_data in enumerate(assessments_data):
+            if i < len(form.assessments):
+                form.assessments[i].assessment.data = assessment_data.get('assessment', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_pba.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading PBA draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_pba'))
+
+@app.route('/delete-pba-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_pba_draft(draft_id):
+    """Delete PBA worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='pba').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+@app.route('/autosave-pba-draft', methods=['POST'])
+@login_required
+def autosave_pba_draft():
+    """AJAX endpoint for autosaving PBA draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'session_number': data.get('session_number', ''),
+            'section_header': data.get('section_header', ''),
+            'assessments': []
+        }
+        
+        # Process assessment fields
+        assessments_data = data.get('assessments', [])
+        for assessment_data in assessments_data:
+            assessment_text = assessment_data.get('assessment', '').strip()
+            # Only include non-empty assessments
+            if assessment_text:
+                form_data['assessments'].append({
+                    'assessment': assessment_text
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='pba').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym'] or form_data['session_number']:
+                    draft.title = f"PBA Worksheet - {form_data['module_acronym']} Session {form_data['session_number']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title_parts = []
+            if form_data['module_acronym']:
+                title_parts.append(form_data['module_acronym'])
+            if form_data['session_number']:
+                title_parts.append(f"Session {form_data['session_number']}")
+            
+            title = f"PBA Worksheet - {' '.join(title_parts)}" if title_parts else "PBA Worksheet - Untitled"
+            
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='pba',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in PBA autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True) 
