@@ -28,9 +28,17 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///nola_docs.db')
+# Database configuration with Render compatibility
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///nola_docs.db')
+# Fix for Render PostgreSQL URL format
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Environment detection
+app.config['IS_PRODUCTION'] = os.environ.get('FLASK_ENV') == 'production' or 'render.com' in os.environ.get('RENDER_EXTERNAL_URL', '')
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -2872,27 +2880,18 @@ def generate_module_activity_sheet(form):
 
 @app.route('/debug/db-status')
 def debug_db_status():
-    """Debug route to check database status and create tables if needed"""
+    """Debug route to check database status - DEVELOPMENT ONLY"""
+    # SECURITY: Only allow in development
+    if app.config.get('IS_PRODUCTION', False):
+        return "Debug routes disabled in production", 403
+    
     try:
-        # Try to create all tables
-        with app.app_context():
-            db.create_all()
-        
-        # Test database connection
+        # Don't call db.create_all() - just check existing tables
         total_users = User.query.count()
         admin_count = User.query.filter_by(is_admin=True).count()
         
-        # Test if we can create a simple log entry
-        test_log = ActivityLog(
-            action='database_test',
-            details={'test': True}
-        )
-        db.session.add(test_log)
-        db.session.commit()
-        
-        # Clean up test log
-        db.session.delete(test_log)
-        db.session.commit()
+        # Test database connection without modifications
+        test_query = db.session.execute(db.text('SELECT 1')).scalar()
         
         return f"""
         <h1>Database Status - OK</h1>
@@ -2900,8 +2899,7 @@ def debug_db_status():
         <li>Database URL: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...</li>
         <li>Total users: {total_users}</li>
         <li>Admin users: {admin_count}</li>
-        <li>Tables created: SUCCESS</li>
-        <li>Database operations: SUCCESS</li>
+        <li>Database connection: {test_query}</li>
         </ul>
         <p><a href="/setup">Go to Setup</a> | <a href="/">Home</a></p>
         """
@@ -2914,36 +2912,16 @@ def debug_db_status():
         <p><a href="/">Home</a></p>
         """
 
-@app.route('/force-db-init')
-def force_db_init():
-    """Force database initialization - EMERGENCY USE ONLY"""
-    try:
-        # Drop and recreate all tables (CAREFUL!)
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-        
-        return f"""
-        <h1>🚨 Database Reinitialized</h1>
-        <p><strong>WARNING:</strong> All data has been reset!</p>
-        <p>You need to recreate your admin user.</p>
-        <p><a href="/create-admin-simple">Create Admin User</a></p>
-        """
-        
-    except Exception as e:
-        return f"""
-        <h1>Database Initialization - ERROR</h1>
-        <p><strong>Error:</strong> {str(e)}</p>
-        <p><a href="/debug/db-status">Check Database Status</a></p>
-        """
-
 @app.route('/migrate-db')
 def migrate_db():
-    """Safely migrate database - add missing tables only"""
+    """Safely migrate database - DEVELOPMENT ONLY"""
+    # SECURITY: Only allow in development
+    if app.config.get('IS_PRODUCTION', False):
+        return "Debug routes disabled in production", 403
+    
     try:
-        # Create only missing tables (safe operation)
-        with app.app_context():
-            db.create_all()
+        # Only create missing tables (safe operation) - don't drop existing ones
+        db.create_all()
         
         # Test that we can query existing users
         total_users = User.query.count()
@@ -2960,17 +2938,22 @@ def migrate_db():
         return f"""
         <h1>Database Migration - ERROR</h1>
         <p><strong>Error:</strong> {str(e)}</p>
-        <p><strong>Try force reset:</strong> <a href="/force-db-init">Force DB Reinitialization</a></p>
         <p><a href="/debug/db-status">Check Database Status</a></p>
         """
 
 @app.route('/create-admin-simple', methods=['GET', 'POST'])
 def create_admin_simple():
-    """Simple admin creation with better error handling"""
+    """Simple admin creation with better error handling - DEVELOPMENT ONLY"""
+    # SECURITY: Only allow in development or when no admin exists
+    if app.config.get('IS_PRODUCTION', False):
+        # In production, only allow if no admin exists
+        existing_admin = User.query.filter_by(is_admin=True).first()
+        if existing_admin:
+            return "Admin creation disabled - admin already exists", 403
+    
     try:
-        # Ensure tables exist
-        with app.app_context():
-            db.create_all()
+        # Don't call db.create_all() - use migrations instead
+        # Tables should already exist via flask db upgrade
         
         if request.method == 'GET':
             # Check if admin already exists
