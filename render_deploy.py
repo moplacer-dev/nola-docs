@@ -28,8 +28,11 @@ def setup_for_render():
         with app.app_context():
             log_message("📊 Testing database connection...")
             
-            # Test database connection
+            # Test database connection using newer SQLAlchemy API
             try:
+                from sqlalchemy import text
+                with db.engine.connect() as connection:
+                    result = connection.execute(text("SELECT 1"))
                 user_count = User.query.count()
                 log_message(f"✅ Database connected. Found {user_count} users.")
             except Exception as e:

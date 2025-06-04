@@ -24,12 +24,16 @@ def test_database_connection():
     
     try:
         with app.app_context():
-            # Test basic connection
-            result = db.engine.execute("SELECT 1")
-            print("✅ Database connection successful!")
+            # Test basic connection using newer SQLAlchemy API
+            from sqlalchemy import text
+            with db.engine.connect() as connection:
+                result = connection.execute(text("SELECT 1"))
+                print("✅ Database connection successful!")
             
             # Check if tables exist
-            tables = db.engine.table_names()
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
             print(f"📋 Found {len(tables)} tables: {', '.join(tables)}")
             
             # Test user table specifically
