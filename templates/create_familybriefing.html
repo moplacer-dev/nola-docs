@@ -1,169 +1,391 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Family Briefing - NOLA.docs</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-6xl mx-auto py-8 px-4">
-        <!-- Header -->
-        <div class="mb-8">
-            <a href="/" class="text-blue-600 hover:text-blue-700">&larr; Back to Home</a>
-            <h1 class="text-3xl font-bold text-gray-900 mt-4">Create Family Briefing</h1>
-            <p class="text-gray-600 mt-2">Generate a family briefing document to communicate module information to parents and caregivers.</p>
-        </div>
+{% extends "base.html" %}
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block title %}Create Family Briefing - NOLA.docs{% endblock %}
 
-        <!-- Form -->
-        <div class="bg-white rounded-lg shadow-md p-8">
-            <form method="POST" id="familybriefing-form">
-                {{ form.hidden_tag() }}
-                
-                <!-- Module Information -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
-                    
-                    <div class="mb-6">
-                        {{ form.module_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                        {{ form.module_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                        {% if form.module_name.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.module_name.errors[0] }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-6">
-                        {{ form.introsentence.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                        {{ form.introsentence(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=3) }}
-                        {% if form.introsentence.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.introsentence.errors[0] }}</p>
-                        {% endif %}
-                    </div>
-                </div>
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
 
-                <!-- Learning Objectives -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Learning Objectives</h2>
-                    <p class="text-sm text-gray-600 mb-4">Enter up to 4 learning objectives for this module.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            {{ form.learningobjective1.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.learningobjective1(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=2) }}
-                        </div>
-                        <div>
-                            {{ form.learningobjective2.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.learningobjective2(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=2) }}
-                        </div>
-                        <div>
-                            {{ form.learningobjective3.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.learningobjective3(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=2) }}
-                        </div>
-                        <div>
-                            {{ form.learningobjective4.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.learningobjective4(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=2) }}
-                        </div>
-                    </div>
-                </div>
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+</style>
 
-                <!-- Session Activities -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Session Activities</h2>
-                    <p class="text-sm text-gray-600 mb-4">List up to 7 activities for this module.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {% for field in [form.activityname1, form.activityname2, form.activityname3, form.activityname4, form.activityname5, form.activityname6, form.activityname7] %}
-                            <div>
-                                {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Draft saved</span>
+</div>
 
-                <!-- Key Terminology -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Key Terminology</h2>
-                    <p class="text-sm text-gray-600 mb-4">Enter up to 21 key terms for this module.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {% for i in range(1, 22) %}
-                            {% set field = form['term' ~ i] %}
-                            <div>
-                                {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Key Concepts -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Key Concepts</h2>
-                    <p class="text-sm text-gray-600 mb-4">Enter up to 3 key concepts with explanations.</p>
-                    
-                    <div class="space-y-6">
-                        <!-- Key Concept 1 -->
-                        <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 1</h3>
-                            <div class="mb-4">
-                                {{ form.keyconcept1_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept1_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
-                            <div>
-                                {{ form.keyconcept1_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept1_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=3) }}
-                            </div>
-                        </div>
-
-                        <!-- Key Concept 2 -->
-                        <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 2</h3>
-                            <div class="mb-4">
-                                {{ form.keyconcept2_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept2_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
-                            <div>
-                                {{ form.keyconcept2_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept2_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=3) }}
-                            </div>
-                        </div>
-
-                        <!-- Key Concept 3 -->
-                        <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 3</h3>
-                            <div class="mb-4">
-                                {{ form.keyconcept3_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept3_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
-                            <div>
-                                {{ form.keyconcept3_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.keyconcept3_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows=3) }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end space-x-4">
-                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
-                        Cancel
-                    </a>
-                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
-                </div>
-            </form>
-        </div>
+<div class="max-w-6xl mx-auto py-8 px-4 pb-24">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Family Briefing</h1>
+        <p class="text-gray-600 mt-2">Generate a family briefing document to communicate module information to parents and caregivers. <strong>Your progress is automatically saved as you type.</strong></p>
     </div>
-</body>
-</html> 
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST" action="{{ url_for('create_familybriefing') }}" id="familybriefing-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Module Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
+                
+                <div class="mb-6">
+                    {{ form.module_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                    {{ form.module_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        id="module_name",
+                        data_autosave="true") }}
+                    {% if form.module_name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.module_name.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    {{ form.introsentence.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                    {{ form.introsentence(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        rows=3,
+                        data_autosave="true") }}
+                    {% if form.introsentence.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.introsentence.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Learning Objectives -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Learning Objectives</h2>
+                <p class="text-sm text-gray-600 mb-4">Enter up to 4 learning objectives for this module.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        {{ form.learningobjective1.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.learningobjective1(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                            rows=2,
+                            data_autosave="true") }}
+                    </div>
+                    <div>
+                        {{ form.learningobjective2.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.learningobjective2(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                            rows=2,
+                            data_autosave="true") }}
+                    </div>
+                    <div>
+                        {{ form.learningobjective3.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.learningobjective3(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                            rows=2,
+                            data_autosave="true") }}
+                    </div>
+                    <div>
+                        {{ form.learningobjective4.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.learningobjective4(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                            rows=2,
+                            data_autosave="true") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Activities -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Session Activities</h2>
+                <p class="text-sm text-gray-600 mb-4">List up to 7 activities for this module.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{ form.activityname1(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 1",
+                        data_autosave="true") }}
+                    {{ form.activityname2(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 2",
+                        data_autosave="true") }}
+                    {{ form.activityname3(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 3",
+                        data_autosave="true") }}
+                    {{ form.activityname4(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 4",
+                        data_autosave="true") }}
+                    {{ form.activityname5(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 5",
+                        data_autosave="true") }}
+                    {{ form.activityname6(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 6",
+                        data_autosave="true") }}
+                    {{ form.activityname7(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        placeholder="Activity 7",
+                        data_autosave="true") }}
+                </div>
+            </div>
+
+            <!-- Key Terminology -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Key Terminology</h2>
+                <p class="text-sm text-gray-600 mb-4">Enter up to 21 key terms for this module.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {% for i in range(1, 22) %}
+                        {% set field = form['term' ~ i] %}
+                        {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                            placeholder="Term " ~ i,
+                            data_autosave="true") }}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Key Concepts -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Key Concepts</h2>
+                <p class="text-sm text-gray-600 mb-4">Enter up to 3 key concepts with explanations.</p>
+                
+                <div class="space-y-6">
+                    <!-- Key Concept 1 -->
+                    <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 1</h3>
+                        <div class="mb-4">
+                            {{ form.keyconcept1_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept1_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                data_autosave="true") }}
+                        </div>
+                        <div>
+                            {{ form.keyconcept1_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept1_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                rows=3,
+                                data_autosave="true") }}
+                        </div>
+                    </div>
+
+                    <!-- Key Concept 2 -->
+                    <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 2</h3>
+                        <div class="mb-4">
+                            {{ form.keyconcept2_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept2_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                data_autosave="true") }}
+                        </div>
+                        <div>
+                            {{ form.keyconcept2_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept2_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                rows=3,
+                                data_autosave="true") }}
+                        </div>
+                    </div>
+
+                    <!-- Key Concept 3 -->
+                    <div class="p-6 border border-gray-200 rounded-lg bg-gray-50">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Key Concept 3</h3>
+                        <div class="mb-4">
+                            {{ form.keyconcept3_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept3_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                data_autosave="true") }}
+                        </div>
+                        <div>
+                            {{ form.keyconcept3_explanation.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.keyconcept3_explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                rows=3,
+                                data_autosave="true") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button type="submit" name="action" value="generate" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                    Generate Family Briefing
+                </button>
+            </div>
+            
+            <!-- Hidden field to track if we're editing an existing draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+    // Autosave functionality
+    class FamilyBriefingAutosave {
+        constructor() {
+            this.autosaveTimeout = null;
+            this.autosaveDelay = 2000; // 2 seconds after user stops typing
+            this.currentDraftId = document.getElementById('current_draft_id').value || null;
+            this.isAutosaving = false;
+            this.lastSaveData = null;
+            
+            this.initializeEventListeners();
+            this.showAutosaveStatus('Ready to autosave', 'saved');
+        }
+        
+        initializeEventListeners() {
+            // Listen for changes on autosave-enabled fields
+            const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
+            
+            autosaveFields.forEach(field => {
+                field.addEventListener('input', () => {
+                    this.scheduleAutosave();
+                });
+                
+                field.addEventListener('blur', () => {
+                    // Save immediately when user leaves a field
+                    this.performAutosave();
+                });
+            });
+        }
+        
+        scheduleAutosave() {
+            // Clear existing timeout
+            if (this.autosaveTimeout) {
+                clearTimeout(this.autosaveTimeout);
+            }
+            
+            // Schedule new autosave
+            this.autosaveTimeout = setTimeout(() => {
+                this.performAutosave();
+            }, this.autosaveDelay);
+        }
+        
+        async performAutosave() {
+            if (this.isAutosaving) {
+                return; // Already autosaving
+            }
+            
+            // Collect form data
+            const formData = this.collectFormData();
+            
+            // Check if data has changed
+            if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
+                return; // No changes to save
+            }
+            
+            this.isAutosaving = true;
+            this.showAutosaveStatus('Saving...', 'saving');
+            
+            try {
+                // Add draft_id to the data
+                formData.draft_id = this.currentDraftId;
+                
+                const response = await fetch('/autosave-familybriefing-draft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update current draft ID if this was a new draft
+                    if (result.draft_id && !this.currentDraftId) {
+                        this.currentDraftId = result.draft_id;
+                        document.getElementById('current_draft_id').value = result.draft_id;
+                    }
+                    
+                    this.lastSaveData = formData;
+                    this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+                } else {
+                    this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Autosave error:', error);
+                this.showAutosaveStatus('Save failed - check connection', 'error');
+            } finally {
+                this.isAutosaving = false;
+            }
+        }
+        
+        collectFormData() {
+            // Collect all form fields with their values
+            const formData = {};
+            
+            // Module information
+            formData.module_name = document.getElementById('module_name').value;
+            formData.introsentence = document.querySelector('[name="introsentence"]').value;
+            
+            // Learning objectives
+            for (let i = 1; i <= 4; i++) {
+                formData[`learningobjective${i}`] = document.querySelector(`[name="learningobjective${i}"]`).value;
+            }
+            
+            // Activities
+            for (let i = 1; i <= 7; i++) {
+                formData[`activityname${i}`] = document.querySelector(`[name="activityname${i}"]`).value;
+            }
+            
+            // Terms
+            for (let i = 1; i <= 21; i++) {
+                formData[`term${i}`] = document.querySelector(`[name="term${i}"]`).value;
+            }
+            
+            // Key concepts
+            for (let i = 1; i <= 3; i++) {
+                formData[`keyconcept${i}_name`] = document.querySelector(`[name="keyconcept${i}_name"]`).value;
+                formData[`keyconcept${i}_explanation`] = document.querySelector(`[name="keyconcept${i}_explanation"]`).value;
+            }
+            
+            return formData;
+        }
+        
+        showAutosaveStatus(message, type) {
+            const statusElement = document.getElementById('autosave-status');
+            const textElement = document.getElementById('autosave-text');
+            
+            // Update text and styling
+            textElement.textContent = message;
+            statusElement.className = `autosave-status ${type}`;
+            
+            // Show the status
+            setTimeout(() => {
+                statusElement.classList.remove('hidden');
+            }, 10);
+            
+            // Auto-hide after 3 seconds (except for errors)
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusElement.classList.add('hidden');
+                }, 3000);
+            }
+        }
+    }
+    
+    // Initialize everything when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize autosave
+        window.autosaveInstance = new FamilyBriefingAutosave();
+    });
+</script>
+
+{% endblock %} 
