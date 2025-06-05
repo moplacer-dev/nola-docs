@@ -82,18 +82,16 @@ class FormDraft(db.Model):
     
     @property
     def document_type_display(self):
-        """Human-readable document type"""
+        """Return user-friendly name for the document type"""
         type_map = {
             'vocabulary': 'Vocabulary Worksheet',
+            'test': 'Test Worksheet',
             'pba': 'PBA Worksheet',
-            'pretest': 'Pre-Test Worksheet',
-            'posttest': 'Post-Test Worksheet',
-            'generic': 'Generic Worksheet',
             'familybriefing': 'Family Briefing',
             'rca': 'RCA Worksheet',
-            'moduleGuide': 'Module Guide',
-            'moduleAnswerKey': 'Module Answer Key',
-            'moduleActivitySheet': 'Module Activity Sheet'
+            'generic': 'Generic Worksheet',
+            'moduleactivity': 'Module Activity Sheet',
+            'moduleguide': 'Module Guide'
         }
         return type_map.get(self.form_type, self.form_type.title())
     

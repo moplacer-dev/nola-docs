@@ -1103,9 +1103,24 @@ def create_module_guide():
         try:
             print("Attempting to generate Module Guide...")
             doc_path = generate_module_guide(form)
+            filename = os.path.basename(doc_path)
+            
             print(f"Module Guide generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='moduleguide',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_acronym.data,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('Module Guide generated successfully!', 'success')
-            return redirect(url_for('create_module_guide'))
+            return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating Module Guide: {e}")
             flash(f'Error generating Module Guide: {str(e)}', 'error')
@@ -1157,14 +1172,80 @@ def create_module_activity_sheet():
         try:
             print("Attempting to generate Module Activity Sheet...")
             doc_path = generate_module_activity_sheet(form)
+            filename = os.path.basename(doc_path)
+            
             print(f"Module Activity Sheet generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='moduleactivity',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_acronym.data,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('Module Activity Sheet generated successfully!', 'success')
-            return redirect(url_for('create_module_activity_sheet'))
+            return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating Module Activity Sheet: {e}")
             flash(f'Error generating Module Activity Sheet: {str(e)}', 'error')
     
     return render_template('create_moduleActivitySheet.html', form=form)
+
+@app.route('/load-moduleactivity-draft/<int:draft_id>')
+@login_required
+def load_moduleactivity_draft(draft_id):
+    """Load module activity sheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleactivity').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_module_activity_sheet'))
+    
+    try:
+        # Create form and populate with draft data
+        form = ModuleActivitySheetForm()
+        form_data = draft.form_data
+        
+        # Populate form fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate session data
+        sessions_data = form_data.get('sessions', [])
+        session_dict = {session['session_number']: session for session in sessions_data}
+        
+        for i in range(1, 8):
+            if i in session_dict:
+                session_data = session_dict[i]
+                getattr(form, f'session{i}_activity').data = session_data.get('activity', '')
+                getattr(form, f'session{i}_is_pba').data = session_data.get('is_pba', False)
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_moduleActivitySheet.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading module activity draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_module_activity_sheet'))
+
+@app.route('/delete-moduleactivity-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_moduleactivity_draft(draft_id):
+    """Delete module activity sheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleactivity').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
 
 def generate_vocabulary_worksheet(form):
     """Generate a vocabulary worksheet using docxtpl"""
@@ -3523,6 +3604,537 @@ def autosave_pba_draft():
         
     except Exception as e:
         print(f"Error in PBA autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/autosave-generic-draft', methods=['POST'])
+@login_required  
+def autosave_generic_draft():
+    """AJAX endpoint for autosaving generic worksheet draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'dynamic_fields': data.get('dynamic_fields', [])
+        }
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='generic').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym']:
+                    draft.title = f"Generic Worksheet - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Generic Worksheet - {form_data['module_acronym']}" if form_data['module_acronym'] else "Generic Worksheet - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='generic',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in generic autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/autosave-moduleactivity-draft', methods=['POST'])
+@login_required
+def autosave_moduleactivity_draft():
+    """AJAX endpoint for autosaving module activity sheet draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'sessions': []
+        }
+        
+        # Process session data (7 sessions)
+        for i in range(1, 8):
+            session_activity = data.get(f'session{i}_activity', '').strip()
+            session_is_pba = data.get(f'session{i}_is_pba', False)
+            
+            if session_activity or session_is_pba:
+                form_data['sessions'].append({
+                    'session_number': i,
+                    'activity': session_activity,
+                    'is_pba': session_is_pba
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleactivity').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym']:
+                    draft.title = f"Module Activity Sheet - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Module Activity Sheet - {form_data['module_acronym']}" if form_data['module_acronym'] else "Module Activity Sheet - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='moduleactivity',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in module activity autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/autosave-moduleguide-draft', methods=['POST'])
+@login_required
+def autosave_moduleguide_draft():
+    """AJAX endpoint for autosaving module guide draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'teachertips_statement': data.get('teachertips_statement', ''),
+            'standards': [],
+            'vocab_terms': [],
+            'careers': [],
+            'sessions': [],
+            'enrichment_activities': [],
+            'locally_sourced_materials': [],
+            'maintenance_items': [],
+            'assembly_instructions': [],
+            'recommended_websites': []
+        }
+        
+        # Process standards
+        standards_data = data.get('standards', [])
+        for standard in standards_data:
+            if standard.get('standard'):
+                form_data['standards'].append({
+                    'standard': standard['standard']
+                })
+        
+        # Process vocabulary terms
+        vocab_data = data.get('vocab_terms', [])
+        for term in vocab_data:
+            if term.get('term'):
+                form_data['vocab_terms'].append({
+                    'term': term['term']
+                })
+        
+        # Process careers
+        careers_data = data.get('careers', [])
+        for career in careers_data:
+            if career.get('career'):
+                form_data['careers'].append({
+                    'career': career['career']
+                })
+        
+        # Process sessions (7 sessions with complex structure)
+        sessions_data = data.get('sessions', [])
+        for session in sessions_data:
+            if session.get('focus') or session.get('goals') or session.get('materials') or session.get('preparations') or session.get('assessments'):
+                session_data = {
+                    'focus': session.get('focus', ''),
+                    'goals': [goal for goal in session.get('goals', []) if goal],
+                    'materials': [material for material in session.get('materials', []) if material],
+                    'preparations': [prep for prep in session.get('preparations', []) if prep],
+                    'assessments': [assessment for assessment in session.get('assessments', []) if assessment]
+                }
+                form_data['sessions'].append(session_data)
+        
+        # Process enrichment activities
+        enrichment_data = data.get('enrichment_activities', [])
+        for activity in enrichment_data:
+            if activity.get('activity'):
+                form_data['enrichment_activities'].append({
+                    'activity': activity['activity']
+                })
+        
+        # Process locally sourced materials
+        materials_data = data.get('locally_sourced_materials', [])
+        for material in materials_data:
+            if material.get('material'):
+                form_data['locally_sourced_materials'].append({
+                    'material': material['material']
+                })
+        
+        # Process maintenance items
+        maintenance_data = data.get('maintenance_items', [])
+        for item in maintenance_data:
+            if item.get('item'):
+                form_data['maintenance_items'].append({
+                    'item': item['item']
+                })
+        
+        # Process assembly instructions
+        assembly_data = data.get('assembly_instructions', [])
+        for instruction in assembly_data:
+            if instruction.get('instruction'):
+                form_data['assembly_instructions'].append({
+                    'instruction': instruction['instruction']
+                })
+        
+        # Process recommended websites
+        websites_data = data.get('recommended_websites', [])
+        for website in websites_data:
+            if website.get('title') or website.get('url'):
+                form_data['recommended_websites'].append({
+                    'title': website.get('title', ''),
+                    'url': website.get('url', '')
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym']:
+                    draft.title = f"Module Guide - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Module Guide - {form_data['module_acronym']}" if form_data['module_acronym'] else "Module Guide - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='moduleguide',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in module guide autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-moduleguide-draft/<int:draft_id>')
+@login_required
+def load_moduleguide_draft(draft_id):
+    """Load module guide draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_module_guide'))
+    
+    try:
+        # Create form and populate with draft data
+        form = ModuleGuideForm()
+        form_data = draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        form.teachertips_statement.data = form_data.get('teachertips_statement', '')
+        
+        # Populate standards
+        standards_data = form_data.get('standards', [])
+        for i, standard_data in enumerate(standards_data):
+            if i < len(form.standards):
+                form.standards[i].standard.data = standard_data.get('standard', '')
+        
+        # Populate vocabulary terms
+        vocab_data = form_data.get('vocab_terms', [])
+        for i, vocab_item in enumerate(vocab_data):
+            if i < len(form.vocab_terms):
+                form.vocab_terms[i].term.data = vocab_item.get('term', '')
+        
+        # Populate careers
+        careers_data = form_data.get('careers', [])
+        for i, career_data in enumerate(careers_data):
+            if i < len(form.careers):
+                form.careers[i].career.data = career_data.get('career', '')
+        
+        # Populate sessions (complex nested structure)
+        sessions_data = form_data.get('sessions', [])
+        for i, session_data in enumerate(sessions_data):
+            if i < len(form.sessions):
+                session_form = form.sessions[i]
+                session_form.focus.data = session_data.get('focus', '')
+                
+                # Populate goals
+                goals = session_data.get('goals', [])
+                for j, goal in enumerate(goals):
+                    if j < len(session_form.goals):
+                        session_form.goals[j].goal.data = goal
+                
+                # Populate materials (15 material fields)
+                materials = session_data.get('materials', [])
+                for j, material in enumerate(materials):
+                    if j < 15:  # 15 material fields
+                        material_field = getattr(session_form, f'material{j+1}')
+                        material_field.data = material
+                
+                # Populate preparations
+                preparations = session_data.get('preparations', [])
+                for j, prep in enumerate(preparations):
+                    if j < len(session_form.preparations):
+                        session_form.preparations[j].prep.data = prep
+                
+                # Populate assessments
+                assessments = session_data.get('assessments', [])
+                for j, assessment in enumerate(assessments):
+                    if j < len(session_form.assessments):
+                        session_form.assessments[j].assessment.data = assessment
+        
+        # Populate enrichment activities
+        enrichment_data = form_data.get('enrichment_activities', [])
+        for i, activity_data in enumerate(enrichment_data):
+            if i < len(form.enrichment_activities):
+                form.enrichment_activities[i].activity.data = activity_data.get('activity', '')
+        
+        # Populate locally sourced materials
+        materials_data = form_data.get('locally_sourced_materials', [])
+        for i, material_data in enumerate(materials_data):
+            if i < len(form.locally_sourced_materials):
+                form.locally_sourced_materials[i].material.data = material_data.get('material', '')
+        
+        # Populate maintenance items
+        maintenance_data = form_data.get('maintenance_items', [])
+        for i, item_data in enumerate(maintenance_data):
+            if i < len(form.maintenance_items):
+                form.maintenance_items[i].item.data = item_data.get('item', '')
+        
+        # Populate assembly instructions
+        assembly_data = form_data.get('assembly_instructions', [])
+        for i, instruction_data in enumerate(assembly_data):
+            if i < len(form.assembly_instructions):
+                form.assembly_instructions[i].instruction.data = instruction_data.get('instruction', '')
+        
+        # Populate recommended websites
+        websites_data = form_data.get('recommended_websites', [])
+        for i, website_data in enumerate(websites_data):
+            if i < len(form.recommended_websites):
+                form.recommended_websites[i].title.data = website_data.get('title', '')
+                form.recommended_websites[i].url.data = website_data.get('url', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_moduleGuide.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading module guide draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_module_guide'))
+
+@app.route('/delete-moduleguide-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_moduleguide_draft(draft_id):
+    """Delete module guide draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+@app.route('/autosave-moduleanswerkey-draft', methods=['POST'])
+@login_required
+def autosave_moduleanswerkey_draft():
+    """AJAX endpoint for autosaving module answer key draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'pretest_questions': [],
+            'rca_sessions': [],
+            'posttest_questions': [],
+            'pba_sessions': [],
+            'vocabulary': [],
+            'portfolio_checklist': [],
+            'enrichment_dynamic_content': data.get('enrichment_dynamic_content', []),
+            'worksheet_answer_keys': data.get('worksheet_answer_keys', [])
+        }
+        
+        # Process pre-test questions
+        pretest_data = data.get('pretest_questions', [])
+        for question in pretest_data:
+            if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
+                form_data['pretest_questions'].append({
+                    'question_text': question.get('question_text', ''),
+                    'choice_a': question.get('choice_a', ''),
+                    'choice_b': question.get('choice_b', ''),
+                    'choice_c': question.get('choice_c', ''),
+                    'choice_d': question.get('choice_d', ''),
+                    'correct_answer': question.get('correct_answer', '')
+                })
+        
+        # Process RCA sessions (4 sessions with 3 questions each)
+        rca_data = data.get('rca_sessions', [])
+        for session in rca_data:
+            questions = []
+            for question in session.get('questions', []):
+                if question.get('question_text') or question.get('choice_a'):
+                    questions.append({
+                        'question_text': question.get('question_text', ''),
+                        'choice_a': question.get('choice_a', ''),
+                        'choice_b': question.get('choice_b', ''),
+                        'choice_c': question.get('choice_c', ''),
+                        'choice_d': question.get('choice_d', ''),
+                        'correct_answer': question.get('correct_answer', '')
+                    })
+            
+            if questions:
+                form_data['rca_sessions'].append({
+                    'session_number': session.get('session_number', ''),
+                    'questions': questions
+                })
+        
+        # Process post-test questions
+        posttest_data = data.get('posttest_questions', [])
+        for question in posttest_data:
+            if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
+                form_data['posttest_questions'].append({
+                    'question_text': question.get('question_text', ''),
+                    'choice_a': question.get('choice_a', ''),
+                    'choice_b': question.get('choice_b', ''),
+                    'choice_c': question.get('choice_c', ''),
+                    'choice_d': question.get('choice_d', ''),
+                    'correct_answer': question.get('correct_answer', '')
+                })
+        
+        # Process PBA sessions
+        pba_data = data.get('pba_sessions', [])
+        for session in pba_data:
+            questions = []
+            for question in session.get('assessment_questions', []):
+                if question.get('question') or question.get('correct_answer'):
+                    questions.append({
+                        'question': question.get('question', ''),
+                        'correct_answer': question.get('correct_answer', '')
+                    })
+            
+            if session.get('session_number') or session.get('activity_name') or questions:
+                form_data['pba_sessions'].append({
+                    'session_number': session.get('session_number', ''),
+                    'activity_name': session.get('activity_name', ''),
+                    'assessment_questions': questions
+                })
+        
+        # Process vocabulary terms
+        vocab_data = data.get('vocabulary', [])
+        for term in vocab_data:
+            if term.get('term') or term.get('definition'):
+                form_data['vocabulary'].append({
+                    'term': term.get('term', ''),
+                    'definition': term.get('definition', '')
+                })
+        
+        # Process portfolio checklist
+        portfolio_data = data.get('portfolio_checklist', [])
+        for item in portfolio_data:
+            if item.get('item'):
+                form_data['portfolio_checklist'].append({
+                    'item': item.get('item', '')
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleanswerkey').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym']:
+                    draft.title = f"Module Answer Key - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Module Answer Key - {form_data['module_acronym']}" if form_data['module_acronym'] else "Module Answer Key - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='moduleanswerkey',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in module answer key autosave: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
