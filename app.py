@@ -1138,19 +1138,34 @@ def create_module_answer_key():
         print(f"Form valid: {form.validate_on_submit()}")
         if form.errors:
             print(f"Form errors: {form.errors}")
-    
-    if form.validate_on_submit():
-        print("Module Answer Key form validation passed!")
-        # Generate the document
-        try:
-            print("Attempting to generate Module Answer Key...")
-            doc_path = generate_module_answer_key(form)
-            print(f"Module Answer Key generated at: {doc_path}")
-            flash('Module Answer Key generated successfully!', 'success')
-            return redirect(url_for('create_module_answer_key'))
-        except Exception as e:
-            print(f"Error generating Module Answer Key: {e}")
-            flash(f'Error generating Module Answer Key: {str(e)}', 'error')
+        
+        # Only handle document generation now - autosave handles saving
+        if form.validate_on_submit():
+            print("Module Answer Key form validation passed!")
+            try:
+                print("Attempting to generate Module Answer Key...")
+                doc_path = generate_module_answer_key(form)
+                filename = os.path.basename(doc_path)
+                
+                print(f"Module Answer Key generated at: {doc_path}")
+                
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='moduleanswerkey',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                flash('Module Answer Key generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"Error generating Module Answer Key: {e}")
+                flash(f'Error generating Module Answer Key: {str(e)}', 'error')
     
     return render_template('create_moduleAnswerKey.html', form=form)
 
@@ -4136,6 +4151,110 @@ def autosave_moduleanswerkey_draft():
     except Exception as e:
         print(f"Error in module answer key autosave: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-moduleanswerkey-draft/<int:draft_id>')
+@login_required
+def load_moduleanswerkey_draft(draft_id):
+    """Load module answer key draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleanswerkey').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_module_answer_key'))
+    
+    try:
+        # Create form and populate with draft data
+        form = ModuleAnswerKeyForm()
+        form_data = draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate pre-test questions
+        pretest_data = form_data.get('pretest_questions', [])
+        for i, question_data in enumerate(pretest_data):
+            if i < len(form.pretest_questions):
+                form.pretest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.pretest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.pretest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.pretest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.pretest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                form.pretest_questions[i].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate RCA sessions
+        rca_data = form_data.get('rca_sessions', [])
+        for i, session_data in enumerate(rca_data):
+            if i < len(form.rca_sessions):
+                questions = session_data.get('questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.rca_sessions[i].questions):
+                        form.rca_sessions[i].questions[j].question_text.data = question_data.get('question_text', '')
+                        form.rca_sessions[i].questions[j].choice_a.data = question_data.get('choice_a', '')
+                        form.rca_sessions[i].questions[j].choice_b.data = question_data.get('choice_b', '')
+                        form.rca_sessions[i].questions[j].choice_c.data = question_data.get('choice_c', '')
+                        form.rca_sessions[i].questions[j].choice_d.data = question_data.get('choice_d', '')
+                        form.rca_sessions[i].questions[j].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate post-test questions
+        posttest_data = form_data.get('posttest_questions', [])
+        for i, question_data in enumerate(posttest_data):
+            if i < len(form.posttest_questions):
+                form.posttest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.posttest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.posttest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.posttest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.posttest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                form.posttest_questions[i].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate PBA sessions
+        pba_data = form_data.get('pba_sessions', [])
+        for i, session_data in enumerate(pba_data):
+            if i < len(form.pba_sessions):
+                form.pba_sessions[i].session_number.data = session_data.get('session_number', '')
+                form.pba_sessions[i].activity_name.data = session_data.get('activity_name', '')
+                
+                questions = session_data.get('assessment_questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.pba_sessions[i].assessment_questions):
+                        form.pba_sessions[i].assessment_questions[j].question.data = question_data.get('question', '')
+                        form.pba_sessions[i].assessment_questions[j].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate vocabulary
+        vocab_data = form_data.get('vocabulary', [])
+        for i, term_data in enumerate(vocab_data):
+            if i < len(form.vocabulary):
+                form.vocabulary[i].term.data = term_data.get('term', '')
+                form.vocabulary[i].definition.data = term_data.get('definition', '')
+        
+        # Populate portfolio checklist
+        portfolio_data = form_data.get('portfolio_checklist', [])
+        for i, item_data in enumerate(portfolio_data):
+            if i < len(form.portfolio_checklist):
+                form.portfolio_checklist[i].product.data = item_data.get('product', '')
+                form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_moduleAnswerKey.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading module answer key draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_module_answer_key'))
+
+@app.route('/delete-moduleanswerkey-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_moduleanswerkey_draft(draft_id):
+    """Delete module answer key draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleanswerkey').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)

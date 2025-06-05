@@ -7,7 +7,7 @@ This document captures proven technical patterns, troubleshooting solutions, and
 
 ---
 
-## 🎯 Phase 2A: Core Forms with Autosave ✅ **COMPLETE**
+## 🎯 Phase 2A: Core Forms with Autosave ✅ **NEARLY COMPLETE**
 
 ### 🎉 **COMPLETED FEATURES:**
 
@@ -23,29 +23,68 @@ This document captures proven technical patterns, troubleshooting solutions, and
 - User Workflow: Select test type → Create → Autosave (automatic) → Generate → Download
 - Navigation: Unified template extending base.html
 
+**✅ PBA Worksheets (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: Session-based assessments with autosave system
+- User Workflow: Enter session info → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html
+
+**✅ Family Briefings (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: Module overview, learning objectives, activities, terminology, key concepts
+- User Workflow: Enter module info → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html
+
+**✅ RCA Worksheets (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: Research/Challenge/Application questions with image support
+- User Workflow: Enter questions → Upload image (optional) → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html
+
+**✅ Generic Worksheets (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: Dynamic field system supporting all question types, images, and complex content
+- User Workflow: Add dynamic fields → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html
+
+**✅ Module Activity Sheets (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: 7 session activities with PBA checkboxes, real-time autosave
+- User Workflow: Enter session activities → Check PBAs → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html
+
+**✅ Module Guides (COMPLETE):**
+- Status: Complete with autosave functionality
+- Features: Complex accordion interface, teacher tips, sessions, vocab, careers, resources
+- User Workflow: Enter comprehensive module data → Autosave (automatic) → Generate → Download
+- Navigation: Unified template extending base.html with advanced accordion UI
+
 ### 🎯 **PHASE 2A OBJECTIVES ACHIEVED:**
 
 **Primary Goals:**
-- ✅ **Autosave functionality** - **IMPLEMENTED FOR 6 DOCUMENT TYPES** 
+- ✅ **Autosave functionality** - **IMPLEMENTED FOR 8 DOCUMENT TYPES** 
   - ✅ Vocabulary Worksheets (Complete)
   - ✅ PBA Worksheets (Complete) 
   - ✅ Test Worksheets (Complete)
   - ✅ Family Briefings (Complete)
   - ✅ RCA Worksheets (Complete)
   - ✅ Generic Worksheets (Complete with dynamic fields)
+  - ✅ Module Activity Sheets (Complete)
+  - ✅ Module Guides (Complete with accordion interface)
 - ✅ **Unified navigation** - **ALL FORMS USE BASE.HTML TEMPLATE**
 - ✅ **Draft management** - **CENTRALIZED DRAFTS PAGE WORKING**
 - ✅ **Visual feedback** - **REAL-TIME SAVE STATUS INDICATORS**
 - ✅ **Document generation** - **INTEGRATED WITH DATABASE TRACKING**
-- ✅ **Auto-save patterns** - **ESTABLISHED AND REUSABLE FOR REMAINING FORMS**
+- ✅ **Auto-save patterns** - **ESTABLISHED AND PROVEN FOR ALL COMPLEXITY LEVELS**
 
 **📊 Implementation Status:**
-- **Completed**: 6 of 9 document types (67%)
-- **Remaining**: Module Guides, Module Answer Keys, Module Activity Sheets
+- **Completed**: 8 of 9 document types (89%)
+- **Remaining**: Module Answer Keys (most complex)
 - **Backend endpoints**: All autosave AJAX endpoints implemented
 - **Frontend JavaScript**: Consistent autosave classes across all forms
 - **Database integration**: Draft persistence and version tracking working
 - **User experience**: Real-time status indicators and seamless saving
+- **Advanced features**: Accordion interfaces, dynamic fields, image uploads all working
 
 ---
 
@@ -586,62 +625,124 @@ def delete_[type]_draft(draft_id):
 - [x] Real-time visual feedback
 - [x] Test type selection support
 
+**PBA Worksheets:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
+**Family Briefings:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
+**RCA Worksheets:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
+**Generic Worksheets:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
+**Module Activity Sheets:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
+**Module Guides:**
+- [x] Backend autosave endpoint
+- [x] Updated creation route
+- [x] Draft management routes
+- [x] Modern template with base.html
+- [x] Unified drafts support
+- [x] Database integration
+- [x] Real-time visual feedback
+
 ### 🔄 **PENDING DOCUMENT TYPES:**
 
-**For Each Remaining Document Type, Implement:**
-- [ ] Backend autosave endpoint (`/autosave-[type]-draft`)
+**Module Answer Keys (Final Remaining):**
+- [ ] Backend autosave endpoint (`/autosave-moduleanswerkey-draft`)
 - [ ] Update main creation route (remove manual save logic)
-- [ ] Add draft management routes (`/load-[type]-draft`, `/delete-[type]-draft`)
+- [ ] Add draft management routes (`/load-moduleanswerkey-draft`, `/delete-moduleanswerkey-draft`)
 - [ ] Convert template to extend `base.html`
-- [ ] Add autosave JavaScript class
+- [ ] Add autosave JavaScript class with complex nested data handling
 - [ ] Add to unified drafts template
-- [ ] Test autosave functionality
+- [ ] Test autosave functionality for all sections (assessments, vocabulary, PBAs, etc.)
 
 ---
 
-## 🎯 **Priority Implementation Order (UPDATED):**
+## 🎯 **Priority Implementation Order (FINAL PHASE):**
 
-### **Next Priority (High):**
-1. **PBA Worksheets** - Simple structure (module_acronym, session_number, section_header, assessments)
-2. **Family Briefings** - Many individual fields but straightforward
-3. **RCA Worksheets** - Similar to tests (3 questions + image support)
+### **🏆 FINAL IMPLEMENTATION:**
+1. **Module Answer Keys** - Most complex with multiple nested sections:
+   - Pre-test questions (10)
+   - RCA sessions (4 sessions × 3 questions each)
+   - Post-test questions (10) 
+   - PBA sessions (3 sessions with assessment questions)
+   - Vocabulary terms with definitions (25+)
+   - Portfolio checklist items
+   - Enrichment activities (dynamic content)
+   - Worksheet answer keys (nested worksheet structure)
 
-### **Medium Priority:**  
-4. **Module Activity Sheets** - Session-based with checkboxes
-5. **Generic Worksheets** - Complex dynamic fields (defer until pattern is solid)
-
-### **Lower Priority (Complex):**
-6. **Module Guides** - Very complex nested structure
-7. **Module Answer Keys** - Most complex with multiple nested sections
+**Complexity Level: MAXIMUM** ⚠️
+- Most complex form in the entire application
+- Multiple nested data structures
+- Dynamic content sections
+- Requires advanced JavaScript data collection
+- Sophisticated template loading logic needed
 
 ---
 
 ## 🚀 **Implementation Benefits Achieved:**
 
 ### **User Experience Improvements:**
-1. ✅ **Seamless Workflow**: No manual saving required (Vocabulary & Tests)
+1. ✅ **Seamless Workflow**: No manual saving required (proven across 8 document types)
 2. ✅ **Consistent Navigation**: Unified top bar across all pages 
 3. ✅ **Visual Feedback**: Real-time save status indicators working
 4. ✅ **Unified Drafts**: All drafts in one place with type-specific previews
 5. ✅ **Automatic Backup**: Never lose work due to browser issues
+6. ✅ **Advanced UI Features**: Accordion interfaces, dynamic fields, image uploads
 
 ### **Developer Benefits:**
 1. ✅ **Simplified Code**: Removed complex save/cancel button logic
-2. ✅ **Consistent Templates**: All new forms extend base.html
+2. ✅ **Consistent Templates**: All forms extend base.html
 3. ✅ **Centralized Navigation**: Changes in one place affect all pages
-4. ✅ **Proven Pattern**: Test implementation validates vocabulary approach
+4. ✅ **Proven Patterns**: 8 successful implementations validate approach
 5. ✅ **Maintainable**: Clear separation of concerns
+6. ✅ **Scalable**: Handles simple to extremely complex forms
 
 ### **Technical Advantages:**
 1. ✅ **Reduced Server Load**: Only saves when content changes
 2. ✅ **Better Performance**: AJAX saves without page reloads
-3. ✅ **Scalable Pattern**: Proven to work for different document structures
+3. ✅ **Proven Scalability**: Works for all complexity levels (simple to advanced)
 4. ✅ **Robust Error Handling**: Graceful degradation if autosave fails
 5. ✅ **Clean URLs**: No action parameters needed
+6. ✅ **Advanced Features**: Dynamic content, nested forms, image handling
 
 ---
 
-## 🐛 Troubleshooting Guide (UPDATED)
+## 🐛 Troubleshooting Guide (COMPREHENSIVE)
 
 ### **Issue 1: Autosave Not Triggering**
 
@@ -649,7 +750,7 @@ def delete_[type]_draft(draft_id):
 
 **Root Cause:** JavaScript event listeners not properly attached
 
-**✅ Solution (Proven):** 
+**✅ Solution (Proven across 8 document types):** 
 ```javascript
 // Ensure DOM is loaded before attaching listeners
 document.addEventListener('DOMContentLoaded', function() {
@@ -657,146 +758,164 @@ document.addEventListener('DOMContentLoaded', function() {
     const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
     
     autosaveFields.forEach(field => {
-        field.addEventListener('input', () => {
-            window.autosaveInstance.scheduleAutosave();
-        });
-        
-        field.addEventListener('blur', () => {
-            window.autosaveInstance.performAutosave();
-        });
+        if (field.type === 'checkbox') {
+            field.addEventListener('change', () => {
+                window.autosaveInstance.performAutosave(); // Immediate for checkboxes
+            });
+        } else {
+            field.addEventListener('input', () => {
+                window.autosaveInstance.scheduleAutosave();
+            });
+            
+            field.addEventListener('blur', () => {
+                window.autosaveInstance.performAutosave();
+            });
+        }
     });
 });
 ```
 
 ### **Issue 2: Complex Form Data Collection**
 
-**Problem:** Difficulty collecting data from complex forms (like Test questions)
+**Problem:** Difficulty collecting data from complex forms (like Module Guides)
 
-**Root Cause:** Need proper data attributes and indexing
+**Root Cause:** Need proper data attributes and indexing for nested structures
 
-**✅ Solution (Proven with Tests):**
+**✅ Solution (Proven with Module Guides):**
 ```javascript
 collectFormData() {
-    const moduleAcronym = document.getElementById('module_acronym').value;
-    const questions = [];
+    const formData = {
+        module_acronym: document.getElementById('module_acronym').value,
+        sessions: []
+    };
     
-    // Use data attributes to track form structure
-    const questionFields = document.querySelectorAll('[data-question-index]');
-    const questionsByIndex = {};
-    
-    questionFields.forEach(field => {
-        const questionIndex = parseInt(field.dataset.questionIndex);
-        if (!questionsByIndex[questionIndex]) {
-            questionsByIndex[questionIndex] = {};
+    // Handle complex nested structures with data attributes
+    for (let sessionIndex = 0; sessionIndex < 7; sessionIndex++) {
+        const sessionData = {
+            focus: '',
+            goals: [],
+            materials: [],
+            preparations: [],
+            assessments: []
+        };
+        
+        // Session focus
+        const focusField = document.querySelector(`[data-field-type="session_focus"][data-session-index="${sessionIndex}"]`);
+        if (focusField) {
+            sessionData.focus = focusField.value.trim();
         }
         
-        // Use additional data attributes for sub-fields
-        if (field.dataset.choice) {
-            questionsByIndex[questionIndex][`choice_${field.dataset.choice}`] = field.value.trim();
-        } else {
-            questionsByIndex[questionIndex]['question_text'] = field.value.trim();
+        // Session goals (dynamic array)
+        document.querySelectorAll(`[data-field-type="session_goal"][data-session-index="${sessionIndex}"]`).forEach(field => {
+            if (field.value.trim()) {
+                sessionData.goals.push(field.value.trim());
+            }
+        });
+        
+        // Only add sessions that have content
+        if (sessionData.focus || sessionData.goals.length || sessionData.materials.length) {
+            formData.sessions.push(sessionData);
         }
-    });
+    }
     
-    // Convert to array maintaining order
-    Object.keys(questionsByIndex).forEach(index => {
-        questions[parseInt(index)] = questionsByIndex[index];
-    });
-    
-    return {
-        module_acronym: moduleAcronym,
-        questions: questions
-    };
+    return formData;
 }
 ```
 
-### **Issue 3: Draft Loading with Complex Data**
+### **Issue 3: Accordion Interface Performance**
 
-**Problem:** Difficulty populating complex forms from saved drafts
+**Problem:** Large forms with accordion interfaces can be slow
 
-**Root Cause:** Need proper field mapping and bounds checking
+**Root Cause:** Too many DOM manipulations on expand/collapse
 
-**✅ Solution (Proven with Tests):**
-```python
-def load_test_draft(draft_id):
-    # ... validation code ...
+**✅ Solution (Proven with Module Guides):**
+```javascript
+initializeAccordion() {
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
     
-    try:
-        form = TestWorksheetForm()
-        form_data = draft.form_data
-        
-        # Simple fields
-        form.module_acronym.data = form_data.get('module_acronym', '')
-        form.test_type.data = form_data.get('test_type', 'pre')
-        
-        # Complex nested data with bounds checking
-        questions_data = form_data.get('questions', [])
-        for i, question_data in enumerate(questions_data):
-            if i < len(form.questions):  # Bounds check prevents errors
-                form.questions[i].question_text.data = question_data.get('question_text', '')
-                form.questions[i].choice_a.data = question_data.get('choice_a', '')
-                form.questions[i].choice_b.data = question_data.get('choice_b', '')
-                form.questions[i].choice_c.data = question_data.get('choice_c', '')
-                form.questions[i].choice_d.data = question_data.get('choice_d', '')
-        
-        return render_template('create_test.html', form=form, draft_id=draft.id)
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            const content = document.getElementById(section + '-content');
+            const icon = this.querySelector('.accordion-icon');
+            
+            // Use CSS classes instead of inline styles for better performance
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        });
+    });
+}
+```
+
+### **Issue 4: Dynamic Field Management**
+
+**Problem:** Adding/removing dynamic fields breaks autosave
+
+**Root Cause:** Event listeners not attached to new fields
+
+**✅ Solution (Proven with Generic Worksheets):**
+```javascript
+// Re-initialize event listeners when fields change
+addDynamicField() {
+    // Add new field DOM
+    const newField = createNewFieldElement();
+    
+    // Re-attach autosave listeners to ALL fields
+    this.initializeEventListeners();
+    
+    // Trigger autosave to save new field structure
+    this.performAutosave();
+}
 ```
 
 ---
 
-## 📊 **Current Status Summary (UPDATED):**
+## 📊 **Current Status Summary (FINAL STRETCH):**
 
-| Document Type | Autosave Status | Navigation | Database | Priority |
-|---------------|----------------|------------|----------|----------|
-| ✅ Vocabulary Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Complete |
-| ✅ Test Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Complete |
-| 🔄 PBA Worksheets | Ready to implement | ❌ Old template | ❌ Manual save | **HIGH** |
-| 🔄 Family Briefings | Ready to implement | ❌ Old template | ❌ Manual save | **HIGH** |
-| 🔄 RCA Worksheets | Ready to implement | ❌ Old template | ❌ Manual save | **HIGH** |
-| 🔄 Module Activity Sheets | Ready to implement | ❌ Old template | ❌ Manual save | Medium |
-| 🔄 Generic Worksheets | Ready to implement | ❌ Old template | ❌ Manual save | Medium |
-| 🔄 Module Guides | Ready to implement | ❌ Old template | ❌ Manual save | Low |
-| 🔄 Module Answer Keys | Ready to implement | ❌ Old template | ❌ Manual save | Low |
+| Document Type | Autosave Status | Navigation | Database | Complexity |
+|---------------|----------------|------------|----------|------------|
+| ✅ Vocabulary Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
+| ✅ Test Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
+| ✅ PBA Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
+| ✅ Family Briefings | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
+| ✅ RCA Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
+| ✅ Generic Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Complex |
+| ✅ Module Activity Sheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
+| ✅ Module Guides | **COMPLETE** | ✅ Base.html | ✅ Integrated | Very Complex |
+| 🏁 Module Answer Keys | Ready for final implementation | ❌ Old template | ❌ Manual save | **MAXIMUM** |
 
-**Progress: 2/9 document types complete (22%)**
-
----
-
-## 💡 **Lessons Learned (UPDATED):**
-
-1. ✅ **Autosave provides superior UX** - Users prefer automatic saving over manual (proven with 2 document types)
-2. ✅ **Data attributes simplify complex forms** - Test worksheets showed how to handle nested data effectively  
-3. ✅ **Unified navigation reduces confusion** - Single top navbar consistently better than scattered links
-4. ✅ **Base template consistency is crucial** - All pages should extend base.html for maintainability
-5. ✅ **Visual feedback builds confidence** - Save status indicators reassure users their work is safe
-6. ✅ **Debounced autosave prevents API spam** - 2-second delay balances UX and performance perfectly
-7. ✅ **Immediate save on blur catches edge cases** - Users expect changes to save when they leave fields
-8. ✅ **Template simplification improves maintainability** - Fewer navigation buttons means less to update
-9. ✅ **Pattern consistency speeds development** - Test implementation was faster due to vocabulary learnings
-10. ✅ **Robust error handling is essential** - Network issues should not crash the autosave system
+**Progress: 8/9 document types complete (89%)**
 
 ---
 
-## 🎨 **UI/UX Design Principles (PROVEN):**
+## 💡 **Lessons Learned (COMPREHENSIVE):**
 
-### **Form Design:**
-- ✅ **Header**: Page title + descriptive subtitle + autosave status
-- ✅ **Content**: Clean form fields with proper spacing and data attributes
-- ✅ **Actions**: Single prominent "Generate" button (no manual save clutter)
-- ✅ **Feedback**: Real-time save status in fixed position (top-right)
+### **Technical Insights:**
+1. ✅ **Autosave provides superior UX** - Users prefer automatic saving (proven across 8 document types)
+2. ✅ **Data attributes simplify complex forms** - Essential for nested structures like Module Guides
+3. ✅ **Unified navigation reduces confusion** - Single top navbar consistently better
+4. ✅ **Base template consistency is crucial** - All pages should extend base.html
+5. ✅ **Visual feedback builds confidence** - Save status indicators reassure users
+6. ✅ **Debounced autosave prevents API spam** - 2-3 second delay balances UX and performance
+7. ✅ **Immediate save on blur catches edge cases** - Critical for user confidence
+8. ✅ **Template simplification improves maintainability** - Fewer buttons means less complexity
+9. ✅ **Pattern consistency speeds development** - Later implementations faster due to established patterns
+10. ✅ **Robust error handling is essential** - Network issues should not crash autosave
 
-### **Navigation Design:**
-- ✅ **Top Bar**: Consistent across all pages via base.html extension
-- ✅ **No Scattered Links**: Everything accessible through unified top navigation
-- ✅ **Breadcrumbs**: Implied through page titles and navigation structure
-- ✅ **Quick Actions**: Dashboard stats provide fast access to common tasks
+### **UI/UX Insights:**
+11. ✅ **Accordion interfaces scale well** - Module Guides prove complex forms can be manageable
+12. ✅ **Dynamic fields need careful state management** - Generic Worksheets showed importance of event re-binding
+13. ✅ **Checkbox handling differs from text inputs** - Immediate save vs debounced save patterns
+14. ✅ **Complex forms benefit from longer delays** - 3 seconds for Module Guides vs 2 for simple forms
+15. ✅ **Status indicators should be persistent for errors** - Users need time to read error messages
 
-### **Status Indicators:**
-- ✅ **Saving**: Yellow background with "Saving..." text
-- ✅ **Saved**: Green background with timestamp
-- ✅ **Error**: Red background with "Save failed" message  
-- ✅ **Placement**: Fixed position, visible but unobtrusive
+### **Development Insights:**
+16. ✅ **Start simple, build complexity gradually** - Vocabulary → Tests → Module Guides progression worked well
+17. ✅ **Consistent naming conventions are critical** - autosave-[type]-draft pattern prevents confusion
+18. ✅ **Data collection grows in complexity** - Simple forms (vocabulary) vs nested forms (module guides)
+19. ✅ **Database schema flexibility is important** - JSON fields accommodate varying form structures
+20. ✅ **Front-end validation reduces server load** - Check for changes before sending AJAX requests
 
 ---
 
-*Last Updated: January 2025 - After Test Worksheet Implementation* 
+*Last Updated: January 2025 - After Module Activity Sheets & Module Guides Implementation* 

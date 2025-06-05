@@ -1,1391 +1,1073 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Module Answer Key - NOLA.docs</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        .accordion-content.expanded {
-            max-height: none;
-            overflow: visible;
-        }
-        .accordion-icon {
-            transition: transform 0.3s ease;
-        }
-        .accordion-icon.expanded {
-            transform: rotate(90deg);
-        }
-        
-        /* Math Symbols Toolbar Styles */
-        .math-toolbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 2px solid #e5e7eb;
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-            transform: translateY(100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 1000;
-        }
-        
-        .math-toolbar.active {
-            transform: translateY(0);
-        }
-        
-        .math-toolbar-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #3b82f6;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 50px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            z-index: 999;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .math-toolbar-toggle:hover {
-            background: #2563eb;
-        }
-        
-        .symbol-category {
-            border-right: 1px solid #e5e7eb;
-            padding: 12px;
-        }
-        
-        .symbol-category:last-child {
-            border-right: none;
-        }
-        
-        .symbol-btn {
-            width: 40px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            cursor: pointer;
-            margin: 2px;
-            border-radius: 4px;
-            font-size: 18px;
-            transition: all 0.2s;
-        }
-        
-        .symbol-btn:hover {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        
-        .active-input {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-6xl mx-auto py-8 px-4">
-        <!-- Header -->
-        <div class="mb-8">
-            <a href="/" class="text-blue-600 hover:text-blue-700">&larr; Back to Home</a>
-            <h1 class="text-3xl font-bold text-gray-900 mt-4">Create Module Answer Key</h1>
-            <p class="text-gray-600 mt-2">Enter comprehensive answer key information for all module assessments, vocabulary, and activities.</p>
-        </div>
+{% extends "base.html" %}
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block title %}Create Module Answer Key - NOLA.docs{% endblock %}
 
-        <!-- Form -->
-        <div class="bg-white rounded-lg shadow-md p-8">
-            <form method="POST" id="module-answer-key-form" enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    /* Existing accordion styles */
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .accordion-content.expanded {
+        max-height: none;
+        overflow: visible;
+    }
+    .accordion-icon {
+        transition: transform 0.3s ease;
+    }
+    .accordion-icon.expanded {
+        transform: rotate(90deg);
+    }
+    
+    /* Math Symbols Toolbar Styles */
+    .math-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+    }
+    
+    .math-toolbar.active {
+        transform: translateY(0);
+    }
+    
+    .math-toolbar-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 999;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .math-toolbar-toggle:hover {
+        background: #2563eb;
+    }
+    
+    .symbol-category {
+        border-right: 1px solid #e5e7eb;
+        padding: 12px;
+    }
+    
+    .symbol-category:last-child {
+        border-right: none;
+    }
+    
+    .symbol-btn {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        cursor: pointer;
+        margin: 2px;
+        border-radius: 4px;
+        font-size: 18px;
+        transition: all 0.2s;
+    }
+    
+    .symbol-btn:hover {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+    
+    .active-input {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Ready to autosave</span>
+</div>
+
+<div class="max-w-6xl mx-auto py-8 px-4 pb-24">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Module Answer Key</h1>
+        <p class="text-gray-600 mt-2">Enter comprehensive answer key information for all module assessments, vocabulary, and activities. <strong>Your progress is automatically saved as you type.</strong></p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST" action="{{ url_for('create_module_answer_key') }}" id="module-answer-key-form" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <!-- Module Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
                 
-                <!-- Module Information -->
-                <div class="mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
-                    
-                    <div class="mb-6">
-                        {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                        {% if form.module_acronym.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
-                        {% endif %}
-                    </div>
+                <div class="mb-6">
+                    {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                    {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        id="module_acronym", 
+                        data_autosave="true") }}
+                    {% if form.module_acronym.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
+                    {% endif %}
                 </div>
+            </div>
 
-                <!-- Assessments Section - Expanded by default -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="assessments">
-                        <h2 class="text-xl font-semibold text-gray-800">✍️ Assessments</h2>
-                        <svg class="accordion-icon expanded w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content expanded" id="assessments-content">
-                        <div class="p-6">
-                            <!-- Pre-test Questions -->
-                            <div class="mb-8">
-                                <h3 class="text-lg font-medium text-gray-700 mb-4">Pre-test Questions</h3>
-                                <p class="text-sm text-gray-600 mb-4">Enter 10 pre-test questions with their answer choices and correct answers.</p>
-                                
-                                <div class="space-y-6">
-                                    {% for question_form in form.pretest_questions %}
-                                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                            <h4 class="font-medium text-gray-700 mb-3">Question {{ loop.index }}</h4>
-                                            
-                                            <div class="mb-3">
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
-                                                {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the question") }}
-                                                {% if question_form.question_text.errors %}
-                                                    <p class="mt-1 text-sm text-red-600">{{ question_form.question_text.errors[0] }}</p>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
-                                                    {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice A") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
-                                                    {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice B") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
-                                                    {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice C") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
-                                                    {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice D") }}
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
-                                                {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                                <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- RCA Sessions -->
-                            <div class="mb-8">
-                                <h3 class="text-lg font-medium text-gray-700 mb-4">RCA Sessions (Sessions 2-5)</h3>
-                                <p class="text-sm text-gray-600 mb-4">Each session has 3 questions: Research, Challenge, and Application.</p>
-                                
-                                <div class="space-y-6">
-                                    {% for session_form in form.rca_sessions %}
-                                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                            <h4 class="font-medium text-blue-800 mb-4">Session {{ loop.index + 1 }}</h4>
-                                            
-                                            {% for question_form in session_form.questions %}
-                                                <div class="mb-6 p-4 bg-white rounded-lg">
-                                                    <h5 class="font-medium text-gray-700 mb-3">
-                                                        {% if loop.index == 1 %}Research Question{% elif loop.index == 2 %}Challenge Question{% else %}Application Question{% endif %}
-                                                    </h5>
-                                                    
-                                                    <div class="mb-3">
-                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
-                                                        {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the question") }}
-                                                    </div>
-                                                    
-                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
-                                                            {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice A") }}
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
-                                                            {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice B") }}
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
-                                                            {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice C") }}
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
-                                                            {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice D") }}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
-                                                        {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                                        <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Post-test Questions -->
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-700 mb-4">Post-test Questions</h3>
-                                <p class="text-sm text-gray-600 mb-4">Enter 10 post-test questions with their answer choices and correct answers.</p>
-                                
-                                <div class="space-y-6">
-                                    {% for question_form in form.posttest_questions %}
-                                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                            <h4 class="font-medium text-gray-700 mb-3">Question {{ loop.index }}</h4>
-                                            
-                                            <div class="mb-3">
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
-                                                {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the question") }}
-                                                {% if question_form.question_text.errors %}
-                                                    <p class="mt-1 text-sm text-red-600">{{ question_form.question_text.errors[0] }}</p>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
-                                                    {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice A") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
-                                                    {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice B") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
-                                                    {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice C") }}
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
-                                                    {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter choice D") }}
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
-                                                {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                                <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Performance Based Assessments Section -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="pba">
-                        <h2 class="text-xl font-semibold text-gray-800">🎯 Performance Based Assessments</h2>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content" id="pba-content">
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">Enter performance-based assessment activities and their associated questions with correct answers.</p>
+            <!-- Assessments Section - Expanded by default -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="assessments">
+                    <h2 class="text-xl font-semibold text-gray-800">✍️ Assessments</h2>
+                    <svg class="accordion-icon expanded w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content expanded" id="assessments-content">
+                    <div class="p-6">
+                        <!-- Pre-test Questions -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-700 mb-4">Pre-test Questions</h3>
+                            <p class="text-sm text-gray-600 mb-4">Enter 10 pre-test questions with their answer choices and correct answers.</p>
                             
                             <div class="space-y-6">
-                                {% for session_form in form.pba_sessions %}
-                                    <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                                        <h3 class="font-medium text-purple-800 mb-4">PBA {{ loop.index }}</h3>
+                                {% for question_form in form.pretest_questions %}
+                                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <h4 class="font-medium text-gray-700 mb-3">Question {{ loop.index }}</h4>
                                         
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div class="mb-3">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                                            {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="Enter the question", 
+                                                data_autosave="true",
+                                                data_field_type="pretest_question",
+                                                data_question_index=loop.index0,
+                                                data_field_name="question_text") }}
+                                            {% if question_form.question_text.errors %}
+                                                <p class="mt-1 text-sm text-red-600">{{ question_form.question_text.errors[0] }}</p>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Session Number</label>
-                                                {{ session_form.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="e.g., 1, 2, 3, 4, 5, 6, or 7") }}
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                                {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice A", 
+                                                    data_autosave="true",
+                                                    data_field_type="pretest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_a") }}
                                             </div>
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Activity Name</label>
-                                                {{ session_form.activity_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the activity name") }}
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                                {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice B", 
+                                                    data_autosave="true",
+                                                    data_field_type="pretest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_b") }}
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                                {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice C", 
+                                                    data_autosave="true",
+                                                    data_field_type="pretest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_c") }}
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                                {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice D", 
+                                                    data_autosave="true",
+                                                    data_field_type="pretest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_d") }}
                                             </div>
                                         </div>
                                         
-                                        <div class="space-y-4">
-                                            <h4 class="font-medium text-gray-700">Assessment Questions</h4>
-                                            {% for question_form in session_form.assessment_questions %}
-                                                <div class="p-3 bg-white rounded-lg">
-                                                    <div class="mb-2">
-                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Question {{ loop.index }}</label>
-                                                        {{ question_form.question(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the assessment question") }}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                                            {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                data_autosave="true",
+                                                data_field_type="pretest_question",
+                                                data_question_index=loop.index0,
+                                                data_field_name="correct_answer") }}
+                                            <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- RCA Sessions -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-700 mb-4">RCA Sessions (Sessions 2-5)</h3>
+                            <p class="text-sm text-gray-600 mb-4">Each session has 3 questions: Research, Challenge, and Application.</p>
+                            
+                            <div class="space-y-6">
+                                {% for session_form in form.rca_sessions %}
+                                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h4 class="font-medium text-blue-800 mb-4">Session {{ loop.index + 1 }}</h4>
+                                        
+                                        {% for question_form in session_form.questions %}
+                                            <div class="mb-6 p-4 bg-white rounded-lg">
+                                                <h5 class="font-medium text-gray-700 mb-3">
+                                                    {% if loop.index == 1 %}Research Question{% elif loop.index == 2 %}Challenge Question{% else %}Application Question{% endif %}
+                                                </h5>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                                                    {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                        placeholder="Enter the question", 
+                                                        data_autosave="true",
+                                                        data_field_type="rca_question",
+                                                        data_session_index=loop.index0,
+                                                        data_question_index=loop.index0,
+                                                        data_field_name="question_text") }}
+                                                </div>
+                                                
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                                        {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                            placeholder="Enter choice A", 
+                                                            data_autosave="true",
+                                                            data_field_type="rca_question",
+                                                            data_session_index=loop.index0,
+                                                            data_question_index=loop.index0,
+                                                            data_field_name="choice_a") }}
                                                     </div>
                                                     <div>
-                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
-                                                        {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows="2", placeholder="Enter the correct answer") }}
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                                        {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                            placeholder="Enter choice B", 
+                                                            data_autosave="true",
+                                                            data_field_type="rca_question",
+                                                            data_session_index=loop.index0,
+                                                            data_question_index=loop.index0,
+                                                            data_field_name="choice_b") }}
                                                     </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vocabulary Section -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="vocabulary">
-                        <h2 class="text-xl font-semibold text-gray-800">📚 Vocabulary</h2>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content" id="vocabulary-content">
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">Enter vocabulary terms with their definitions. Leave unused fields blank.</p>
-                            
-                            <div class="space-y-4">
-                                {% for term_form in form.vocabulary %}
-                                    <div class="p-4 bg-gray-50 rounded-lg">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Term {{ loop.index }}</label>
-                                                {{ term_form.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the term") }}
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Definition</label>
-                                                {{ term_form.definition(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", rows="2", placeholder="Enter the definition") }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Student Portfolio Checklist Section -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="portfolio">
-                        <h2 class="text-xl font-semibold text-gray-800">📋 Student Portfolio Checklist</h2>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content" id="portfolio-content">
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">List portfolio products and their corresponding session numbers.</p>
-                            
-                            <div class="space-y-3">
-                                {% for item_form in form.portfolio_checklist %}
-                                    <div class="p-3 bg-gray-50 rounded-lg">
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div class="md:col-span-2">
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Product {{ loop.index }}</label>
-                                                {{ item_form.product(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="Enter the product name") }}
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Session Number</label>
-                                                {{ item_form.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", placeholder="e.g., 1, 2, 3") }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Enrichment Activities Section -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="enrichment">
-                        <h2 class="text-xl font-semibold text-gray-800">🌟 Enrichment Answer Key</h2>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content" id="enrichment-content">
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">Build enrichment answer key content using dynamic fields.</p>
-                            
-                            <!-- Dynamic fields container -->
-                            <div id="enrichment-fields-container">
-                                {% for field_form in form.enrichment_dynamic_content %}
-                                    <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-index="{{ loop.index0 }}">
-                                        <!-- Field content will be populated by JavaScript -->
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            
-                            <!-- Empty state message -->
-                            <div id="enrichment-empty-message" class="text-gray-500 text-center py-8">
-                                <p>Click "Add Field" to start building content.</p>
-                            </div>
-                            
-                            <!-- Field Type Selector for Enrichment (moved to bottom for better UX) -->
-                            <div id="enrichment-field-type-selector" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                <h3 class="text-lg font-medium text-gray-800 mb-3">Select Field Type to Add:</h3>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    <button type="button" class="field-type-btn bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-3 rounded-md transition-colors" data-type="section_header" data-section="enrichment">
-                                        📋 Section Header
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-3 rounded-md transition-colors" data-type="section_instructions" data-section="enrichment">
-                                        📝 Instructions
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-3 rounded-md transition-colors" data-type="paragraph_text" data-section="enrichment">
-                                        📄 Paragraph Text
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-green-100 hover:bg-green-200 text-green-800 px-4 py-3 rounded-md transition-colors" data-type="multiple_choice" data-section="enrichment">
-                                        ☑️ Multiple Choice
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-4 py-3 rounded-md transition-colors" data-type="fill_in_blank" data-section="enrichment">
-                                        ✏️ Fill in Blank
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-3 rounded-md transition-colors" data-type="math_problem" data-section="enrichment">
-                                        🔢 Math Problem
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-red-100 hover:bg-red-200 text-red-800 px-4 py-3 rounded-md transition-colors" data-type="text_entry" data-section="enrichment">
-                                        📄 Text Entry
-                                    </button>
-                                    <button type="button" class="field-type-btn bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-3 rounded-md transition-colors" data-type="image" data-section="enrichment">
-                                        🖼️ Image
-                                    </button>
-                                </div>
-                                <button type="button" class="mt-3 text-gray-600 hover:text-gray-800" onclick="hideFieldTypeSelector('enrichment')">Cancel</button>
-                            </div>
-                            
-                            <div class="text-right mt-6">
-                                <button type="button" id="enrichment-add-field-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" onclick="showFieldTypeSelector('enrichment')">
-                                    + Add Field
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Worksheet Answer Keys Section -->
-                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                    <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="worksheet_keys">
-                        <h2 class="text-xl font-semibold text-gray-800">📝 Worksheet Answer Keys</h2>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    
-                    <div class="accordion-content" id="worksheet_keys-content">
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">Create worksheet answer keys organized by individual worksheets. Each worksheet can contain multiple sections and questions.</p>
-                            
-                            <div class="bg-gray-50 rounded-lg p-6">
-                                <div class="p-6">
-                                    <p class="text-sm text-gray-600 mb-4">Add worksheet containers to organize your answer keys. Each worksheet can have its own title and content.</p>
-                                    
-                                    <!-- Worksheets container -->
-                                    <div id="worksheets-container">
-                                        {% for worksheet_form in form.worksheet_answer_keys %}
-                                            <div class="worksheet-container mb-8 p-6 border border-gray-300 rounded-lg bg-white" data-worksheet-index="{{ loop.index0 }}">
-                                                <!-- Worksheet header -->
-                                                <div class="flex justify-between items-center mb-4">
-                                                    <h3 class="text-lg font-semibold text-gray-800">📄 Worksheet Answer Key #{{ loop.index }}</h3>
-                                                    <button type="button" class="delete-worksheet-btn text-red-600 hover:text-red-800 font-medium">
-                                                        🗑️ Delete Worksheet
-                                                    </button>
-                                                </div>
-                                                
-                                                <!-- Worksheet title field -->
-                                                <div class="mb-4">
-                                                    <label class="block text-sm font-medium text-gray-700 mb-2">Worksheet Title (optional)</label>
-                                                    {{ worksheet_form.worksheet_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500") }}
-                                                </div>
-                                                
-                                                <!-- Fields container for this worksheet -->
-                                                <div class="worksheet-fields-container" data-worksheet-index="{{ loop.index0 }}">
-                                                    {% for field_form in worksheet_form.dynamic_content %}
-                                                        <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-field-index="{{ loop.index0 }}">
-                                                            <!-- Field content will be populated by JavaScript -->
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                                
-                                                <!-- Empty state message for this worksheet -->
-                                                <div class="worksheet-empty-message text-gray-500 text-center py-4" data-worksheet-index="{{ loop.index0 }}">
-                                                    <p>No fields added to this worksheet yet.</p>
-                                                    <p class="text-sm">Click "Add Field" below to start building this worksheet's content.</p>
-                                                </div>
-                                                
-                                                <!-- Field Type Selector for this worksheet -->
-                                                <div class="worksheet-field-type-selector hidden" data-worksheet-index="{{ loop.index0 }}">
-                                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                                        <h4 class="font-medium text-gray-800 mb-3">Select Field Type to Add:</h4>
-                                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_header" data-worksheet-index="{{ loop.index0 }}">
-                                                                📝 Section Header
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_instructions" data-worksheet-index="{{ loop.index0 }}">
-                                                                📋 Instructions
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="multiple_choice" data-worksheet-index="{{ loop.index0 }}">
-                                                                ✅ Multiple Choice
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="fill_in_blank" data-worksheet-index="{{ loop.index0 }}">
-                                                                ✏️ Fill in Blank
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="text_entry" data-worksheet-index="{{ loop.index0 }}">
-                                                                📝 Text Entry
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="math_problem" data-worksheet-index="{{ loop.index0 }}">
-                                                                🔢 Math Problem
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="{{ loop.index0 }}">
-                                                                📄 Paragraph Text
-                                                            </button>
-                                                            <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="image" data-worksheet-index="{{ loop.index0 }}">
-                                                                🖼️ Image
-                                                            </button>
-                                                        </div>
-                                                        <div class="mt-3 text-center">
-                                                            <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="{{ loop.index0 }}">Cancel</button>
-                                                        </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                                        {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                            placeholder="Enter choice C", 
+                                                            data_autosave="true",
+                                                            data_field_type="rca_question",
+                                                            data_session_index=loop.index0,
+                                                            data_question_index=loop.index0,
+                                                            data_field_name="choice_c") }}
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                                        {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                            placeholder="Enter choice D", 
+                                                            data_autosave="true",
+                                                            data_field_type="rca_question",
+                                                            data_session_index=loop.index0,
+                                                            data_question_index=loop.index0,
+                                                            data_field_name="choice_d") }}
                                                     </div>
                                                 </div>
                                                 
-                                                <!-- Add Field Button for this worksheet -->
-                                                <div class="text-center mt-4">
-                                                    <button type="button" class="add-field-btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-worksheet-index="{{ loop.index0 }}">
-                                                        ➕ Add Field
-                                                    </button>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                                                    {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                        data_autosave="true",
+                                                        data_field_type="rca_question",
+                                                        data_session_index=loop.index0,
+                                                        data_question_index=loop.index0,
+                                                        data_field_name="correct_answer") }}
+                                                    <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
                                                 </div>
                                             </div>
                                         {% endfor %}
                                     </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Post-test Questions -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-4">Post-test Questions</h3>
+                            <p class="text-sm text-gray-600 mb-4">Enter 10 post-test questions with their answer choices and correct answers.</p>
+                            
+                            <div class="space-y-6">
+                                {% for question_form in form.posttest_questions %}
+                                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <h4 class="font-medium text-gray-700 mb-3">Question {{ loop.index }}</h4>
+                                        
+                                        <div class="mb-3">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                                            {{ question_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="Enter the question", 
+                                                data_autosave="true",
+                                                data_field_type="posttest_question",
+                                                data_question_index=loop.index0,
+                                                data_field_name="question_text") }}
+                                            {% if question_form.question_text.errors %}
+                                                <p class="mt-1 text-sm text-red-600">{{ question_form.question_text.errors[0] }}</p>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
+                                                {{ question_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice A", 
+                                                    data_autosave="true",
+                                                    data_field_type="posttest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_a") }}
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
+                                                {{ question_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice B", 
+                                                    data_autosave="true",
+                                                    data_field_type="posttest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_b") }}
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
+                                                {{ question_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice C", 
+                                                    data_autosave="true",
+                                                    data_field_type="posttest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_c") }}
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
+                                                {{ question_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                    placeholder="Enter choice D", 
+                                                    data_autosave="true",
+                                                    data_field_type="posttest_question",
+                                                    data_question_index=loop.index0,
+                                                    data_field_name="choice_d") }}
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                                            {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                data_autosave="true",
+                                                data_field_type="posttest_question",
+                                                data_question_index=loop.index0,
+                                                data_field_name="correct_answer") }}
+                                            <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Based Assessments Section -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="pba">
+                    <h2 class="text-xl font-semibold text-gray-800">🎯 Performance Based Assessments</h2>
+                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content" id="pba-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Enter performance-based assessment activities and their associated questions with correct answers.</p>
+                        
+                        <div class="space-y-6">
+                            {% for session_form in form.pba_sessions %}
+                                <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                    <h3 class="font-medium text-purple-800 mb-4">PBA {{ loop.index }}</h3>
                                     
-                                    <!-- Empty state message when no worksheets -->
-                                    <div id="worksheets-empty-message" class="text-gray-500 text-center py-8">
-                                        <p class="text-lg">No worksheet answer keys created yet.</p>
-                                        <p class="text-sm">Click "Add Worksheet Answer Key" to start organizing your answer keys.</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Session Number</label>
+                                            {{ session_form.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="e.g., 1, 2, 3, 4, 5, 6, or 7", 
+                                                data_autosave="true",
+                                                data_field_type="pba_session",
+                                                data_session_index=loop.index0,
+                                                data_field_name="session_number") }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Activity Name</label>
+                                            {{ session_form.activity_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="Enter the activity name", 
+                                                data_autosave="true",
+                                                data_field_type="pba_session",
+                                                data_session_index=loop.index0,
+                                                data_field_name="activity_name") }}
+                                        </div>
                                     </div>
                                     
-                                    <!-- Add Worksheet Button -->
-                                    <div class="text-center mt-6">
-                                        <button type="button" id="add-worksheet-btn" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                                            📄 Add Worksheet Answer Key
-                                        </button>
+                                    <div class="space-y-4">
+                                        <h4 class="font-medium text-gray-700">Assessment Questions</h4>
+                                        {% for question_form in session_form.assessment_questions %}
+                                            <div class="p-3 bg-white rounded-lg">
+                                                <div class="mb-2">
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Question {{ loop.index }}</label>
+                                                    {{ question_form.question(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                        placeholder="Enter the assessment question", 
+                                                        data_autosave="true",
+                                                        data_field_type="pba_question",
+                                                        data_session_index=loop.index0,
+                                                        data_question_index=loop.index0,
+                                                        data_field_name="question") }}
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                                                    {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                        rows="2", 
+                                                        placeholder="Enter the correct answer", 
+                                                        data_autosave="true",
+                                                        data_field_type="pba_question",
+                                                        data_session_index=loop.index0,
+                                                        data_question_index=loop.index0,
+                                                        data_field_name="correct_answer") }}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
                                     </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Section -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="vocabulary">
+                    <h2 class="text-xl font-semibold text-gray-800">📚 Vocabulary</h2>
+                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content" id="vocabulary-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Enter vocabulary terms with their definitions. Leave unused fields blank.</p>
+                        
+                        <div class="space-y-4">
+                            {% for term_form in form.vocabulary %}
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Term {{ loop.index }}</label>
+                                            {{ term_form.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="Enter the term", 
+                                                data_autosave="true",
+                                                data_field_type="vocabulary",
+                                                data_term_index=loop.index0,
+                                                data_field_name="term") }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Definition</label>
+                                            {{ term_form.definition(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                rows="2", 
+                                                placeholder="Enter the definition", 
+                                                data_autosave="true",
+                                                data_field_type="vocabulary",
+                                                data_term_index=loop.index0,
+                                                data_field_name="definition") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Portfolio Checklist Section -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="portfolio">
+                    <h2 class="text-xl font-semibold text-gray-800">📋 Student Portfolio Checklist</h2>
+                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content" id="portfolio-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">List portfolio products and their corresponding session numbers.</p>
+                        
+                        <div class="space-y-3">
+                            {% for item_form in form.portfolio_checklist %}
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Product {{ loop.index }}</label>
+                                            {{ item_form.product(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="Enter the product name", 
+                                                data_autosave="true",
+                                                data_field_type="portfolio",
+                                                data_item_index=loop.index0,
+                                                data_field_name="product") }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Session Number</label>
+                                            {{ item_form.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                                                placeholder="e.g., 1, 2, 3", 
+                                                data_autosave="true",
+                                                data_field_type="portfolio",
+                                                data_item_index=loop.index0,
+                                                data_field_name="session_number") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enrichment Activities Section -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="enrichment">
+                    <h2 class="text-xl font-semibold text-gray-800">🌟 Enrichment Answer Key</h2>
+                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content" id="enrichment-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Build enrichment answer key content using dynamic fields.</p>
+                        
+                        <!-- Dynamic fields container -->
+                        <div id="enrichment-fields-container">
+                            {% for field_form in form.enrichment_dynamic_content %}
+                                <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-index="{{ loop.index0 }}">
+                                    <!-- Field content will be populated by JavaScript -->
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Empty state message -->
+                        <div id="enrichment-empty-message" class="text-gray-500 text-center py-8">
+                            <p>Click "Add Field" to start building content.</p>
+                        </div>
+                        
+                        <!-- Field Type Selector for Enrichment (moved to bottom for better UX) -->
+                        <div id="enrichment-field-type-selector" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <h3 class="text-lg font-medium text-gray-800 mb-3">Select Field Type to Add:</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <button type="button" class="field-type-btn bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-3 rounded-md transition-colors" data-type="section_header" data-section="enrichment">
+                                    📋 Section Header
+                                </button>
+                                <button type="button" class="field-type-btn bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-3 rounded-md transition-colors" data-type="section_instructions" data-section="enrichment">
+                                    📝 Instructions
+                                </button>
+                                <button type="button" class="field-type-btn bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-3 rounded-md transition-colors" data-type="paragraph_text" data-section="enrichment">
+                                    📄 Paragraph Text
+                                </button>
+                                <button type="button" class="field-type-btn bg-green-100 hover:bg-green-200 text-green-800 px-4 py-3 rounded-md transition-colors" data-type="multiple_choice" data-section="enrichment">
+                                    ☑️ Multiple Choice
+                                </button>
+                                <button type="button" class="field-type-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-4 py-3 rounded-md transition-colors" data-type="fill_in_blank" data-section="enrichment">
+                                    ✏️ Fill in Blank
+                                </button>
+                                <button type="button" class="field-type-btn bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-3 rounded-md transition-colors" data-type="math_problem" data-section="enrichment">
+                                    🔢 Math Problem
+                                </button>
+                                <button type="button" class="field-type-btn bg-red-100 hover:bg-red-200 text-red-800 px-4 py-3 rounded-md transition-colors" data-type="text_entry" data-section="enrichment">
+                                    📄 Text Entry
+                                </button>
+                                <button type="button" class="field-type-btn bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-3 rounded-md transition-colors" data-type="image" data-section="enrichment">
+                                    🖼️ Image
+                                </button>
+                            </div>
+                            <button type="button" class="mt-3 text-gray-600 hover:text-gray-800" onclick="hideFieldTypeSelector('enrichment')">Cancel</button>
+                        </div>
+                        
+                        <div class="text-right mt-6">
+                            <button type="button" id="enrichment-add-field-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" onclick="showFieldTypeSelector('enrichment')">
+                                + Add Field
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Worksheet Answer Keys Section -->
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="worksheet_keys">
+                    <h2 class="text-xl font-semibold text-gray-800">📝 Worksheet Answer Keys</h2>
+                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                
+                <div class="accordion-content" id="worksheet_keys-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Create worksheet answer keys organized by individual worksheets. Each worksheet can contain multiple sections and questions.</p>
+                        
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="p-6">
+                                <p class="text-sm text-gray-600 mb-4">Add worksheet containers to organize your answer keys. Each worksheet can have its own title and content.</p>
+                                
+                                <!-- Worksheets container -->
+                                <div id="worksheets-container">
+                                    {% for worksheet_form in form.worksheet_answer_keys %}
+                                        <div class="worksheet-container mb-8 p-6 border border-gray-300 rounded-lg bg-white" data-worksheet-index="{{ loop.index0 }}">
+                                            <!-- Worksheet header -->
+                                            <div class="flex justify-between items-center mb-4">
+                                                <h3 class="text-lg font-semibold text-gray-800">📄 Worksheet Answer Key #{{ loop.index }}</h3>
+                                                <button type="button" class="delete-worksheet-btn text-red-600 hover:text-red-800 font-medium">
+                                                    🗑️ Delete Worksheet
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Worksheet title field -->
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Worksheet Title (optional)</label>
+                                                {{ worksheet_form.worksheet_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+                                            </div>
+                                            
+                                            <!-- Fields container for this worksheet -->
+                                            <div class="worksheet-fields-container" data-worksheet-index="{{ loop.index0 }}">
+                                                {% for field_form in worksheet_form.dynamic_content %}
+                                                    <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-field-index="{{ loop.index0 }}">
+                                                        <!-- Field content will be populated by JavaScript -->
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <!-- Empty state message for this worksheet -->
+                                            <div class="worksheet-empty-message text-gray-500 text-center py-4" data-worksheet-index="{{ loop.index0 }}">
+                                                <p>No fields added to this worksheet yet.</p>
+                                                <p class="text-sm">Click "Add Field" below to start building this worksheet's content.</p>
+                                            </div>
+                                            
+                                            <!-- Field Type Selector for this worksheet -->
+                                            <div class="worksheet-field-type-selector hidden" data-worksheet-index="{{ loop.index0 }}">
+                                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                                    <h4 class="font-medium text-gray-800 mb-3">Select Field Type to Add:</h4>
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_header" data-worksheet-index="{{ loop.index0 }}">
+                                                            📝 Section Header
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_instructions" data-worksheet-index="{{ loop.index0 }}">
+                                                            📋 Instructions
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="multiple_choice" data-worksheet-index="{{ loop.index0 }}">
+                                                            ✅ Multiple Choice
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="fill_in_blank" data-worksheet-index="{{ loop.index0 }}">
+                                                            ✏️ Fill in Blank
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="text_entry" data-worksheet-index="{{ loop.index0 }}">
+                                                            📝 Text Entry
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="math_problem" data-worksheet-index="{{ loop.index0 }}">
+                                                            🔢 Math Problem
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="{{ loop.index0 }}">
+                                                            📄 Paragraph Text
+                                                        </button>
+                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="image" data-worksheet-index="{{ loop.index0 }}">
+                                                            🖼️ Image
+                                                        </button>
+                                                    </div>
+                                                    <div class="mt-3 text-center">
+                                                        <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="{{ loop.index0 }}">Cancel</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Add Field Button for this worksheet -->
+                                            <div class="text-center mt-4">
+                                                <button type="button" class="add-field-btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-worksheet-index="{{ loop.index0 }}">
+                                                    ➕ Add Field
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Empty state message when no worksheets -->
+                                <div id="worksheets-empty-message" class="text-gray-500 text-center py-8">
+                                    <p class="text-lg">No worksheet answer keys created yet.</p>
+                                    <p class="text-sm">Click "Add Worksheet Answer Key" to start organizing your answer keys.</p>
+                                </div>
+                                
+                                <!-- Add Worksheet Button -->
+                                <div class="text-center mt-6">
+                                    <button type="button" id="add-worksheet-btn" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                                        📄 Add Worksheet Answer Key
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Submit Button -->
-                <div class="flex justify-end space-x-4">
-                    <a href="/" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors">
-                        Cancel
-                    </a>
-                    {{ form.submit(class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors") }}
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- JavaScript -->
-    <script>
-        // Accordion functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const accordionHeaders = document.querySelectorAll('.accordion-header');
-            
-            accordionHeaders.forEach(header => {
-                header.addEventListener('click', function() {
-                    const section = this.getAttribute('data-section');
-                    const content = document.getElementById(section + '-content');
-                    const icon = this.querySelector('.accordion-icon');
-                    
-                    content.classList.toggle('expanded');
-                    icon.classList.toggle('expanded');
-                });
-            });
-            
-            // Initialize empty state for dynamic sections
-            checkEmptyState('enrichment');
-            checkEmptyState('worksheets');
-        });
-
-        // Dynamic field functionality
-        let enrichmentFieldIndex = 0;
-        let worksheetIndex = 0;
-        let worksheetFieldIndexes = {}; // Track field indexes per worksheet
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize accordion functionality
-            initializeAccordions();
-            
-            // Initialize empty state for dynamic sections
-            checkEmptyState('enrichment');
-            checkEmptyState('worksheets');
-            
-            // Initialize field indexes for existing worksheets
-            document.querySelectorAll('.worksheet-container').forEach(function(container) {
-                const worksheetIndex = container.dataset.worksheetIndex;
-                const fieldCount = container.querySelectorAll('.dynamic-field').length;
-                worksheetFieldIndexes[worksheetIndex] = fieldCount;
-            });
-        });
-        
-        // Add new worksheet
-        document.getElementById('add-worksheet-btn').addEventListener('click', function() {
-            addNewWorksheet();
-        });
-        
-        function addNewWorksheet() {
-            const container = document.getElementById('worksheets-container');
-            const emptyMessage = document.getElementById('worksheets-empty-message');
-            
-            // Hide empty message
-            emptyMessage.style.display = 'none';
-            
-            // Initialize field index for this worksheet
-            worksheetFieldIndexes[worksheetIndex] = 0;
-            
-            // Create worksheet HTML
-            const worksheetHtml = `
-                <div class="worksheet-container mb-8 p-6 border border-gray-300 rounded-lg bg-white" data-worksheet-index="${worksheetIndex}">
-                    <!-- Worksheet header -->
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">📄 Worksheet Answer Key #${worksheetIndex + 1}</h3>
-                        <button type="button" class="delete-worksheet-btn text-red-600 hover:text-red-800 font-medium">
-                            🗑️ Delete Worksheet
-                        </button>
-                    </div>
-                    
-                    <!-- Worksheet title field -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Worksheet Title (optional)</label>
-                        <input type="text" name="worksheet_answer_keys-${worksheetIndex}-worksheet_title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Chapter 3 Review, Lab Answer Key">
-                    </div>
-                    
-                    <!-- Fields container for this worksheet -->
-                    <div class="worksheet-fields-container" data-worksheet-index="${worksheetIndex}">
-                    </div>
-                    
-                    <!-- Empty state message for this worksheet -->
-                    <div class="worksheet-empty-message text-gray-500 text-center py-4" data-worksheet-index="${worksheetIndex}">
-                        <p>No fields added to this worksheet yet.</p>
-                        <p class="text-sm">Click "Add Field" below to start building this worksheet's content.</p>
-                    </div>
-                    
-                    <!-- Field Type Selector for this worksheet -->
-                    <div class="worksheet-field-type-selector hidden" data-worksheet-index="${worksheetIndex}">
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <h4 class="font-medium text-gray-800 mb-3">Select Field Type to Add:</h4>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_header" data-worksheet-index="${worksheetIndex}">
-                                    📝 Section Header
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_instructions" data-worksheet-index="${worksheetIndex}">
-                                    📋 Instructions
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="multiple_choice" data-worksheet-index="${worksheetIndex}">
-                                    ✅ Multiple Choice
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="fill_in_blank" data-worksheet-index="${worksheetIndex}">
-                                    ✏️ Fill in Blank
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="text_entry" data-worksheet-index="${worksheetIndex}">
-                                    📝 Text Entry
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="math_problem" data-worksheet-index="${worksheetIndex}">
-                                    🔢 Math Problem
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="${worksheetIndex}">
-                                    📄 Paragraph Text
-                                </button>
-                                <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="image" data-worksheet-index="${worksheetIndex}">
-                                    🖼️ Image
-                                </button>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="${worksheetIndex}">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Add Field Button for this worksheet -->
-                    <div class="text-center mt-4">
-                        <button type="button" class="add-field-btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-worksheet-index="${worksheetIndex}">
-                            ➕ Add Field
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Add to container
-            const worksheetDiv = document.createElement('div');
-            worksheetDiv.innerHTML = worksheetHtml;
-            container.appendChild(worksheetDiv.firstElementChild);
-            
-            // Add event listeners for the new worksheet
-            addWorksheetEventListeners(worksheetIndex);
-            
-            worksheetIndex++;
-            checkEmptyState('worksheets');
-        }
-        
-        // Add event listeners for worksheet functionality
-        function addWorksheetEventListeners(worksheetIndex) {
-            const worksheetContainer = document.querySelector(`[data-worksheet-index="${worksheetIndex}"]`);
-            
-            // Delete worksheet button
-            worksheetContainer.querySelector('.delete-worksheet-btn').addEventListener('click', function() {
-                worksheetContainer.remove();
-                checkEmptyState('worksheets');
-            });
-            
-            // Add field button
-            worksheetContainer.querySelector('.add-field-btn').addEventListener('click', function() {
-                showWorksheetFieldTypeSelector(worksheetIndex);
-            });
-            
-            // Cancel field selection button
-            worksheetContainer.querySelector('.cancel-field-selection-btn').addEventListener('click', function() {
-                hideWorksheetFieldTypeSelector(worksheetIndex);
-            });
-            
-            // Field type buttons
-            worksheetContainer.querySelectorAll('.worksheet-field-type-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const fieldType = this.dataset.type;
-                    const worksheetIndex = this.dataset.worksheetIndex;
-                    addFieldToWorksheet(worksheetIndex, fieldType);
-                    hideWorksheetFieldTypeSelector(worksheetIndex);
-                });
-            });
-        }
-        
-        // Show field type selector for specific worksheet
-        function showWorksheetFieldTypeSelector(worksheetIndex) {
-            const selector = document.querySelector(`.worksheet-field-type-selector[data-worksheet-index="${worksheetIndex}"]`);
-            const button = document.querySelector(`.add-field-btn[data-worksheet-index="${worksheetIndex}"]`);
-            selector.classList.remove('hidden');
-            button.style.display = 'none';
-        }
-        
-        // Hide field type selector for specific worksheet
-        function hideWorksheetFieldTypeSelector(worksheetIndex) {
-            const selector = document.querySelector(`.worksheet-field-type-selector[data-worksheet-index="${worksheetIndex}"]`);
-            const button = document.querySelector(`.add-field-btn[data-worksheet-index="${worksheetIndex}"]`);
-            selector.classList.add('hidden');
-            button.style.display = '';
-        }
-        
-        // Add field to specific worksheet
-        function addFieldToWorksheet(worksheetIndex, fieldType) {
-            const fieldsContainer = document.querySelector(`.worksheet-fields-container[data-worksheet-index="${worksheetIndex}"]`);
-            const emptyMessage = document.querySelector(`.worksheet-empty-message[data-worksheet-index="${worksheetIndex}"]`);
-            
-            // Hide empty message
-            emptyMessage.style.display = 'none';
-            
-            // Get field index for this worksheet
-            const fieldIndex = worksheetFieldIndexes[worksheetIndex] || 0;
-            
-            // Create field HTML
-            const fieldHtml = createWorksheetFieldHtml(fieldType, worksheetIndex, fieldIndex);
-            
-            // Add to container
-            const fieldDiv = document.createElement('div');
-            fieldDiv.className = 'dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50';
-            fieldDiv.dataset.fieldIndex = fieldIndex;
-            fieldDiv.innerHTML = fieldHtml;
-            
-            fieldsContainer.appendChild(fieldDiv);
-            
-            // Add delete functionality
-            fieldDiv.querySelector('.delete-field-btn').addEventListener('click', function() {
-                fieldDiv.remove();
-                checkWorksheetEmptyState(worksheetIndex);
-            });
-            
-            // Update field index for this worksheet
-            worksheetFieldIndexes[worksheetIndex] = fieldIndex + 1;
-        }
-        
-        // Create field HTML for worksheet
-        function createWorksheetFieldHtml(fieldType, worksheetIndex, fieldIndex) {
-            const fieldPrefix = `worksheet_answer_keys-${worksheetIndex}-dynamic_content`;
-            
-            const baseFields = `
-                <input type="hidden" name="${fieldPrefix}-${fieldIndex}-field_type" value="${fieldType}">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-medium text-gray-800">${getFieldTypeLabel(fieldType)}</h3>
-                    <button type="button" class="delete-field-btn text-red-600 hover:text-red-800">
-                        🗑️ Delete
-                    </button>
-                </div>
-            `;
-            
-            let specificFields = '';
-            
-            switch(fieldType) {
-                case 'section_header':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Section Title</label>
-                            <input type="text" name="${fieldPrefix}-${fieldIndex}-section_title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Bonus Questions, Extra Credit">
-                        </div>
-                    `;
-                    break;
-                    
-                case 'section_instructions':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
-                            <textarea name="${fieldPrefix}-${fieldIndex}-instructions_text" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter instructions for this section..."></textarea>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'paragraph_text':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Paragraph Text</label>
-                            <textarea name="${fieldPrefix}-${fieldIndex}-paragraph_text" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter paragraph text (e.g., A square root relates directly to the area of a square...)"></textarea>
-                            <p class="text-xs text-gray-500 mt-1">This will be formatted as body text in the document.</p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'multiple_choice':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Question Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${fieldIndex}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Choices</label>
-                                <select name="${fieldPrefix}-${fieldIndex}-choice_count" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="2">2 choices</option>
-                                    <option value="3">3 choices</option>
-                                    <option value="4" selected>4 choices</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <textarea name="${fieldPrefix}-${fieldIndex}-question_text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter the question..."></textarea>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice A</label>
-                                <input type="text" name="${fieldPrefix}-${fieldIndex}-choice_a" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="First choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice B</label>
-                                <input type="text" name="${fieldPrefix}-${fieldIndex}-choice_b" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Second choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice C</label>
-                                <input type="text" name="${fieldPrefix}-${fieldIndex}-choice_c" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Third choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice D</label>
-                                <input type="text" name="${fieldPrefix}-${fieldIndex}-choice_d" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Fourth choice">
-                            </div>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'fill_in_blank':
-                case 'text_entry':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Question Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${fieldIndex}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <textarea name="${fieldPrefix}-${fieldIndex}-question_text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter the question..."></textarea>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'math_problem':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Problem Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${fieldIndex}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Math Problem</label>
-                            <input type="text" name="${fieldPrefix}-${fieldIndex}-math_expression" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., √98 = , √225 = , 3x + 5 = 20">
-                            <p class="text-xs text-gray-500 mt-1">Enter the mathematical expression.</p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'image':
-                    specificFields = `
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                            <input type="file" name="${fieldPrefix}-${fieldIndex}-image_file" accept=".jpg,.jpeg,.png,.gif" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF (max 16MB)</p>
-                        </div>
-                    `;
-                    break;
-            }
-            
-            return baseFields + specificFields;
-        }
-        
-        // Check empty state for specific worksheet
-        function checkWorksheetEmptyState(worksheetIndex) {
-            const fieldsContainer = document.querySelector(`.worksheet-fields-container[data-worksheet-index="${worksheetIndex}"]`);
-            const emptyMessage = document.querySelector(`.worksheet-empty-message[data-worksheet-index="${worksheetIndex}"]`);
-            
-            if (fieldsContainer.children.length === 0) {
-                emptyMessage.style.display = 'block';
-            } else {
-                emptyMessage.style.display = 'none';
-            }
-        }
-        
-        // Initialize existing worksheet event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add event listeners for existing worksheets
-            document.querySelectorAll('.worksheet-container').forEach(function(container) {
-                const worksheetIndex = parseInt(container.dataset.worksheetIndex);
-                addWorksheetEventListeners(worksheetIndex);
-                
-                // Update the global worksheet index
-                if (worksheetIndex >= worksheetIndex) {
-                    worksheetIndex = worksheetIndex + 1;
-                }
-            });
-        });
-
-        // Math Symbols Toolbar functionality
-        let activeInput = null;
-        
-        // Track the currently focused input/textarea
-        document.addEventListener('focusin', function(e) {
-            if (e.target.matches('input[type="text"], textarea')) {
-                activeInput = e.target;
-                document.querySelectorAll('.active-input').forEach(el => el.classList.remove('active-input'));
-                activeInput.classList.add('active-input');
-            }
-        });
-        
-        // Toggle math toolbar
-        function toggleMathToolbar() {
-            const toolbar = document.getElementById('math-toolbar');
-            toolbar.classList.toggle('active');
-            const toggleBtn = document.getElementById('math-toolbar-toggle');
-            if (toolbar.classList.contains('active')) {
-                toggleBtn.innerHTML = '∑ Close Math Symbols';
-            } else {
-                toggleBtn.innerHTML = '∑ Math Symbols';
-            }
-        }
-        
-        // Insert symbol at cursor position
-        function insertSymbol(symbol) {
-            if (!activeInput) {
-                alert('Please click on a text field first');
-                return;
-            }
-            
-            const start = activeInput.selectionStart;
-            const end = activeInput.selectionEnd;
-            const text = activeInput.value;
-            
-            activeInput.value = text.substring(0, start) + symbol + text.substring(end);
-            activeInput.selectionStart = activeInput.selectionEnd = start + symbol.length;
-            activeInput.focus();
-        }
-        
-        // Initialize symbol buttons
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.symbol-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    insertSymbol(this.textContent);
-                });
-            });
-        });
-
-        // Show field type selector for enrichment section
-        function showFieldTypeSelector(section) {
-            document.getElementById(section + '-field-type-selector').classList.remove('hidden');
-            document.getElementById(section + '-add-field-btn').style.display = 'none';
-        }
-        
-        // Hide field type selector for enrichment section
-        function hideFieldTypeSelector(section) {
-            document.getElementById(section + '-field-type-selector').classList.add('hidden');
-            document.getElementById(section + '-add-field-btn').style.display = '';
-        }
-        
-        // Add event listeners to enrichment field type buttons
-        document.querySelectorAll('.field-type-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const fieldType = this.dataset.type;
-                const section = this.dataset.section;
-                addDynamicField(section, fieldType);
-                hideFieldTypeSelector(section);
-            });
-        });
-
-        function addDynamicField(section, fieldType) {
-            const container = document.getElementById(section + '-fields-container');
-            const emptyMessage = document.getElementById(section + '-empty-message');
-            
-            // Hide empty message
-            emptyMessage.style.display = 'none';
-            
-            // Use enrichment field index
-            const fieldIndex = enrichmentFieldIndex++;
-            
-            // Create field HTML based on type
-            const fieldHtml = createFieldHtml(fieldType, fieldIndex, section);
-            
-            // Add to container
-            const fieldDiv = document.createElement('div');
-            fieldDiv.className = 'dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50';
-            fieldDiv.dataset.index = fieldIndex;
-            fieldDiv.innerHTML = fieldHtml;
-            
-            container.appendChild(fieldDiv);
-            
-            // Add delete functionality
-            fieldDiv.querySelector('.delete-field-btn').addEventListener('click', function() {
-                fieldDiv.remove();
-                checkEmptyState(section);
-            });
-        }
-        
-        function createFieldHtml(fieldType, index, section) {
-            // For enrichment section
-            const fieldPrefix = 'enrichment_dynamic_content';
-            
-            const baseFields = `
-                <input type="hidden" name="${fieldPrefix}-${index}-field_type" value="${fieldType}">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-medium text-gray-800">${getFieldTypeLabel(fieldType)}</h3>
-                    <button type="button" class="delete-field-btn text-red-600 hover:text-red-800">
-                        🗑️ Delete
-                    </button>
-                </div>
-            `;
-            
-            let specificFields = '';
-            
-            switch(fieldType) {
-                case 'section_header':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Section Title</label>
-                            <input type="text" name="${fieldPrefix}-${index}-section_title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Bonus Questions, Extra Credit">
-                        </div>
-                    `;
-                    break;
-                    
-                case 'section_instructions':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
-                            <textarea name="${fieldPrefix}-${index}-instructions_text" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter instructions for this section..."></textarea>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'paragraph_text':
-                    specificFields = `
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Paragraph Text</label>
-                            <textarea name="${fieldPrefix}-${index}-paragraph_text" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter paragraph text (e.g., A square root relates directly to the area of a square...)"></textarea>
-                            <p class="text-xs text-gray-500 mt-1">This will be formatted as body text in the document.</p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'multiple_choice':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Question Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${index}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Choices</label>
-                                <select name="${fieldPrefix}-${index}-choice_count" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="2">2 choices</option>
-                                    <option value="3">3 choices</option>
-                                    <option value="4" selected>4 choices</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <textarea name="${fieldPrefix}-${index}-question_text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter the question..."></textarea>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice A</label>
-                                <input type="text" name="${fieldPrefix}-${index}-choice_a" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="First choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice B</label>
-                                <input type="text" name="${fieldPrefix}-${index}-choice_b" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Second choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice C</label>
-                                <input type="text" name="${fieldPrefix}-${index}-choice_c" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Third choice">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Choice D</label>
-                                <input type="text" name="${fieldPrefix}-${index}-choice_d" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Fourth choice">
-                            </div>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'fill_in_blank':
-                case 'text_entry':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Question Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${index}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
-                            <textarea name="${fieldPrefix}-${index}-question_text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter the question..."></textarea>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'math_problem':
-                    specificFields = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Problem Number (optional)</label>
-                                <input type="number" name="${fieldPrefix}-${index}-question_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Auto-numbered if blank">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Math Problem</label>
-                            <input type="text" name="${fieldPrefix}-${index}-math_expression" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., √98 = , √225 = , 3x + 5 = 20">
-                            <p class="text-xs text-gray-500 mt-1">Enter the mathematical expression.</p>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'image':
-                    specificFields = `
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                            <input type="file" name="${fieldPrefix}-${index}-image_file" accept=".jpg,.jpeg,.png,.gif" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF (max 16MB)</p>
-                        </div>
-                    `;
-                    break;
-            }
-            
-            return baseFields + specificFields;
-        }
-        
-        function getFieldTypeLabel(fieldType) {
-            const labels = {
-                'section_header': '📋 Section Header',
-                'section_instructions': '📝 Section Instructions',
-                'paragraph_text': '📄 Paragraph Text',
-                'multiple_choice': '☑️ Multiple Choice Question',
-                'fill_in_blank': '✏️ Fill-in-the-Blank Question',
-                'math_problem': '🔢 Math Problem',
-                'text_entry': '📄 Text Entry Question',
-                'image': '🖼️ Image'
-            };
-            return labels[fieldType] || fieldType;
-        }
-        
-        function checkEmptyState(section) {
-            if (section === 'worksheets') {
-                const container = document.getElementById('worksheets-container');
-                const emptyMessage = document.getElementById('worksheets-empty-message');
-                
-                if (container.children.length === 0) {
-                    emptyMessage.style.display = 'block';
-                } else {
-                    emptyMessage.style.display = 'none';
-                }
-            } else {
-                // For enrichment section
-                const container = document.getElementById(section + '-fields-container');
-                const emptyMessage = document.getElementById(section + '-empty-message');
-                
-                if (container.children.length === 0) {
-                    emptyMessage.style.display = 'block';
-                } else {
-                    emptyMessage.style.display = 'none';
-                }
-            }
-        }
-    </script>
-    
-    <!-- Math Symbols Toolbar -->
-    <div id="math-toolbar" class="math-toolbar">
-        <div class="p-4">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-gray-800">Math Symbols</h3>
-                <button onclick="toggleMathToolbar()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <!-- Only Generate Button -->
+                <button type="submit" name="action" value="generate" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                    Generate Module Answer Key
                 </button>
             </div>
             
-            <div class="flex flex-wrap">
-                <!-- Basic Operations -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Basic Operations</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">+</button>
-                        <button class="symbol-btn">−</button>
-                        <button class="symbol-btn">×</button>
-                        <button class="symbol-btn">÷</button>
-                        <button class="symbol-btn">=</button>
-                        <button class="symbol-btn">≠</button>
-                        <button class="symbol-btn">±</button>
-                        <button class="symbol-btn">∓</button>
-                    </div>
-                </div>
-                
-                <!-- Comparison -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Comparison</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn"><</button>
-                        <button class="symbol-btn">></button>
-                        <button class="symbol-btn">≤</button>
-                        <button class="symbol-btn">≥</button>
-                        <button class="symbol-btn">≈</button>
-                        <button class="symbol-btn">≡</button>
-                        <button class="symbol-btn">∝</button>
-                    </div>
-                </div>
-                
-                <!-- Roots & Powers -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Roots & Powers</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">√</button>
-                        <button class="symbol-btn">∛</button>
-                        <button class="symbol-btn">∜</button>
-                        <button class="symbol-btn">²</button>
-                        <button class="symbol-btn">³</button>
-                        <button class="symbol-btn">⁴</button>
-                        <button class="symbol-btn">⁵</button>
-                        <button class="symbol-btn">ⁿ</button>
-                    </div>
-                </div>
-                
-                <!-- Subscripts -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Subscripts</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">₀</button>
-                        <button class="symbol-btn">₁</button>
-                        <button class="symbol-btn">₂</button>
-                        <button class="symbol-btn">₃</button>
-                        <button class="symbol-btn">₄</button>
-                        <button class="symbol-btn">₅</button>
-                        <button class="symbol-btn">ₙ</button>
-                        <button class="symbol-btn">ᵢ</button>
-                    </div>
-                </div>
-                
-                <!-- Greek Letters -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Greek Letters</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">π</button>
-                        <button class="symbol-btn">θ</button>
-                        <button class="symbol-btn">α</button>
-                        <button class="symbol-btn">β</button>
-                        <button class="symbol-btn">γ</button>
-                        <button class="symbol-btn">δ</button>
-                        <button class="symbol-btn">μ</button>
-                        <button class="symbol-btn">σ</button>
-                        <button class="symbol-btn">Σ</button>
-                        <button class="symbol-btn">Δ</button>
-                    </div>
-                </div>
-                
-                <!-- Other Symbols -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Other Symbols</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">∞</button>
-                        <button class="symbol-btn">∴</button>
-                        <button class="symbol-btn">∵</button>
-                        <button class="symbol-btn">∈</button>
-                        <button class="symbol-btn">∉</button>
-                        <button class="symbol-btn">⊂</button>
-                        <button class="symbol-btn">∪</button>
-                        <button class="symbol-btn">∩</button>
-                        <button class="symbol-btn">∅</button>
-                        <button class="symbol-btn">°</button>
-                        <button class="symbol-btn">′</button>
-                        <button class="symbol-btn">″</button>
-                    </div>
-                </div>
-                
-                <!-- Fractions & Brackets -->
-                <div class="symbol-category">
-                    <h4 class="text-sm font-medium text-gray-600 mb-2">Fractions & Brackets</h4>
-                    <div class="flex flex-wrap">
-                        <button class="symbol-btn">½</button>
-                        <button class="symbol-btn">⅓</button>
-                        <button class="symbol-btn">¼</button>
-                        <button class="symbol-btn">⅔</button>
-                        <button class="symbol-btn">¾</button>
-                        <button class="symbol-btn">{</button>
-                        <button class="symbol-btn">}</button>
-                        <button class="symbol-btn">[</button>
-                        <button class="symbol-btn">]</button>
-                        <button class="symbol-btn">⟨</button>
-                        <button class="symbol-btn">⟩</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <!-- Hidden field to track if we're editing an existing draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+            {% endif %}
+        </form>
     </div>
+</div>
+
+<script>
+// Autosave functionality for Module Answer Keys
+class ModuleAnswerKeyAutosave {
+    constructor() {
+        this.autosaveTimeout = null;
+        this.autosaveDelay = 3000; // 3 seconds for complex form
+        this.currentDraftId = document.getElementById('current_draft_id').value || null;
+        this.isAutosaving = false;
+        this.lastSaveData = null;
+        
+        this.initializeEventListeners();
+        this.initializeAccordion();
+        this.showAutosaveStatus('Ready to autosave', 'saved');
+    }
     
-    <!-- Math Toolbar Toggle Button -->
-    <button id="math-toolbar-toggle" class="math-toolbar-toggle" onclick="toggleMathToolbar()">
-        ∑ Math Symbols
-    </button>
-</body>
-</html> 
+    initializeEventListeners() {
+        // Listen for changes on autosave-enabled fields
+        const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
+        
+        autosaveFields.forEach(field => {
+            field.addEventListener('input', () => {
+                this.scheduleAutosave();
+            });
+            
+            field.addEventListener('blur', () => {
+                // Save immediately when user leaves a field
+                this.performAutosave();
+            });
+        });
+    }
+    
+    initializeAccordion() {
+        // Get all accordion headers
+        const accordionHeaders = document.querySelectorAll('.accordion-header');
+        
+        accordionHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const section = this.getAttribute('data-section');
+                const content = document.getElementById(section + '-content');
+                const icon = this.querySelector('.accordion-icon');
+                
+                // Toggle expanded class
+                content.classList.toggle('expanded');
+                icon.classList.toggle('expanded');
+            });
+        });
+    }
+    
+    scheduleAutosave() {
+        // Clear existing timeout
+        if (this.autosaveTimeout) {
+            clearTimeout(this.autosaveTimeout);
+        }
+        
+        // Schedule new autosave
+        this.autosaveTimeout = setTimeout(() => {
+            this.performAutosave();
+        }, this.autosaveDelay);
+    }
+    
+    async performAutosave() {
+        if (this.isAutosaving) {
+            return; // Already autosaving
+        }
+        
+        // Collect form data
+        const formData = this.collectFormData();
+        
+        // Check if data has changed
+        if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
+            return; // No changes to save
+        }
+        
+        this.isAutosaving = true;
+        this.showAutosaveStatus('Saving...', 'saving');
+        
+        try {
+            // Add draft_id to the data
+            formData.draft_id = this.currentDraftId;
+            
+            const response = await fetch('/autosave-moduleanswerkey-draft', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update current draft ID if this was a new draft
+                if (result.draft_id && !this.currentDraftId) {
+                    this.currentDraftId = result.draft_id;
+                    document.getElementById('current_draft_id').value = result.draft_id;
+                }
+                
+                this.lastSaveData = formData;
+                this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+            } else {
+                this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Autosave error:', error);
+            this.showAutosaveStatus('Save failed - check connection', 'error');
+        } finally {
+            this.isAutosaving = false;
+        }
+    }
+    
+    collectFormData() {
+        const moduleAcronym = document.getElementById('module_acronym').value;
+        
+        // Collect form data
+        const formData = {
+            module_acronym: moduleAcronym,
+            pretest_questions: [],
+            rca_sessions: [],
+            posttest_questions: [],
+            pba_sessions: [],
+            vocabulary: [],
+            portfolio_checklist: []
+        };
+        
+        // Collect pre-test questions
+        document.querySelectorAll('[data-field-type="pretest_question"]').forEach(field => {
+            const questionIndex = parseInt(field.dataset.questionIndex);
+            const fieldName = field.dataset.fieldName;
+            
+            if (!formData.pretest_questions[questionIndex]) {
+                formData.pretest_questions[questionIndex] = {};
+            }
+            
+            if (field.value.trim()) {
+                formData.pretest_questions[questionIndex][fieldName] = field.value.trim();
+            }
+        });
+        
+        // Clean up sparse arrays and ensure we have objects
+        formData.pretest_questions = formData.pretest_questions.filter(q => q && Object.keys(q).length > 0);
+        
+        // Collect RCA sessions (4 sessions × 3 questions each)
+        for (let sessionIndex = 0; sessionIndex < 4; sessionIndex++) {
+            const sessionData = {
+                session_number: sessionIndex + 2, // Sessions 2-5
+                questions: []
+            };
+            
+            for (let questionIndex = 0; questionIndex < 3; questionIndex++) {
+                const questionData = {};
+                
+                // Find all fields for this session and question
+                document.querySelectorAll(`[data-field-type="rca_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
+                    const fieldName = field.dataset.fieldName;
+                    if (field.value.trim()) {
+                        questionData[fieldName] = field.value.trim();
+                    }
+                });
+                
+                if (Object.keys(questionData).length > 0) {
+                    sessionData.questions[questionIndex] = questionData;
+                }
+            }
+            
+            // Only add session if it has questions
+            if (sessionData.questions.length > 0) {
+                formData.rca_sessions.push(sessionData);
+            }
+        }
+        
+        // Collect post-test questions
+        document.querySelectorAll('[data-field-type="posttest_question"]').forEach(field => {
+            const questionIndex = parseInt(field.dataset.questionIndex);
+            const fieldName = field.dataset.fieldName;
+            
+            if (!formData.posttest_questions[questionIndex]) {
+                formData.posttest_questions[questionIndex] = {};
+            }
+            
+            if (field.value.trim()) {
+                formData.posttest_questions[questionIndex][fieldName] = field.value.trim();
+            }
+        });
+        
+        // Clean up sparse arrays
+        formData.posttest_questions = formData.posttest_questions.filter(q => q && Object.keys(q).length > 0);
+        
+        // Collect PBA sessions (3 sessions)
+        for (let sessionIndex = 0; sessionIndex < 3; sessionIndex++) {
+            const sessionData = {
+                session_number: '',
+                activity_name: '',
+                assessment_questions: []
+            };
+            
+            // Collect session-level data
+            document.querySelectorAll(`[data-field-type="pba_session"][data-session-index="${sessionIndex}"]`).forEach(field => {
+                const fieldName = field.dataset.fieldName;
+                if (field.value.trim()) {
+                    sessionData[fieldName] = field.value.trim();
+                }
+            });
+            
+            // Collect questions for this session
+            for (let questionIndex = 0; questionIndex < 4; questionIndex++) {
+                const questionData = {};
+                
+                document.querySelectorAll(`[data-field-type="pba_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
+                    const fieldName = field.dataset.fieldName;
+                    if (field.value.trim()) {
+                        questionData[fieldName] = field.value.trim();
+                    }
+                });
+                
+                if (Object.keys(questionData).length > 0) {
+                    sessionData.assessment_questions[questionIndex] = questionData;
+                }
+            }
+            
+            // Only add session if it has content
+            if (sessionData.session_number || sessionData.activity_name || sessionData.assessment_questions.length > 0) {
+                formData.pba_sessions.push(sessionData);
+            }
+        }
+        
+        // Collect vocabulary terms
+        document.querySelectorAll('[data-field-type="vocabulary"]').forEach(field => {
+            const termIndex = parseInt(field.dataset.termIndex);
+            const fieldName = field.dataset.fieldName;
+            
+            if (!formData.vocabulary[termIndex]) {
+                formData.vocabulary[termIndex] = {};
+            }
+            
+            if (field.value.trim()) {
+                formData.vocabulary[termIndex][fieldName] = field.value.trim();
+            }
+        });
+        
+        // Clean up sparse arrays
+        formData.vocabulary = formData.vocabulary.filter(term => term && (term.term || term.definition));
+        
+        // Collect portfolio checklist
+        document.querySelectorAll('[data-field-type="portfolio"]').forEach(field => {
+            const itemIndex = parseInt(field.dataset.itemIndex);
+            const fieldName = field.dataset.fieldName;
+            
+            if (!formData.portfolio_checklist[itemIndex]) {
+                formData.portfolio_checklist[itemIndex] = {};
+            }
+            
+            if (field.value.trim()) {
+                formData.portfolio_checklist[itemIndex][fieldName] = field.value.trim();
+            }
+        });
+        
+        // Clean up sparse arrays
+        formData.portfolio_checklist = formData.portfolio_checklist.filter(item => item && (item.product || item.session_number));
+        
+        return formData;
+    }
+    
+    showAutosaveStatus(message, type) {
+        const statusElement = document.getElementById('autosave-status');
+        const textElement = document.getElementById('autosave-text');
+        
+        // Update text and styling
+        textElement.textContent = message;
+        statusElement.className = `autosave-status ${type}`;
+        
+        // Show the status
+        setTimeout(() => {
+            statusElement.classList.remove('hidden');
+        }, 10);
+        
+        // Auto-hide after 3 seconds (except for errors)
+        if (type !== 'error') {
+            setTimeout(() => {
+                statusElement.classList.add('hidden');
+            }, 3000);
+        }
+    }
+}
+
+// Initialize autosave when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.autosaveInstance = new ModuleAnswerKeyAutosave();
+});
+
+// Continue with existing scripts...
+</script>
+{% endblock %} 

@@ -211,6 +211,7 @@
                 </div>
                 
                 {% for session_form in form.sessions %}
+                    {% set outer_loop = loop %}
                     <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
                         <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="session{{ loop.index }}">
                             <h3 class="text-lg font-semibold text-gray-800">Session {{ loop.index }}</h3>
@@ -228,7 +229,7 @@
                                         placeholder="Enter the main focus for this session", 
                                         data_autosave="true",
                                         data_field_type="session_focus",
-                                        data_session_index=loop.index0) }}
+                                        data_session_index=outer_loop.index0) }}
                                     {% if session_form.focus.errors %}
                                         <p class="mt-1 text-sm text-red-600">{{ session_form.focus.errors[0] }}</p>
                                     {% endif %}
@@ -245,7 +246,7 @@
                                                     placeholder="Enter a goal", 
                                                     data_autosave="true",
                                                     data_field_type="session_goal",
-                                                    data_session_index=loop.index0 of session_form,
+                                                    data_session_index=outer_loop.index0,
                                                     data_goal_index=loop.index0) }}
                                             </div>
                                             {% if goal_form.goal.errors %}
@@ -266,7 +267,7 @@
                                                     placeholder="Material " + i|string, 
                                                     data_autosave="true",
                                                     data_field_type="session_material",
-                                                    data_session_index=loop.index0 of session_form,
+                                                    data_session_index=outer_loop.index0,
                                                     data_material_index=i) }}
                                             </div>
                                         {% endfor %}
@@ -284,7 +285,7 @@
                                                     placeholder="Enter a preparation item", 
                                                     data_autosave="true",
                                                     data_field_type="session_prep",
-                                                    data_session_index=loop.index0 of session_form,
+                                                    data_session_index=outer_loop.index0,
                                                     data_prep_index=loop.index0) }}
                                             </div>
                                             {% if prep_form.prep.errors %}
@@ -305,7 +306,7 @@
                                                     placeholder="Enter an assessment", 
                                                     data_autosave="true",
                                                     data_field_type="session_assessment",
-                                                    data_session_index=loop.index0 of session_form,
+                                                    data_session_index=outer_loop.index0,
                                                     data_assessment_index=loop.index0) }}
                                             </div>
                                             {% if assessment_form.assessment.errors %}
