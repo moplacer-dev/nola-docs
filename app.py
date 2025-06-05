@@ -1693,50 +1693,8 @@ def generate_generic_worksheet(form):
                     p.paragraph_format.space_after = Pt(6)
             
             elif field_type == 'image':
-                # Handle image upload - check if there's a file in the request
-                # Updated approach: search for the field in request.files more robustly
-                image_file = None
-                field_name = f'dynamic_fields-{i}-image_file'
-                
-                # First try the expected field name
-                if field_name in request.files:
-                    image_file = request.files[field_name]
-                else:
-                    # If not found, search through all files for this field pattern
-                    # This handles cases where frontend indices don't match backend indices due to deletions
-                    for file_key in request.files.keys():
-                        if file_key.startswith('dynamic_fields-') and file_key.endswith('-image_file'):
-                            # Extract the index from the field name
-                            try:
-                                parts = file_key.split('-')
-                                if len(parts) >= 3:
-                                    file_index = int(parts[2])
-                                    # Check if this file hasn't been processed yet
-                                    if file_key not in processed_image_fields:
-                                        image_file = request.files[file_key]
-                                        processed_image_fields.add(file_key)
-                                        print(f"Found image file with key: {file_key} for field at position {i}")
-                                        break
-                            except (ValueError, IndexError):
-                                continue
-                
-                if image_file and image_file.filename:
-                    # Save the uploaded file temporarily
-                    filename = secure_filename(image_file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
-                    # Save the file
-                    image_file.save(filepath)
-                    saved_images.append(filepath)  # Track for cleanup
-                    
-                    # Add image to subdocument with fixed width of 4 inches
-                    p = subdoc.add_paragraph()
-                    run = p.add_run()
-                    run.add_picture(filepath, width=Inches(4))
-                    p.alignment = 1  # Center alignment
-                    # Caption removed per user request
+                # Skip images in subdocument - handle them separately like RCA worksheets
+                print(f"Skipping image field {i} - will be processed separately")
             
             elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
                 question_text = (field_data.get('question_text') or '').strip()
@@ -1835,6 +1793,58 @@ def generate_generic_worksheet(form):
                     subdoc.add_paragraph()
                     question_counter += 1
         
+        # Process images separately (like RCA worksheets)
+        images_context = {}
+        
+        # Go through the form data again to find images
+        for i, field_data in enumerate(form.dynamic_fields.data):
+            field_type = field_data.get('field_type')
+            
+            if field_type == 'image':
+                # Handle image upload - check if there's a file in the request
+                image_file = None
+                field_name = f'dynamic_fields-{i}-image_file'
+                
+                # First try the expected field name
+                if field_name in request.files:
+                    image_file = request.files[field_name]
+                else:
+                    # If not found, search through all files for this field pattern
+                    for file_key in request.files.keys():
+                        if file_key.startswith('dynamic_fields-') and file_key.endswith('-image_file'):
+                            # Extract the index from the field name
+                            try:
+                                parts = file_key.split('-')
+                                if len(parts) >= 3:
+                                    file_index = int(parts[2])
+                                    # Check if this file hasn't been processed yet
+                                    if file_key not in processed_image_fields:
+                                        image_file = request.files[file_key]
+                                        processed_image_fields.add(file_key)
+                                        print(f"Found image file with key: {file_key} for field at position {i}")
+                                        break
+                            except (ValueError, IndexError):
+                                continue
+                
+                if image_file and image_file.filename:
+                    # Save the uploaded file temporarily
+                    filename = secure_filename(image_file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{filename}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    
+                    # Save the file
+                    image_file.save(filepath)
+                    saved_images.append(filepath)  # Track for cleanup
+                    
+                    # Create InlineImage for the template (like RCA worksheets)
+                    image_obj = InlineImage(doc, filepath, width=Inches(4))
+                    
+                    # Add to context with a unique key
+                    image_key = f'image_{i}'
+                    images_context[image_key] = image_obj
+                    print(f"Added image to context with key: {image_key}")
+        
         # Initialize context with subdoc as dynamic_content
         context = {
             'module_acronym': escape_xml(form.module_acronym.data),
@@ -1842,6 +1852,9 @@ def generate_generic_worksheet(form):
             'date': datetime.now().strftime('%B %d, %Y'),
             'dynamic_content': subdoc
         }
+        
+        # Add images to context
+        context.update(images_context)
         
         print(f"Built dynamic content as subdocument")
         print(f"Saved {len(saved_images)} images")
@@ -2587,48 +2600,8 @@ def generate_module_answer_key(form):
                     p.paragraph_format.space_after = Pt(6)
             
             elif field_type == 'image':
-                # Handle image upload with robust detection logic
-                image_file = None
-                field_name = f'enrichment_dynamic_content-{i}-image_file'
-                
-                # First try the expected field name
-                if field_name in request.files:
-                    image_file = request.files[field_name]
-                else:
-                    # If not found, search through all files for this field pattern
-                    # This handles cases where frontend indices don't match backend indices due to deletions
-                    for file_key in request.files.keys():
-                        if file_key.startswith('enrichment_dynamic_content-') and file_key.endswith('-image_file'):
-                            # Extract the index from the field name
-                            try:
-                                parts = file_key.split('-')
-                                if len(parts) >= 3:
-                                    file_index = int(parts[2])
-                                    # Check if this file hasn't been processed yet
-                                    if file_key not in processed_enrichment_image_fields:
-                                        image_file = request.files[file_key]
-                                        processed_enrichment_image_fields.add(file_key)
-                                        print(f"Found enrichment image file with key: {file_key} for field at position {i}")
-                                        break
-                            except (ValueError, IndexError):
-                                continue
-                
-                if image_file and image_file.filename:
-                    # Save the uploaded file temporarily
-                    filename = secure_filename(image_file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
-                    # Save the file
-                    image_file.save(filepath)
-                    saved_images.append(filepath)  # Track for cleanup
-                    
-                    # Add image to subdocument with fixed width of 4 inches
-                    p = enrichment_subdoc.add_paragraph()
-                    run = p.add_run()
-                    run.add_picture(filepath, width=Inches(4))
-                    p.alignment = 1  # Center alignment
+                # Skip enrichment images in subdocument - handle them separately like RCA worksheets
+                print(f"Skipping enrichment image field {i} - will be processed separately")
             
             elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
                 question_text = (field_data.get('question_text') or '').strip()
@@ -2785,50 +2758,8 @@ def generate_module_answer_key(form):
                         p.paragraph_format.space_after = Pt(6)
                 
                 elif field_type == 'image':
-                    # Handle image upload with robust detection logic for worksheet fields
-                    image_file = None
-                    field_name = f'worksheet_answer_keys-{worksheet_index}-dynamic_content-{field_index}-image_file'
-                    
-                    # First try the expected field name
-                    if field_name in request.files:
-                        image_file = request.files[field_name]
-                    else:
-                        # If not found, search through all files for this field pattern
-                        # This handles cases where frontend indices don't match backend indices due to deletions
-                        for file_key in request.files.keys():
-                            if file_key.startswith('worksheet_answer_keys-') and file_key.endswith('-image_file'):
-                                # Extract the worksheet and field indices from the field name
-                                try:
-                                    # Expected format: worksheet_answer_keys-{worksheet_index}-dynamic_content-{field_index}-image_file
-                                    parts = file_key.split('-')
-                                    if len(parts) >= 5 and parts[2] == 'dynamic' and parts[3] == 'content':
-                                        worksheet_idx = int(parts[1])
-                                        field_idx = int(parts[4])
-                                        # Check if this file hasn't been processed yet
-                                        if file_key not in processed_worksheet_image_fields:
-                                            image_file = request.files[file_key]
-                                            processed_worksheet_image_fields.add(file_key)
-                                            print(f"Found worksheet image file with key: {file_key} for worksheet {worksheet_index} field {field_index}")
-                                            break
-                                except (ValueError, IndexError):
-                                    continue
-                
-                if image_file and image_file.filename:
-                    # Save the uploaded file temporarily
-                    filename = secure_filename(image_file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
-                    # Save the file
-                    image_file.save(filepath)
-                    saved_images.append(filepath)  # Track for cleanup
-                    
-                    # Add image to subdocument with fixed width of 4 inches
-                    p = worksheet_keys_subdoc.add_paragraph()
-                    run = p.add_run()
-                    run.add_picture(filepath, width=Inches(4))
-                    p.alignment = 1  # Center alignment
+                    # Skip worksheet images in subdocument - handle them separately like RCA worksheets
+                    print(f"Skipping worksheet image field {worksheet_index}-{field_index} - will be processed separately")
                 
                 elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
                     question_text = (field_data.get('question_text') or '').strip()
@@ -2937,6 +2868,110 @@ def generate_module_answer_key(form):
                 worksheet_keys_subdoc.add_paragraph()
                 worksheet_keys_subdoc.add_paragraph()
         
+        # Process images separately (like RCA worksheets)
+        images_context = {}
+        
+        # Process enrichment images
+        for i, field_data in enumerate(form.enrichment_dynamic_content.data):
+            field_type = field_data.get('field_type')
+            
+            if field_type == 'image':
+                # Handle enrichment image upload
+                image_file = None
+                field_name = f'enrichment_dynamic_content-{i}-image_file'
+                
+                # First try the expected field name
+                if field_name in request.files:
+                    image_file = request.files[field_name]
+                else:
+                    # If not found, search through all files for this field pattern
+                    for file_key in request.files.keys():
+                        if file_key.startswith('enrichment_dynamic_content-') and file_key.endswith('-image_file'):
+                            # Extract the index from the field name
+                            try:
+                                parts = file_key.split('-')
+                                if len(parts) >= 3:
+                                    file_index = int(parts[2])
+                                    # Check if this file hasn't been processed yet
+                                    if file_key not in processed_enrichment_image_fields:
+                                        image_file = request.files[file_key]
+                                        processed_enrichment_image_fields.add(file_key)
+                                        print(f"Found enrichment image file with key: {file_key} for field at position {i}")
+                                        break
+                            except (ValueError, IndexError):
+                                continue
+                
+                if image_file and image_file.filename:
+                    # Save the uploaded file temporarily
+                    filename = secure_filename(image_file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    unique_filename = f"{timestamp}_{filename}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    
+                    # Save the file
+                    image_file.save(filepath)
+                    saved_images.append(filepath)  # Track for cleanup
+                    
+                    # Create InlineImage for the template (like RCA worksheets)
+                    image_obj = InlineImage(doc, filepath, width=Inches(4))
+                    
+                    # Add to context with a unique key
+                    image_key = f'enrichment_image_{i}'
+                    images_context[image_key] = image_obj
+                    print(f"Added enrichment image to context with key: {image_key}")
+        
+        # Process worksheet images
+        for worksheet_index, worksheet_data in enumerate(form.worksheet_answer_keys.data):
+            for field_index, field_data in enumerate(worksheet_data.get('dynamic_content', [])):
+                field_type = field_data.get('field_type')
+                
+                if field_type == 'image':
+                    # Handle worksheet image upload
+                    image_file = None
+                    field_name = f'worksheet_answer_keys-{worksheet_index}-dynamic_content-{field_index}-image_file'
+                    
+                    # First try the expected field name
+                    if field_name in request.files:
+                        image_file = request.files[field_name]
+                    else:
+                        # If not found, search through all files for this field pattern
+                        for file_key in request.files.keys():
+                            if file_key.startswith('worksheet_answer_keys-') and file_key.endswith('-image_file'):
+                                # Extract the worksheet and field indices from the field name
+                                try:
+                                    # Expected format: worksheet_answer_keys-{worksheet_index}-dynamic_content-{field_index}-image_file
+                                    parts = file_key.split('-')
+                                    if len(parts) >= 5 and parts[2] == 'dynamic' and parts[3] == 'content':
+                                        worksheet_idx = int(parts[1])
+                                        field_idx = int(parts[4])
+                                        # Check if this file hasn't been processed yet
+                                        if file_key not in processed_worksheet_image_fields:
+                                            image_file = request.files[file_key]
+                                            processed_worksheet_image_fields.add(file_key)
+                                            print(f"Found worksheet image file with key: {file_key} for worksheet {worksheet_index} field {field_index}")
+                                            break
+                                except (ValueError, IndexError):
+                                    continue
+                    
+                    if image_file and image_file.filename:
+                        # Save the uploaded file temporarily
+                        filename = secure_filename(image_file.filename)
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        unique_filename = f"{timestamp}_{filename}"
+                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                        
+                        # Save the file
+                        image_file.save(filepath)
+                        saved_images.append(filepath)  # Track for cleanup
+                        
+                        # Create InlineImage for the template (like RCA worksheets)
+                        image_obj = InlineImage(doc, filepath, width=Inches(4))
+                        
+                        # Add to context with a unique key
+                        image_key = f'worksheet_image_{worksheet_index}_{field_index}'
+                        images_context[image_key] = image_obj
+                        print(f"Added worksheet image to context with key: {image_key}")
+        
         # Build the complete context
         context = {
             'module_acronym': escape_xml(form.module_acronym.data),
@@ -2949,6 +2984,9 @@ def generate_module_answer_key(form):
             'enrichment_dynamic_content': enrichment_subdoc,
             'worksheet_answer_keys': worksheet_keys_subdoc
         }
+        
+        # Add images to context
+        context.update(images_context)
         
         print(f"Module Answer Key context data prepared")
         print(f"Number of pre-test questions: {len(pretest_questions_data)}")
