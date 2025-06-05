@@ -1021,10 +1021,23 @@ def create_generic():
         # Generate the document
         try:
             print("Attempting to generate generic worksheet...")
-            doc_path = generate_generic_worksheet(form)
+            doc_path, filename = generate_generic_worksheet(form)
             print(f"Generic worksheet generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='generic',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_acronym.data,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('Generic worksheet generated successfully!', 'success')
-            return redirect(url_for('create_generic'))
+            return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating generic worksheet: {e}")
             flash(f'Error generating generic worksheet: {str(e)}', 'error')
@@ -1049,9 +1062,24 @@ def create_familybriefing():
         try:
             print("Attempting to generate family briefing...")
             doc_path = generate_family_briefing(form)
+            filename = os.path.basename(doc_path)
+            
             print(f"Family briefing generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='familybriefing',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_name.data,  # Note: Family Briefing uses module_name, not module_acronym
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('Family Briefing generated successfully!', 'success')
-            return redirect(url_for('create_familybriefing'))
+            return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating family briefing: {e}")
             flash(f'Error generating family briefing: {str(e)}', 'error')
@@ -1076,9 +1104,24 @@ def create_rca():
         try:
             print("Attempting to generate RCA worksheet...")
             doc_path = generate_rca_worksheet(form)
+            filename = os.path.basename(doc_path)
+            
             print(f"RCA worksheet generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='rca',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_acronym.data,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
             flash('RCA worksheet generated successfully!', 'success')
-            return redirect(url_for('create_rca'))
+            return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating RCA worksheet: {e}")
             flash(f'Error generating RCA worksheet: {str(e)}', 'error')
