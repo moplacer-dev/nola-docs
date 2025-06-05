@@ -85,6 +85,20 @@
                                             <span>📋 Standards: {{ draft.form_data.standards|length }}</span>
                                         {% endif %}
                                     {% endif %}
+                                    {% if draft.form_type == 'moduleanswerkey' %}
+                                        {% if draft.form_data.pretest_questions %}
+                                            <span>📝 Pre-Test: {{ draft.form_data.pretest_questions|length }} questions</span>
+                                        {% endif %}
+                                        {% if draft.form_data.rca_sessions %}
+                                            <span>🔍 RCA Sessions: {{ draft.form_data.rca_sessions|length }}</span>
+                                        {% endif %}
+                                        {% if draft.form_data.posttest_questions %}
+                                            <span>📝 Post-Test: {{ draft.form_data.posttest_questions|length }} questions</span>
+                                        {% endif %}
+                                        {% if draft.form_data.vocabulary %}
+                                            <span>📚 Vocab: {{ draft.form_data.vocabulary|length }} terms</span>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="flex items-center space-x-3">
@@ -179,6 +193,18 @@
                                         📝 Edit
                                     </a>
                                     <form method="POST" action="/delete-moduleguide-draft/{{ draft.id }}" 
+                                          class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        <button type="submit" 
+                                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
+                                            🗑️ Delete
+                                        </button>
+                                    </form>
+                                {% elif draft.form_type == 'moduleanswerkey' %}
+                                    <a href="/load-moduleanswerkey-draft/{{ draft.id }}" 
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                        📝 Edit
+                                    </a>
+                                    <form method="POST" action="/delete-moduleanswerkey-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
