@@ -2371,8 +2371,8 @@ def generate_module_guide(form):
 def generate_module_answer_key(form):
     """Generate a Module Answer Key using docxtpl"""
     # Use a master template that never gets touched
-    master_template_path = 'templates/docx_templates/module_answer_key_master.docx'
-    working_template_path = 'templates/docx_templates/module_answer_key.docx'
+    master_template_path = 'templates/docx_templates/module_ak_master.docx'
+    working_template_path = 'templates/docx_templates/module_ak.docx'
     
     print(f"Looking for Module Answer Key master template at: {master_template_path}")
     
@@ -4507,6 +4507,184 @@ def autosave_rca_draft():
     except Exception as e:
         print(f"Error in RCA autosave: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+# Missing Load/Delete Draft Routes - CRITICAL FIX
+@app.route('/load-familybriefing-draft/<int:draft_id>')
+@login_required
+def load_familybriefing_draft(draft_id):
+    """Load family briefing draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_familybriefing'))
+    
+    try:
+        # Create form and populate with draft data
+        form = FamilyBriefingForm()
+        form_data = draft.form_data
+        
+        # Populate all form fields
+        form.module_name.data = form_data.get('module_name', '')
+        form.introsentence.data = form_data.get('introsentence', '')
+        form.learningobjective1.data = form_data.get('learningobjective1', '')
+        form.learningobjective2.data = form_data.get('learningobjective2', '')
+        form.learningobjective3.data = form_data.get('learningobjective3', '')
+        form.learningobjective4.data = form_data.get('learningobjective4', '')
+        form.activityname1.data = form_data.get('activityname1', '')
+        form.activityname2.data = form_data.get('activityname2', '')
+        form.activityname3.data = form_data.get('activityname3', '')
+        form.activityname4.data = form_data.get('activityname4', '')
+        form.activityname5.data = form_data.get('activityname5', '')
+        form.activityname6.data = form_data.get('activityname6', '')
+        form.activityname7.data = form_data.get('activityname7', '')
+        form.term1.data = form_data.get('term1', '')
+        form.term2.data = form_data.get('term2', '')
+        form.term3.data = form_data.get('term3', '')
+        form.term4.data = form_data.get('term4', '')
+        form.term5.data = form_data.get('term5', '')
+        form.term6.data = form_data.get('term6', '')
+        form.term7.data = form_data.get('term7', '')
+        form.term8.data = form_data.get('term8', '')
+        form.term9.data = form_data.get('term9', '')
+        form.term10.data = form_data.get('term10', '')
+        form.term11.data = form_data.get('term11', '')
+        form.term12.data = form_data.get('term12', '')
+        form.term13.data = form_data.get('term13', '')
+        form.term14.data = form_data.get('term14', '')
+        form.term15.data = form_data.get('term15', '')
+        form.term16.data = form_data.get('term16', '')
+        form.term17.data = form_data.get('term17', '')
+        form.term18.data = form_data.get('term18', '')
+        form.term19.data = form_data.get('term19', '')
+        form.term20.data = form_data.get('term20', '')
+        form.term21.data = form_data.get('term21', '')
+        form.keyconcept1_name.data = form_data.get('keyconcept1_name', '')
+        form.keyconcept1_explanation.data = form_data.get('keyconcept1_explanation', '')
+        form.keyconcept2_name.data = form_data.get('keyconcept2_name', '')
+        form.keyconcept2_explanation.data = form_data.get('keyconcept2_explanation', '')
+        form.keyconcept3_name.data = form_data.get('keyconcept3_name', '')
+        form.keyconcept3_explanation.data = form_data.get('keyconcept3_explanation', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_familybriefing.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading family briefing draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_familybriefing'))
+
+@app.route('/delete-familybriefing-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_familybriefing_draft(draft_id):
+    """Delete family briefing draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+@app.route('/load-rca-draft/<int:draft_id>')
+@login_required
+def load_rca_draft(draft_id):
+    """Load RCA worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='rca').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_rca'))
+    
+    try:
+        # Create form and populate with draft data
+        form = RCAWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate form fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        form.session_number.data = form_data.get('session_number', '')
+        
+        # Populate questions
+        questions_data = form_data.get('questions', [])
+        for i, question_data in enumerate(questions_data):
+            if i < len(form.questions):
+                form.questions[i].question_text.data = question_data.get('question_text', '')
+                form.questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.questions[i].choice_d.data = question_data.get('choice_d', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_rca.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading RCA draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_rca'))
+
+@app.route('/delete-rca-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_rca_draft(draft_id):
+    """Delete RCA worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='rca').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+@app.route('/load-generic-draft/<int:draft_id>')
+@login_required
+def load_generic_draft(draft_id):
+    """Load generic worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='generic').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_generic'))
+    
+    try:
+        # Create form and populate with draft data
+        form = GenericWorksheetForm()
+        form_data = draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        form.worksheet_title.data = form_data.get('worksheet_title', '')
+        
+        # Note: Dynamic field loading would require complex reconstruction
+        # For now, just load the basic fields and let user know about dynamic content
+        
+        flash(f'Draft "{draft.title}" loaded successfully! Note: Dynamic fields will need to be recreated.', 'success')
+        return render_template('create_generic.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading generic draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_generic'))
+
+@app.route('/delete-generic-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_generic_draft(draft_id):
+    """Delete generic worksheet draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='generic').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
