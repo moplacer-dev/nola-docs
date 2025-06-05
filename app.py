@@ -3814,80 +3814,98 @@ def autosave_moduleguide_draft():
         # Process standards
         standards_data = data.get('standards', [])
         for standard in standards_data:
-            if standard.get('standard'):
-                form_data['standards'].append({
-                    'standard': standard['standard']
-                })
+            # Check if standard is a valid dictionary (not None)
+            if standard and isinstance(standard, dict):
+                if standard.get('standard'):
+                    form_data['standards'].append({
+                        'standard': standard['standard']
+                    })
         
         # Process vocabulary terms
         vocab_data = data.get('vocab_terms', [])
         for term in vocab_data:
-            if term.get('term'):
-                form_data['vocab_terms'].append({
-                    'term': term['term']
-                })
+            # Check if term is a valid dictionary (not None)
+            if term and isinstance(term, dict):
+                if term.get('term'):
+                    form_data['vocab_terms'].append({
+                        'term': term['term']
+                    })
         
         # Process careers
         careers_data = data.get('careers', [])
         for career in careers_data:
-            if career.get('career'):
-                form_data['careers'].append({
-                    'career': career['career']
-                })
+            # Check if career is a valid dictionary (not None)
+            if career and isinstance(career, dict):
+                if career.get('career'):
+                    form_data['careers'].append({
+                        'career': career['career']
+                    })
         
         # Process sessions (7 sessions with complex structure)
         sessions_data = data.get('sessions', [])
         for session in sessions_data:
-            if session.get('focus') or session.get('goals') or session.get('materials') or session.get('preparations') or session.get('assessments'):
-                session_data = {
-                    'focus': session.get('focus', ''),
-                    'goals': [goal for goal in session.get('goals', []) if goal],
-                    'materials': [material for material in session.get('materials', []) if material],
-                    'preparations': [prep for prep in session.get('preparations', []) if prep],
-                    'assessments': [assessment for assessment in session.get('assessments', []) if assessment]
-                }
-                form_data['sessions'].append(session_data)
+            # Check if session is a valid dictionary (not None)
+            if session and isinstance(session, dict):
+                if session.get('focus') or session.get('goals') or session.get('materials') or session.get('preparations') or session.get('assessments'):
+                    session_data = {
+                        'focus': session.get('focus', ''),
+                        'goals': [goal for goal in session.get('goals', []) if goal],
+                        'materials': [material for material in session.get('materials', []) if material],
+                        'preparations': [prep for prep in session.get('preparations', []) if prep],
+                        'assessments': [assessment for assessment in session.get('assessments', []) if assessment]
+                    }
+                    form_data['sessions'].append(session_data)
         
         # Process enrichment activities
         enrichment_data = data.get('enrichment_activities', [])
         for activity in enrichment_data:
-            if activity.get('activity'):
-                form_data['enrichment_activities'].append({
-                    'activity': activity['activity']
-                })
+            # Check if activity is a valid dictionary (not None)
+            if activity and isinstance(activity, dict):
+                if activity.get('activity'):
+                    form_data['enrichment_activities'].append({
+                        'activity': activity['activity']
+                    })
         
         # Process locally sourced materials
         materials_data = data.get('locally_sourced_materials', [])
         for material in materials_data:
-            if material.get('material'):
-                form_data['locally_sourced_materials'].append({
-                    'material': material['material']
-                })
+            # Check if material is a valid dictionary (not None)
+            if material and isinstance(material, dict):
+                if material.get('material'):
+                    form_data['locally_sourced_materials'].append({
+                        'material': material['material']
+                    })
         
         # Process maintenance items
         maintenance_data = data.get('maintenance_items', [])
         for item in maintenance_data:
-            if item.get('item'):
-                form_data['maintenance_items'].append({
-                    'item': item['item']
-                })
+            # Check if item is a valid dictionary (not None)
+            if item and isinstance(item, dict):
+                if item.get('item'):
+                    form_data['maintenance_items'].append({
+                        'item': item['item']
+                    })
         
         # Process assembly instructions
         assembly_data = data.get('assembly_instructions', [])
         for instruction in assembly_data:
-            if instruction.get('instruction'):
-                form_data['assembly_instructions'].append({
-                    'instruction': instruction['instruction']
-                })
+            # Check if instruction is a valid dictionary (not None)
+            if instruction and isinstance(instruction, dict):
+                if instruction.get('instruction'):
+                    form_data['assembly_instructions'].append({
+                        'instruction': instruction['instruction']
+                    })
         
         # Process recommended websites
         websites_data = data.get('recommended_websites', [])
         for website in websites_data:
-            if website.get('title') or website.get('url'):
-                form_data['recommended_websites'].append({
-                    'title': website.get('title', ''),
-                    'url': website.get('url', '')
-                })
+            # Check if website is a valid dictionary (not None)
+            if website and isinstance(website, dict):
+                if website.get('title') or website.get('url'):
+                    form_data['recommended_websites'].append({
+                        'title': website.get('title', ''),
+                        'url': website.get('url', '')
+                    })
         
         # Check if this is updating an existing draft
         draft_id = data.get('draft_id')
@@ -4077,23 +4095,10 @@ def autosave_moduleanswerkey_draft():
         # Process pre-test questions
         pretest_data = data.get('pretest_questions', [])
         for question in pretest_data:
-            if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
-                form_data['pretest_questions'].append({
-                    'question_text': question.get('question_text', ''),
-                    'choice_a': question.get('choice_a', ''),
-                    'choice_b': question.get('choice_b', ''),
-                    'choice_c': question.get('choice_c', ''),
-                    'choice_d': question.get('choice_d', ''),
-                    'correct_answer': question.get('correct_answer', '')
-                })
-        
-        # Process RCA sessions (4 sessions with 3 questions each)
-        rca_data = data.get('rca_sessions', [])
-        for session in rca_data:
-            questions = []
-            for question in session.get('questions', []):
-                if question.get('question_text') or question.get('choice_a'):
-                    questions.append({
+            # Check if question is a valid dictionary (not None)
+            if question and isinstance(question, dict):
+                if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
+                    form_data['pretest_questions'].append({
                         'question_text': question.get('question_text', ''),
                         'choice_a': question.get('choice_a', ''),
                         'choice_b': question.get('choice_b', ''),
@@ -4101,60 +4106,89 @@ def autosave_moduleanswerkey_draft():
                         'choice_d': question.get('choice_d', ''),
                         'correct_answer': question.get('correct_answer', '')
                     })
-            
-            if questions:
-                form_data['rca_sessions'].append({
-                    'session_number': session.get('session_number', ''),
-                    'questions': questions
-                })
+        
+        # Process RCA sessions (4 sessions with 3 questions each)
+        rca_data = data.get('rca_sessions', [])
+        for session in rca_data:
+            # Check if session is a valid dictionary (not None)
+            if session and isinstance(session, dict):
+                questions = []
+                for question in session.get('questions', []):
+                    # Check if question is a valid dictionary (not None)
+                    if question and isinstance(question, dict):
+                        if question.get('question_text') or question.get('choice_a'):
+                            questions.append({
+                                'question_text': question.get('question_text', ''),
+                                'choice_a': question.get('choice_a', ''),
+                                'choice_b': question.get('choice_b', ''),
+                                'choice_c': question.get('choice_c', ''),
+                                'choice_d': question.get('choice_d', ''),
+                                'correct_answer': question.get('correct_answer', '')
+                            })
+                
+                if questions:
+                    form_data['rca_sessions'].append({
+                        'session_number': session.get('session_number', ''),
+                        'questions': questions
+                    })
         
         # Process post-test questions
         posttest_data = data.get('posttest_questions', [])
         for question in posttest_data:
-            if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
-                form_data['posttest_questions'].append({
-                    'question_text': question.get('question_text', ''),
-                    'choice_a': question.get('choice_a', ''),
-                    'choice_b': question.get('choice_b', ''),
-                    'choice_c': question.get('choice_c', ''),
-                    'choice_d': question.get('choice_d', ''),
-                    'correct_answer': question.get('correct_answer', '')
-                })
+            # Check if question is a valid dictionary (not None)
+            if question and isinstance(question, dict):
+                if question.get('question_text') or question.get('choice_a') or question.get('choice_b') or question.get('choice_c') or question.get('choice_d'):
+                    form_data['posttest_questions'].append({
+                        'question_text': question.get('question_text', ''),
+                        'choice_a': question.get('choice_a', ''),
+                        'choice_b': question.get('choice_b', ''),
+                        'choice_c': question.get('choice_c', ''),
+                        'choice_d': question.get('choice_d', ''),
+                        'correct_answer': question.get('correct_answer', '')
+                    })
         
         # Process PBA sessions
         pba_data = data.get('pba_sessions', [])
         for session in pba_data:
-            questions = []
-            for question in session.get('assessment_questions', []):
-                if question.get('question') or question.get('correct_answer'):
-                    questions.append({
-                        'question': question.get('question', ''),
-                        'correct_answer': question.get('correct_answer', '')
+            # Check if session is a valid dictionary (not None)
+            if session and isinstance(session, dict):
+                questions = []
+                for question in session.get('assessment_questions', []):
+                    # Check if question is a valid dictionary (not None)
+                    if question and isinstance(question, dict):
+                        if question.get('question') or question.get('correct_answer'):
+                            questions.append({
+                                'question': question.get('question', ''),
+                                'correct_answer': question.get('correct_answer', '')
+                            })
+                
+                if session.get('session_number') or session.get('activity_name') or questions:
+                    form_data['pba_sessions'].append({
+                        'session_number': session.get('session_number', ''),
+                        'activity_name': session.get('activity_name', ''),
+                        'assessment_questions': questions
                     })
-            
-            if session.get('session_number') or session.get('activity_name') or questions:
-                form_data['pba_sessions'].append({
-                    'session_number': session.get('session_number', ''),
-                    'activity_name': session.get('activity_name', ''),
-                    'assessment_questions': questions
-                })
         
         # Process vocabulary terms
         vocab_data = data.get('vocabulary', [])
         for term in vocab_data:
-            if term.get('term') or term.get('definition'):
-                form_data['vocabulary'].append({
-                    'term': term.get('term', ''),
-                    'definition': term.get('definition', '')
-                })
+            # Check if term is a valid dictionary (not None)
+            if term and isinstance(term, dict):
+                if term.get('term') or term.get('definition'):
+                    form_data['vocabulary'].append({
+                        'term': term.get('term', ''),
+                        'definition': term.get('definition', '')
+                    })
         
         # Process portfolio checklist
         portfolio_data = data.get('portfolio_checklist', [])
         for item in portfolio_data:
-            if item.get('item'):
-                form_data['portfolio_checklist'].append({
-                    'item': item.get('item', '')
-                })
+            # Check if item is a valid dictionary (not None)
+            if item and isinstance(item, dict):
+                if item.get('item'):
+                    form_data['portfolio_checklist'].append({
+                        'item': item.get('item', '')
+                    })
         
         # Check if this is updating an existing draft
         draft_id = data.get('draft_id')
@@ -4298,6 +4332,181 @@ def delete_moduleanswerkey_draft(draft_id):
         flash('Draft deleted successfully!', 'success')
     
     return redirect(url_for('drafts'))
+
+@app.route('/autosave-familybriefing-draft', methods=['POST'])
+@login_required
+def autosave_familybriefing_draft():
+    """AJAX endpoint for autosaving family briefing draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_name': data.get('module_name', ''),
+            'introsentence': data.get('introsentence', ''),
+            'learningobjective1': data.get('learningobjective1', ''),
+            'learningobjective2': data.get('learningobjective2', ''),
+            'learningobjective3': data.get('learningobjective3', ''),
+            'learningobjective4': data.get('learningobjective4', ''),
+            'activityname1': data.get('activityname1', ''),
+            'activityname2': data.get('activityname2', ''),
+            'activityname3': data.get('activityname3', ''),
+            'activityname4': data.get('activityname4', ''),
+            'activityname5': data.get('activityname5', ''),
+            'activityname6': data.get('activityname6', ''),
+            'activityname7': data.get('activityname7', ''),
+            'term1': data.get('term1', ''),
+            'term2': data.get('term2', ''),
+            'term3': data.get('term3', ''),
+            'term4': data.get('term4', ''),
+            'term5': data.get('term5', ''),
+            'term6': data.get('term6', ''),
+            'term7': data.get('term7', ''),
+            'term8': data.get('term8', ''),
+            'term9': data.get('term9', ''),
+            'term10': data.get('term10', ''),
+            'term11': data.get('term11', ''),
+            'term12': data.get('term12', ''),
+            'term13': data.get('term13', ''),
+            'term14': data.get('term14', ''),
+            'term15': data.get('term15', ''),
+            'term16': data.get('term16', ''),
+            'term17': data.get('term17', ''),
+            'term18': data.get('term18', ''),
+            'term19': data.get('term19', ''),
+            'term20': data.get('term20', ''),
+            'term21': data.get('term21', ''),
+            'keyconcept1_name': data.get('keyconcept1_name', ''),
+            'keyconcept1_explanation': data.get('keyconcept1_explanation', ''),
+            'keyconcept2_name': data.get('keyconcept2_name', ''),
+            'keyconcept2_explanation': data.get('keyconcept2_explanation', ''),
+            'keyconcept3_name': data.get('keyconcept3_name', ''),
+            'keyconcept3_explanation': data.get('keyconcept3_explanation', '')
+        }
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_name']:
+                    draft.title = f"Family Briefing - {form_data['module_name']}"
+                    draft.module_acronym = form_data['module_name']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Family Briefing - {form_data['module_name']}" if form_data['module_name'] else "Family Briefing - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='familybriefing',
+                title=title,
+                module_acronym=form_data['module_name'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in family briefing autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/autosave-rca-draft', methods=['POST'])
+@login_required
+def autosave_rca_draft():
+    """AJAX endpoint for autosaving RCA worksheet draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'session_number': data.get('session_number', ''),
+            'questions': []
+        }
+        
+        # Process RCA questions (Research, Challenge, Application)
+        questions_data = data.get('questions', [])
+        for question_data in questions_data:
+            question_text = question_data.get('question_text', '').strip()
+            choice_a = question_data.get('choice_a', '').strip()
+            choice_b = question_data.get('choice_b', '').strip()
+            choice_c = question_data.get('choice_c', '').strip()
+            choice_d = question_data.get('choice_d', '').strip()
+            
+            # Only include questions with some content
+            if question_text or choice_a or choice_b or choice_c or choice_d:
+                form_data['questions'].append({
+                    'question_text': question_text,
+                    'choice_a': choice_a,
+                    'choice_b': choice_b,
+                    'choice_c': choice_c,
+                    'choice_d': choice_d
+                })
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='rca').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title based on form data
+                if form_data['module_acronym'] or form_data['session_number']:
+                    draft.title = f"RCA Worksheet - {form_data['module_acronym']} Session {form_data['session_number']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title_parts = []
+            if form_data['module_acronym']:
+                title_parts.append(form_data['module_acronym'])
+            if form_data['session_number']:
+                title_parts.append(f"Session {form_data['session_number']}")
+            
+            title = f"RCA Worksheet - {' '.join(title_parts)}" if title_parts else "RCA Worksheet - Untitled"
+            
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='rca',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in RCA autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
