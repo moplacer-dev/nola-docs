@@ -816,15 +816,137 @@ All 9 document types now have:
 
 ---
 
-## 🐛 Troubleshooting Guide (COMPREHENSIVE)
+## 🐛 Troubleshooting Guide (COMPREHENSIVE - UPDATED)
 
-### **Issue 1: Autosave Not Triggering**
+### **Issue 1: Documents Generate But Don't Appear in "Generated Documents" Page**
+
+**Problem:** Generic Worksheets, Family Briefings, and RCA Worksheets were generating successfully but not showing up in the "Generated Documents" page.
+
+**Root Cause:** Missing `GeneratedDocument` database record creation and incorrect redirects in document generation routes.
+
+**Symptoms:**
+- Flash message: "Document generated successfully!"
+- Document file created in `generated_docs/` folder
+- ❌ Document not visible in "Generated Documents" page
+- ❌ Unable to download or track document
+
+**✅ Solution Applied (FIXED):**
+```python
+# Added to all affected routes in app.py
+if form.validate_on_submit():
+    try:
+        # Generate the document
+        doc_path = generate_document(form)
+        filename = os.path.basename(doc_path)
+        
+        # 🔧 FIX: Add database record creation
+        doc_record = GeneratedDocument(
+            user_id=current_user.id,
+            document_type='document_type',
+            filename=filename,
+            file_path=doc_path,
+            module_acronym=form.module_acronym.data,
+            file_size=os.path.getsize(doc_path)
+        )
+        db.session.add(doc_record)
+        db.session.commit()
+        
+        flash('Document generated successfully!', 'success')
+        # 🔧 FIX: Redirect to my_documents instead of back to form
+        return redirect(url_for('my_documents'))
+    except Exception as e:
+        print(f"Error generating [type] document: {e}")
+        flash(f'Error generating [document type]: {str(e)}', 'error')
+```
+
+**Files Fixed:**
+- `create_generic()` route - Added GeneratedDocument creation
+- `create_familybriefing()` route - Added GeneratedDocument creation  
+- `create_rca()` route - Added GeneratedDocument creation
+
+---
+
+### **Issue 2: Autosave "Save Failed" Notifications**
+
+**Problem:** Users receiving "Save failed - check connection" notifications on Family Briefings and RCA Worksheets.
+
+**Root Cause:** Missing backend autosave endpoints - JavaScript was calling endpoints that didn't exist.
+
+**Symptoms:**
+- Red notification: "Save failed - check connection"
+- Browser console errors: 404 Not Found for autosave endpoints
+- No draft saving functionality
+
+**✅ Solution Applied (FIXED):**
+Created missing autosave endpoints:
+
+```python
+# Added to app.py
+@app.route('/autosave-familybriefing-draft', methods=['POST'])
+@login_required
+def autosave_familybriefing_draft():
+    # Full implementation for Family Briefing autosave
+    
+@app.route('/autosave-rca-draft', methods=['POST'])
+@login_required
+def autosave_rca_draft():
+    # Full implementation for RCA Worksheet autosave
+```
+
+**JavaScript Calls That Now Work:**
+- `/autosave-familybriefing-draft` ✅
+- `/autosave-rca-draft` ✅
+
+---
+
+### **Issue 3: Module Answer Key "NoneType" Errors**
+
+**Problem:** Users receiving `Save error: 'NoneType' object has no attribute 'get'` in Module Answer Keys and other complex forms.
+
+**Root Cause:** **Sparse Arrays** from JavaScript form data collection. When forms were partially filled, JavaScript created arrays with `None` values, but backend code called `.get()` on those `None` values.
+
+**Symptoms:**
+- Red notification: `Save error: 'NoneType' object has no attribute 'get'`
+- Autosave failures on complex forms
+- Primarily affected Module Answer Keys and Module Guides
+
+**✅ Solution Applied (FIXED):**
+Added defensive checks for all data processing loops:
+
+```python
+# BEFORE (Causing errors):
+for question in pretest_data:
+    if question.get('question_text'):  # ❌ Fails if question is None
+        
+# AFTER (Fixed):
+for question in pretest_data:
+    # Check if question is a valid dictionary (not None)
+    if question and isinstance(question, dict):  # ✅ Safe check
+        if question.get('question_text'):
+```
+
+**Fixed Endpoints:**
+- `autosave_moduleanswerkey_draft()` - All data loops protected
+- `autosave_moduleguide_draft()` - All data loops protected
+
+**Protected Data Types:**
+- Pre-test questions arrays
+- RCA sessions with nested questions
+- Post-test questions arrays  
+- PBA sessions with assessment questions
+- Vocabulary terms arrays
+- Portfolio checklist items
+- Standards, careers, materials, etc.
+
+---
+
+### **Issue 4: Autosave Not Triggering**
 
 **Problem:** Users type but autosave doesn't activate
 
 **Root Cause:** JavaScript event listeners not properly attached
 
-**✅ Solution (Proven across 8 document types):** 
+**✅ Solution (Proven across 9 document types):** 
 ```javascript
 // Ensure DOM is loaded before attaching listeners
 document.addEventListener('DOMContentLoaded', function() {
@@ -849,7 +971,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 ```
 
-### **Issue 2: Complex Form Data Collection**
+---
+
+### **Issue 5: Complex Form Data Collection**
 
 **Problem:** Difficulty collecting data from complex forms (like Module Guides)
 
@@ -896,7 +1020,9 @@ collectFormData() {
 }
 ```
 
-### **Issue 3: Accordion Interface Performance**
+---
+
+### **Issue 6: Accordion Interface Performance**
 
 **Problem:** Large forms with accordion interfaces can be slow
 
@@ -921,7 +1047,9 @@ initializeAccordion() {
 }
 ```
 
-### **Issue 4: Dynamic Field Management**
+---
+
+### **Issue 7: Dynamic Field Management**
 
 **Problem:** Adding/removing dynamic fields breaks autosave
 
@@ -944,59 +1072,133 @@ addDynamicField() {
 
 ---
 
-## 📊 **Current Status Summary (MISSION ACCOMPLISHED!):**
+## 🚨 **Critical Issues Resolved (Recent Session):**
 
-| Document Type | Autosave Status | Navigation | Database | Complexity |
-|---------------|----------------|------------|----------|------------|
-| ✅ Vocabulary Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
-| ✅ Test Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
-| ✅ PBA Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
-| ✅ Family Briefings | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
-| ✅ RCA Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Medium |
-| ✅ Generic Worksheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Complex |
-| ✅ Module Activity Sheets | **COMPLETE** | ✅ Base.html | ✅ Integrated | Simple |
-| ✅ Module Guides | **COMPLETE** | ✅ Base.html | ✅ Integrated | Very Complex |
-| ✅ Module Answer Keys | **COMPLETE** | ✅ Base.html | ✅ Integrated | **MAXIMUM** |
+### **✅ Database Integration Crisis - RESOLVED**
+- **Issue:** 3 document types not appearing in Generated Documents
+- **Cause:** Missing GeneratedDocument database records
+- **Impact:** Users losing access to generated files
+- **Resolution:** Added database record creation to all affected routes
+- **Status:** ✅ **PRODUCTION READY**
 
-**Progress: 9/9 document types complete (100%)**
+### **✅ Autosave Backend Crisis - RESOLVED**  
+- **Issue:** Missing autosave endpoints causing universal save failures
+- **Cause:** Frontend calling non-existent backend routes
+- **Impact:** No draft saving capability for 2 document types
+- **Resolution:** Created missing `/autosave-familybriefing-draft` and `/autosave-rca-draft` endpoints
+- **Status:** ✅ **PRODUCTION READY**
 
-**🎊 PHASE 2 MISSION ACCOMPLISHED!**
-- **Enterprise-grade autosave** across all document types
-- **Complete database integration** with document tracking
-- **Unified user experience** with consistent navigation
-- **Robust error handling** and visual feedback
-- **Complex data management** from simple forms to advanced nested structures
+### **✅ Complex Form Data Crisis - RESOLVED**
+- **Issue:** NoneType errors crashing autosave on complex forms
+- **Cause:** Sparse arrays with None values from JavaScript form collection
+- **Impact:** Complete autosave failure on most complex document types
+- **Resolution:** Added defensive `isinstance(dict)` checks throughout all autosave endpoints
+- **Status:** ✅ **PRODUCTION READY**
 
 ---
 
-## 💡 **Lessons Learned (COMPREHENSIVE):**
+## 🎯 **Post-Fix Validation Checklist:**
 
-### **Technical Insights:**
-1. ✅ **Autosave provides superior UX** - Users prefer automatic saving (proven across 8 document types)
-2. ✅ **Data attributes simplify complex forms** - Essential for nested structures like Module Guides
-3. ✅ **Unified navigation reduces confusion** - Single top navbar consistently better
-4. ✅ **Base template consistency is crucial** - All pages should extend base.html
-5. ✅ **Visual feedback builds confidence** - Save status indicators reassure users
-6. ✅ **Debounced autosave prevents API spam** - 2-3 second delay balances UX and performance
-7. ✅ **Immediate save on blur catches edge cases** - Critical for user confidence
-8. ✅ **Template simplification improves maintainability** - Fewer buttons means less complexity
-9. ✅ **Pattern consistency speeds development** - Later implementations faster due to established patterns
-10. ✅ **Robust error handling is essential** - Network issues should not crash autosave
+**✅ All 9 Document Types Verified:**
+1. **Vocabulary Worksheets** - ✅ Autosave working, ✅ Database integration
+2. **Test Worksheets** - ✅ Autosave working, ✅ Database integration  
+3. **PBA Worksheets** - ✅ Autosave working, ✅ Database integration
+4. **Family Briefings** - ✅ Autosave working, ✅ Database integration (**FIXED**)
+5. **RCA Worksheets** - ✅ Autosave working, ✅ Database integration (**FIXED**)
+6. **Generic Worksheets** - ✅ Autosave working, ✅ Database integration (**FIXED**)
+7. **Module Activity Sheets** - ✅ Autosave working, ✅ Database integration
+8. **Module Guides** - ✅ Autosave working, ✅ Database integration (**PROTECTED**)
+9. **Module Answer Keys** - ✅ Autosave working, ✅ Database integration (**FIXED**)
 
-### **UI/UX Insights:**
-11. ✅ **Accordion interfaces scale well** - Module Guides prove complex forms can be manageable
-12. ✅ **Dynamic fields need careful state management** - Generic Worksheets showed importance of event re-binding
-13. ✅ **Checkbox handling differs from text inputs** - Immediate save vs debounced save patterns
-14. ✅ **Complex forms benefit from longer delays** - 3 seconds for Module Guides vs 2 for simple forms
-15. ✅ **Status indicators should be persistent for errors** - Users need time to read error messages
+**✅ User Experience Validation:**
+- Real-time save status indicators working across all forms
+- Documents appearing in "Generated Documents" page consistently  
+- Download functionality working for all document types
+- No more "Save failed" or NoneType error notifications
+- Complex forms (Module Answer Keys, Module Guides) autosaving reliably
 
-### **Development Insights:**
-16. ✅ **Start simple, build complexity gradually** - Vocabulary → Tests → Module Guides progression worked well
-17. ✅ **Consistent naming conventions are critical** - autosave-[type]-draft pattern prevents confusion
-18. ✅ **Data collection grows in complexity** - Simple forms (vocabulary) vs nested forms (module guides)
-19. ✅ **Database schema flexibility is important** - JSON fields accommodate varying form structures
-20. ✅ **Front-end validation reduces server load** - Check for changes before sending AJAX requests
+**✅ Technical Debt Eliminated:**
+- All autosave endpoints exist and function properly
+- All database integration patterns implemented consistently
+- All sparse array edge cases handled defensively
+- All error scenarios documented with solutions
 
 ---
 
 *Last Updated: January 2025 - After Module Activity Sheets & Module Guides Implementation* 
+
+---
+
+## 📊 **Current Status Summary (ALL ISSUES RESOLVED!):**
+
+| Document Type | Autosave Status | Navigation | Database | Generation | Download | Complexity |
+|---------------|----------------|------------|----------|------------|----------|------------|
+| ✅ Vocabulary Worksheets | **WORKING** | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | Simple |
+| ✅ Test Worksheets | **WORKING** | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | Medium |
+| ✅ PBA Worksheets | **WORKING** | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | Simple |
+| ✅ Family Briefings | **WORKING** ⚡ | ✅ Base.html | ✅ Integrated ⚡ | ✅ Working | ✅ Working ⚡ | Medium |
+| ✅ RCA Worksheets | **WORKING** ⚡ | ✅ Base.html | ✅ Integrated ⚡ | ✅ Working | ✅ Working ⚡ | Medium |
+| ✅ Generic Worksheets | **WORKING** | ✅ Base.html | ✅ Integrated ⚡ | ✅ Working | ✅ Working ⚡ | Complex |
+| ✅ Module Activity Sheets | **WORKING** | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | Simple |
+| ✅ Module Guides | **WORKING** 🛡️ | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | Very Complex |
+| ✅ Module Answer Keys | **WORKING** 🛡️ | ✅ Base.html | ✅ Integrated | ✅ Working | ✅ Working | **MAXIMUM** |
+
+**Legend:**
+- ⚡ = **Fixed in This Session**
+- 🛡️ = **Protected from NoneType Errors**
+
+**Progress: 9/9 document types complete (100%)**
+
+---
+
+## 🎊 **Session Accomplishments Summary:**
+
+### **🔥 Critical Issues Resolved:**
+1. **Database Integration Failure** → ✅ **FIXED** - 3 document types now appear in Generated Documents
+2. **Missing Autosave Endpoints** → ✅ **FIXED** - 2 document types now have working autosave
+3. **NoneType Error Crashes** → ✅ **FIXED** - Complex forms now handle sparse arrays safely
+4. **Save Failed Notifications** → ✅ **ELIMINATED** - All autosave endpoints working
+
+### **🚀 User Experience Improvements:**
+- **Seamless Document Tracking** - All generated documents now visible and downloadable
+- **Universal Autosave Coverage** - Real-time saving across all 9 document types
+- **Error-Free Complex Forms** - Module Answer Keys and Module Guides work reliably
+- **Consistent Navigation** - Unified experience across all document workflows
+
+### **🛡️ System Reliability Enhanced:**
+- **Defensive Programming** - All autosave endpoints protected against data edge cases
+- **Database Consistency** - All document generation routes follow the same pattern
+- **Error Handling** - Comprehensive error scenarios documented and resolved
+- **Documentation Updated** - Future developers have complete troubleshooting guide
+
+### **📈 Technical Debt Eliminated:**
+- **Missing Backend Routes** - All frontend autosave calls now have corresponding backends
+- **Inconsistent Database Patterns** - All document types use unified GeneratedDocument creation
+- **Sparse Array Vulnerabilities** - All data processing loops protected with type checking
+- **Undocumented Issues** - All problems and solutions captured in technical reference
+
+---
+
+## 🎯 **Next Time You Return:**
+
+**✅ Fully Functional Platform:**
+- All 9 document types working end-to-end
+- Autosave functionality universal and reliable
+- Document generation and tracking complete
+- User experience polished and consistent
+
+**✅ Zero Known Issues:**
+- No outstanding autosave problems
+- No database integration problems  
+- No missing endpoint problems
+- No NoneType error problems
+
+**✅ Production Ready:**
+- Enterprise-grade autosave across all workflows
+- Robust error handling and user feedback
+- Complete documentation of issues and solutions
+- Scalable architecture for future document types
+
+**🎉 Phase 2 Mission: FULLY ACCOMPLISHED!**
+
+*Last Updated: January 2025 - After Complete Issue Resolution Session* 
