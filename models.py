@@ -91,7 +91,8 @@ class FormDraft(db.Model):
             'rca': 'RCA Worksheet',
             'generic': 'Generic Worksheet',
             'moduleactivity': 'Module Activity Sheet',
-            'moduleguide': 'Module Guide'
+            'moduleguide': 'Module Guide',
+            'horizontal_lesson_plan': 'Horizontal Lesson Plan'
         }
         return type_map.get(self.form_type, self.form_type.title())
     
@@ -145,7 +146,8 @@ class GeneratedDocument(db.Model):
             'rca': 'RCA Worksheet',
             'moduleGuide': 'Module Guide',
             'moduleAnswerKey': 'Module Answer Key',
-            'moduleActivitySheet': 'Module Activity Sheet'
+            'moduleActivitySheet': 'Module Activity Sheet',
+            'horizontal_lesson_plan': 'Horizontal Lesson Plan'
         }
         return type_map.get(self.document_type, self.document_type.title())
     

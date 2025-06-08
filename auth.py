@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import generate_csrf, validate_csrf
 from models import User, db, ActivityLog
 from werkzeug.security import generate_password_hash
 from datetime import datetime
@@ -160,4 +161,53 @@ def admin_users():
         return redirect(url_for('dashboard'))
     
     users = User.query.order_by(User.created_at.desc()).all()
-    return render_template('auth/admin_users.html', users=users) 
+    return render_template('auth/admin_users.html', users=users, csrf_token=generate_csrf())
+
+@auth.route('/admin/remove-user/<int:user_id>', methods=['POST'])
+@login_required
+def remove_user(user_id):
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Validate CSRF token
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except:
+        flash('Invalid security token. Please try again.', 'error')
+        return redirect(url_for('auth.admin_users'))
+    
+    # Get the user to be removed
+    user_to_remove = User.query.get_or_404(user_id)
+    
+    # Safety checks
+    if user_to_remove.id == current_user.id:
+        flash('You cannot remove yourself.', 'error')
+        return redirect(url_for('auth.admin_users'))
+    
+    # Check if this is the last admin
+    if user_to_remove.is_admin:
+        admin_count = User.query.filter_by(is_admin=True).count()
+        if admin_count <= 1:
+            flash('Cannot remove the last admin user.', 'error')
+            return redirect(url_for('auth.admin_users'))
+    
+    try:
+        # Log the user removal activity
+        ActivityLog.log_activity('user_removed', current_user.id, 
+                                {'removed_user_email': user_to_remove.email, 
+                                 'removed_user_username': user_to_remove.username,
+                                 'was_admin': user_to_remove.is_admin}, request)
+        
+        # Remove the user (related data will be deleted via CASCADE)
+        username = user_to_remove.username
+        db.session.delete(user_to_remove)
+        db.session.commit()
+        
+        flash(f'User {username} has been removed successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error removing user: {str(e)}', 'error')
+    
+    return redirect(url_for('auth.admin_users')) 

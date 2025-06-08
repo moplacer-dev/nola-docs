@@ -11,6 +11,8 @@ import os
 import shutil
 import tempfile
 from datetime import datetime
+import PyPDF2
+import re
 
 # Add database and authentication imports
 from flask_sqlalchemy import SQLAlchemy
@@ -716,6 +718,89 @@ class ModuleActivitySheetForm(FlaskForm):
     
     submit = SubmitField('Generate Module Activity Sheet')
 
+# ===== HORIZONTAL LESSON PLAN FORMS =====
+
+class HorizontalLessonPlanSessionForm(FlaskForm):
+    class Meta:
+        csrf = False  # Disable CSRF for nested forms
+    
+    focus = TextAreaField('Session Focus', validators=[Optional(), Length(max=500)])
+    objectives = TextAreaField('Learning Objectives', validators=[Optional(), Length(max=1000)])
+    materials = TextAreaField('Materials', validators=[Optional(), Length(max=1000)])
+    teacher_prep = TextAreaField('Teacher Preparations', validators=[Optional(), Length(max=1000)])
+    assessments = TextAreaField('Performance Based Assessments', validators=[Optional(), Length(max=1000)])
+
+class HorizontalLessonPlanModuleForm(FlaskForm):
+    class Meta:
+        csrf = False  # Disable CSRF for nested forms
+    
+    module_name = StringField('Module Name', validators=[Optional(), Length(max=200)])
+    
+    # PDF upload for this module
+    session_notes_pdf = FileField('Session Notes PDF', validators=[
+        FileAllowed(['pdf'], 'PDF files only!')
+    ])
+    
+    # 7 sessions for this module
+    sessions = FieldList(FormField(HorizontalLessonPlanSessionForm), min_entries=7, max_entries=7)
+    
+    enrichment_activities = TextAreaField('Enrichment Activities', validators=[Optional(), Length(max=1000)])
+
+class HorizontalLessonPlanForm(FlaskForm):
+    # Basic information
+    school_name = StringField('School Name', 
+                             validators=[DataRequired(), Length(min=1, max=200)],
+                             render_kw={"placeholder": "e.g., Jefferson Elementary School"})
+    
+    teacher_name = StringField('Teacher Name', 
+                              validators=[DataRequired(), Length(min=1, max=100)],
+                              render_kw={"placeholder": "e.g., Ms. Johnson"})
+    
+    term = StringField('Term', 
+                      validators=[DataRequired(), Length(min=1, max=50)],
+                      render_kw={"placeholder": "e.g., Fall 2024, Spring 2025"})
+    
+    # Up to 5 modules
+    modules = FieldList(FormField(HorizontalLessonPlanModuleForm), min_entries=5, max_entries=5)
+    
+    submit = SubmitField('Generate Horizontal Lesson Plan')
+    
+    def validate(self, extra_validators=None):
+        """Custom validation to ensure at least one module has data"""
+        if not super().validate(extra_validators=extra_validators):
+            return False
+            
+        # Check if this is an extraction request - if so, allow validation to pass if PDFs are uploaded
+        action = request.form.get('action', 'generate') if request else 'generate'
+        
+        if action == 'extract':
+            # For extraction, check if at least one PDF is uploaded
+            has_pdf = False
+            for module in self.modules:
+                if module.session_notes_pdf.data and module.session_notes_pdf.data.filename:
+                    has_pdf = True
+                    break
+            
+            if not has_pdf:
+                self.modules[0].session_notes_pdf.errors.append('Please upload at least one PDF file to extract data from.')
+                return False
+            
+            return True
+        
+        # For other actions (generate/save_draft), check if at least one module has data
+        has_module_data = False
+        for module in self.modules:
+            if module.module_name.data or any(session.focus.data or session.objectives.data 
+                                            for session in module.sessions):
+                has_module_data = True
+                break
+        
+        if not has_module_data:
+            self.modules[0].module_name.errors.append('Please provide data for at least one module.')
+            return False
+            
+        return True
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -1253,6 +1338,177 @@ def create_module_activity_sheet():
             flash(f'Error generating Module Activity Sheet: {str(e)}', 'error')
     
     return render_template('create_moduleActivitySheet.html', form=form)
+
+@app.route('/create-horizontal-lesson-plan', methods=['GET', 'POST'])
+@login_required
+def create_horizontal_lesson_plan():
+    form = HorizontalLessonPlanForm()
+    
+    if request.method == 'POST':
+        print("Horizontal Lesson Plan form submitted!")
+        print(f"Form valid: {form.validate_on_submit()}")
+        if form.errors:
+            print(f"Form errors: {form.errors}")
+    
+    if form.validate_on_submit():
+        print("Horizontal Lesson Plan form validation passed!")
+        
+        # Check which action was clicked
+        action = request.form.get('action', 'generate')
+        print(f"Action clicked: {action}")
+        
+        if action == 'save_draft':
+            # Handle draft saving
+            try:
+                # Prepare form data for JSON storage
+                form_data = {
+                    'school_name': form.school_name.data,
+                    'teacher_name': form.teacher_name.data,
+                    'term': form.term.data,
+                    'modules': []
+                }
+                
+                # Process modules
+                for module in form.modules:
+                    if module.module_name.data or any(session.focus.data or session.objectives.data 
+                                                    for session in module.sessions):
+                        module_data = {
+                            'module_name': module.module_name.data,
+                            'enrichment_activities': module.enrichment_activities.data,
+                            'sessions': []
+                        }
+                        
+                        # Process sessions
+                        for session in module.sessions:
+                            session_data = {
+                                'focus': session.focus.data,
+                                'objectives': session.objectives.data,
+                                'materials': session.materials.data,
+                                'teacher_prep': session.teacher_prep.data,
+                                'assessments': session.assessments.data
+                            }
+                            module_data['sessions'].append(session_data)
+                        
+                        form_data['modules'].append(module_data)
+                
+                # Check if this is updating an existing draft
+                draft_id = request.form.get('draft_id')
+                if draft_id:
+                    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
+                    if draft:
+                        # Update existing draft
+                        draft.form_data = form_data
+                        draft.updated_at = datetime.utcnow()
+                    else:
+                        flash('Draft not found', 'error')
+                        return render_template('create_horizontal_lesson_plan.html', form=form)
+                else:
+                    # Create new draft
+                    title = f"Horizontal Lesson Plan - {form.school_name.data}" if form.school_name.data else "Horizontal Lesson Plan - Untitled"
+                    draft = FormDraft(
+                        user_id=current_user.id,
+                        form_type='horizontal_lesson_plan',
+                        title=title,
+                        form_data=form_data
+                    )
+                    db.session.add(draft)
+                
+                db.session.commit()
+                flash('Draft saved successfully!', 'success')
+                return render_template('create_horizontal_lesson_plan.html', form=form, draft_id=draft.id)
+                
+            except Exception as e:
+                print(f"Error saving draft: {e}")
+                flash(f'Error saving draft: {str(e)}', 'error')
+                return render_template('create_horizontal_lesson_plan.html', form=form)
+        
+        elif action == 'extract':
+            # Extract data from uploaded PDFs
+            try:
+                print("Extracting data from PDFs...")
+                extracted_count = 0
+                
+                for i, module in enumerate(form.modules):
+                    if module.session_notes_pdf.data and module.session_notes_pdf.data.filename:
+                        print(f"Processing PDF for module {i+1}...")
+                        try:
+                            # Extract text from PDF
+                            pdf_text = extract_pdf_text(module.session_notes_pdf.data)
+                            print(f"Extracted text length: {len(pdf_text)}")
+                            
+                            # Parse session data using improved extraction
+                            extracted_data = extract_session_data_from_text(pdf_text)
+                            
+                            print(f"DEBUG: Extracted data for module {i+1}:")
+                            print(f"  Module name: {extracted_data.get('module_name', 'None')}")
+                            print(f"  Enrichment: {extracted_data.get('enrichment', 'None')}")
+                            print(f"  Sessions found: {len(extracted_data.get('sessions', []))}")
+                            
+                            # Populate form fields with extracted data
+                            if extracted_data.get('module_name'):
+                                module.module_name.data = extracted_data['module_name']
+                                print(f"  Set module name: {extracted_data['module_name']}")
+                            
+                            if extracted_data.get('enrichment'):
+                                module.enrichment_activities.data = extracted_data['enrichment']
+                                print(f"  Set enrichment: {extracted_data['enrichment'][:50]}...")
+                            
+                            # Populate session data
+                            sessions_data = extracted_data.get('sessions', [])
+                            for j, session_data in enumerate(sessions_data[:7]):  # Max 7 sessions
+                                if j < len(module.sessions):
+                                    print(f"    Session {j+1}: focus='{session_data.get('focus', '')[:30]}...', objectives='{session_data.get('objectives', '')[:30]}...'")
+                                    module.sessions[j].focus.data = session_data.get('focus', '')
+                                    module.sessions[j].objectives.data = session_data.get('objectives', '')
+                                    module.sessions[j].materials.data = session_data.get('materials', '')
+                                    module.sessions[j].teacher_prep.data = session_data.get('teacher_prep', '')
+                                    module.sessions[j].assessments.data = session_data.get('assessments', '')
+                            
+                            extracted_count += 1
+                            
+                        except Exception as e:
+                            print(f"Error processing PDF for module {i+1}: {e}")
+                            flash(f'Error processing PDF for module {i+1}: {str(e)}', 'warning')
+                
+                if extracted_count > 0:
+                    flash(f'Data extracted from {extracted_count} PDF(s) successfully! Review and edit the data below.', 'success')
+                else:
+                    flash('No valid PDFs found to extract data from.', 'warning')
+                
+            except Exception as e:
+                print(f"Error during extraction: {e}")
+                flash(f'Error extracting data: {str(e)}', 'error')
+                
+            # Return to form with populated data
+            return render_template('create_horizontal_lesson_plan.html', form=form)
+            
+        else:  # action == 'generate' or default
+            # Generate the document
+            try:
+                print("Attempting to generate Horizontal Lesson Plan...")
+                doc_path, filename = generate_horizontal_lesson_plan(form)
+                
+                print(f"Horizontal Lesson Plan generated at: {doc_path}")
+                
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='horizontal_lesson_plan',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=None,  # This form doesn't have a single module acronym
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                flash('Horizontal Lesson Plan generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"Error generating Horizontal Lesson Plan: {e}")
+                flash(f'Error generating Horizontal Lesson Plan: {str(e)}', 'error')
+    
+    return render_template('create_horizontal_lesson_plan.html', form=form)
 
 @app.route('/load-moduleactivity-draft/<int:draft_id>')
 @login_required
@@ -3140,6 +3396,491 @@ def generate_module_activity_sheet(form):
         except Exception as e:
             print(f"Warning: Could not clean up temporary file {temp_template_path}: {e}")
 
+def extract_pdf_text(pdf_file):
+    """Extract text from uploaded PDF file"""
+    try:
+        # Reset file pointer to beginning
+        pdf_file.seek(0)
+        
+        # Create a PDF reader object
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        
+        # Extract text from all pages
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+        
+        return text
+    except Exception as e:
+        print(f"Error extracting PDF text: {e}")
+        return None
+
+def extract_session_data_from_text(text):
+    """Extract session data from the Session Notes PDF with improved accuracy"""
+    extracted_data = {
+        'module_name': '',
+        'enrichment': '',
+        'sessions': []
+    }
+    
+    try:
+        # Clean up the text while preserving line breaks for structure
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'\s*\n\s*', '\n', text)  # Clean up line breaks
+        
+        # Extract module name - try multiple strategies
+        module_name = extract_module_name_advanced(text)
+        if module_name:
+            extracted_data['module_name'] = module_name
+        
+        # Split text by sessions using the exact pattern "Session [number]-"
+        session_splits = re.split(r'Session\s*(\d+)\s*-', text, flags=re.IGNORECASE)
+        
+        # Process each session (skip index 0 which is content before first session)
+        for i in range(1, len(session_splits), 2):
+            if i + 1 < len(session_splits):
+                session_num = int(session_splits[i])
+                if session_num <= 7:  # Only process sessions 1-7
+                    session_content = session_splits[i + 1]
+                    
+                    # Stop at the next session or enrichments section, but be more careful about boundaries
+                    # Look for the start of the next session, but make sure it's actually a session header
+                    next_session_match = re.search(r'(?:\n|^)\s*Session\s*\d+\s*-', session_content, re.IGNORECASE)
+                    enrichment_match = re.search(r'(?:\n|^)\s*Enrichment', session_content, re.IGNORECASE)
+                    
+                    if next_session_match:
+                        session_content = session_content[:next_session_match.start()]
+                    elif enrichment_match:
+                        session_content = session_content[:enrichment_match.start()]
+                    
+                    # Debug output for session content
+                    print(f"DEBUG: Processing Session {session_num}, content length: {len(session_content)}")
+                    if 'Performance' in session_content:
+                        perf_index = session_content.lower().find('performance')
+                        print(f"DEBUG: 'Performance' found at position {perf_index} in session content")
+                        print(f"DEBUG: Text around Performance: '{session_content[max(0, perf_index-50):perf_index+150]}'")
+                    else:
+                        print(f"DEBUG: 'Performance' NOT found in session content")
+                    
+                    session_data = extract_session_fields_improved(session_content)
+                    extracted_data['sessions'].append(session_data)
+        
+        # Extract enrichment activities (everything after "Enrichments")
+        enrichment_match = re.search(r'Enrichments?\s*(.*?)(?=\Z)', text, re.IGNORECASE | re.DOTALL)
+        if enrichment_match:
+            enrichment_text = enrichment_match.group(1).strip()
+            # Clean up the enrichment text
+            enrichment_text = re.sub(r'^\d+\.?\s*', '', enrichment_text, flags=re.MULTILINE)  # Remove numbering
+            extracted_data['enrichment'] = clean_text(enrichment_text)
+    
+    except Exception as e:
+        print(f"Error extracting session data: {e}")
+    
+    return extracted_data
+
+def extract_module_name_advanced(text):
+    """Advanced module name extraction using multiple strategies"""
+    
+    # Strategy 1: Look for text immediately after "Session Notes" 
+    match = re.search(r'Session\s+Notes\s+([^\n\r]+)', text, re.IGNORECASE)
+    if match:
+        potential_name = match.group(1).strip()
+        potential_name = remove_header_artifacts(potential_name)
+        if potential_name and len(potential_name) > 3 and len(potential_name) < 50:
+            return potential_name
+    
+    # Strategy 2: Look for text before "Session Notes"
+    match = re.search(r'([^\n\r]+)\s+Session\s+Notes', text, re.IGNORECASE)
+    if match:
+        potential_name = match.group(1).strip()
+        potential_name = remove_header_artifacts(potential_name)
+        if potential_name and len(potential_name) > 3 and len(potential_name) < 50:
+            return potential_name
+    
+    # Strategy 3: Look at the very beginning, skip common artifacts
+    lines = text.split('\n')[:15]  # Check first 15 lines
+    
+    for line in lines:
+        line = line.strip()
+        # Skip obvious artifacts but look for substantial content
+        if (line and 
+            not re.search(r'Session\s+Notes', line, re.IGNORECASE) and
+            not re.search(r'star\s*ACADEMY', line, re.IGNORECASE) and
+            not re.search(r'NOLA\s+EDUCATION', line, re.IGNORECASE) and
+            not re.search(r'www\.', line, re.IGNORECASE) and
+            not re.search(r'Session\s+\d+', line, re.IGNORECASE) and
+            not re.search(r'Focus:', line, re.IGNORECASE) and
+            not re.search(r'Objectives:', line, re.IGNORECASE) and
+            len(line) > 3 and len(line) < 50):
+            
+            # Clean up the line
+            clean_line = remove_header_artifacts(line)
+            clean_line = re.sub(r'[^\w\s&\'-]', '', clean_line).strip()
+            
+            # Check if it looks like a valid module name
+            if (clean_line and 
+                len(clean_line) > 3 and 
+                not clean_line.lower() in ['session', 'notes', 'page', 'may', 'be', 'photocopied']):
+                return clean_line
+    
+    # Strategy 4: Look for common module name patterns in the text
+    common_patterns = [
+        r'\b(Organism\s+Reproduction)\b',
+        r'\b(Animals?)\b(?!\s+having)',  # "Animals" but not "animals having"
+        r'\b(Plants?)\b(?!\s+reproduce)',
+        r'\b(Chemistry)\b',
+        r'\b(Physics)\b',
+        r'\b(Biology)\b',
+        r'\b(Environmental?\s+Science)\b',
+        r'\b(Earth\s+Science)\b',
+        r'\b(Sports?\s+Statistics)\b',
+    ]
+    
+    for pattern in common_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    
+    return None
+
+def extract_session_fields_improved(session_text):
+    """Extract individual fields from a session text block with improved accuracy"""
+    session_data = {
+        'focus': '',
+        'objectives': '',
+        'materials': '',
+        'teacher_prep': '',
+        'assessments': ''
+    }
+    
+    # More precise patterns based on the actual document structure
+    field_patterns = {
+        'focus': [
+            r'Focus:\s*(.*?)(?=\s*Objectives:)',
+            r'Focus:\s*(.*?)(?=\s*(?:Objectives|Materials|Teacher|Performance))',
+        ],
+        'objectives': [
+            r'Objectives:\s*(.*?)(?=\s*Materials:)',
+            r'Objectives:\s*(.*?)(?=\s*(?:Materials|Teacher|Performance))',
+        ],
+        'materials': [
+            r'Materials:\s*(.*?)(?=\s*Teacher\s*Preparations?:)',
+            r'Materials:\s*(.*?)(?=\s*(?:Teacher|Performance))',
+        ],
+        'teacher_prep': [
+            r'Teacher\s*Preparations?:\s*(.*?)(?=\s*Performance\s*(?:Based\s*)?(?:Assessment\s*)?Questions?:)',
+            r'Teacher\s*Preparations?:\s*(.*?)(?=\s*(?:Performance|Assessment))',
+        ],
+        'assessments': [
+            r'Performance\s*Assessment\s*Questions?\s*:?\s*(.*?)(?=\s*(?:Session\s*\d+|Enrichments?|$))',
+            r'Performance\s*Based\s*Assessment\s*Questions?\s*:?\s*(.*?)(?=\s*(?:Session\s*\d+|Enrichments?|$))',
+            r'Performance\s*(?:Based\s*)?(?:Assessment\s*)?Questions?\s*:?\s*(.*?)(?=\s*(?:Session\s*\d+|Enrichments?|$))',
+            r'Assessment\s*Questions?\s*:?\s*(.*?)(?=\s*(?:Session\s*\d+|Enrichments?|$))',
+            r'PBA\s*:?\s*(.*?)(?=\s*(?:Session\s*\d+|Enrichments?|$))',
+        ]
+    }
+    
+    # Extract each field using the patterns
+    for field, patterns in field_patterns.items():
+        extracted = False
+        for i, pattern in enumerate(patterns):
+            match = re.search(pattern, session_text, re.IGNORECASE | re.DOTALL)
+            if match:
+                extracted_text = match.group(1).strip()
+                
+                # Debug output for assessments
+                if field == 'assessments':
+                    print(f"DEBUG: Assessments found with pattern {i+1}: '{extracted_text[:100]}...'")
+                
+                # Clean up the extracted text based on field type
+                if field == 'focus':
+                    session_data[field] = clean_focus_text(extracted_text)
+                elif field == 'objectives':
+                    session_data[field] = clean_objectives_text(extracted_text)
+                elif field == 'teacher_prep':
+                    session_data[field] = clean_teacher_prep_text(extracted_text)
+                elif field == 'assessments':
+                    session_data[field] = clean_assessment_text(extracted_text)
+                else:
+                    session_data[field] = clean_text(extracted_text)
+                extracted = True
+                break
+        
+        # Debug output for failed extractions
+        if not extracted and field == 'assessments':
+            print(f"DEBUG: No assessments found. Session text sample: '{session_text[:200]}...'")
+        
+        # If no data was extracted for teacher_prep or assessments, set to N/A
+        if not extracted:
+            if field in ['teacher_prep', 'assessments']:
+                session_data[field] = 'N/A'
+    
+    return session_data
+
+def clean_focus_text(text):
+    """Clean session focus text with proper title case"""
+    if not text:
+        return ''
+    
+    # Remove header/footer artifacts first
+    text = remove_header_artifacts(text)
+    
+    # Basic cleanup
+    text = clean_text(text)
+    
+    # Apply title case while preserving acronyms and special terms
+    words = text.split()
+    title_words = []
+    
+    for word in words:
+        # Keep short words like &, and, or lowercase unless at start
+        if word.lower() in ['&', 'and', 'or', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'with'] and title_words:
+            title_words.append(word.lower())
+        else:
+            # Capitalize first letter of each word
+            title_words.append(word.capitalize())
+    
+    return ' '.join(title_words)
+
+def remove_header_artifacts(text):
+    """Remove common header/footer artifacts from PDF text"""
+    if not text:
+        return text
+    
+    # List of common header/footer patterns to remove
+    artifacts = [
+        r'Nola\s+Education,?\s*Llc',
+        r'www\.staracademyprogram\.com',
+        r'This\s+Page\s+May\s+Be\s+Photocopied\s+for\s+Use\s+Only\s+Within\s+the',
+        r'star\s*ACADEMY',
+        r'Session\s+Notes\s+Animals',
+        r'NOLA\s+EDUCATION,?\s*LLC',
+        r'⎢.*?\.com',
+        r'www\..*?\.com',
+        r'This\s+page\s+may\s+be\s+photocopied.*?Star\s+Academy',
+    ]
+    
+    # Remove each artifact pattern
+    for pattern in artifacts:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+    
+    # Clean up extra whitespace
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    
+    return text
+
+def clean_objectives_text(text):
+    """Clean objectives text and ensure proper punctuation"""
+    if not text:
+        return ''
+    
+    # Handle "N/A" case
+    if re.match(r'^\s*n/?a\s*$', text, re.IGNORECASE):
+        return 'N/A'
+    
+    # Remove header artifacts first
+    text = remove_header_artifacts(text)
+    
+    # Basic cleanup
+    text = clean_text(text)
+    
+    # Split into sentences (by common patterns)
+    sentences = re.split(r'(?<=[.!?])\s+|(?<=[a-z])\s+(?=[A-Z])', text)
+    
+    cleaned_sentences = []
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if sentence:
+            # Ensure sentence ends with a period if it doesn't have punctuation
+            if not re.search(r'[.!?]$', sentence):
+                sentence += '.'
+            cleaned_sentences.append(sentence)
+    
+    return ' '.join(cleaned_sentences)
+
+def clean_teacher_prep_text(text):
+    """Clean teacher preparation text and ensure proper punctuation"""
+    if not text:
+        return 'N/A'
+    
+    # Handle "N/A" case
+    if re.match(r'^\s*n/?a\s*$', text, re.IGNORECASE):
+        return 'N/A'
+    
+    # Basic cleanup
+    text = clean_text(text)
+    
+    # Ensure it ends with a period if it doesn't have punctuation
+    if text and not re.search(r'[.!?]$', text):
+        text += '.'
+    
+    return text if text else 'N/A'
+
+def clean_assessment_text(text):
+    """Clean assessment text while preserving list structure"""
+    if not text:
+        return 'N/A'
+    
+    # Handle "N/A" case
+    if re.match(r'^\s*n/?a\s*$', text, re.IGNORECASE):
+        return 'N/A'
+    
+    # Remove any "Enrichments" text that might have leaked in
+    text = re.sub(r'\s*Enrichments?\.?\s*.*$', '', text, flags=re.IGNORECASE | re.DOTALL)
+    
+    # Clean up but preserve numbered lists
+    text = re.sub(r'\s+', ' ', text.strip())
+    
+    # Fix common PDF extraction issues
+    text = fix_pdf_text_issues(text)
+    
+    # If it contains numbered items, format them nicely and add punctuation
+    if re.search(r'\d+\.', text):
+        # Split by numbers and rejoin with proper formatting
+        parts = re.split(r'(\d+\.)', text)
+        formatted_parts = []
+        for i, part in enumerate(parts):
+            if re.match(r'\d+\.', part):
+                formatted_parts.append(f"\n{part}")
+            elif part.strip():
+                sentence = part.strip()
+                
+                # Fix spacing before punctuation
+                sentence = re.sub(r'\s+([.!?])', r'\1', sentence)
+                
+                # Add period if missing
+                if not re.search(r'[.!?]$', sentence):
+                    sentence += '.'
+                formatted_parts.append(f" {sentence}")
+        text = ''.join(formatted_parts).strip()
+    else:
+        # Single sentence - fix spacing and add period if missing
+        text = re.sub(r'\s+([.!?])', r'\1', text)
+        if not re.search(r'[.!?]$', text):
+            text += '.'
+    
+    return text if text else 'N/A'
+
+def fix_pdf_text_issues(text):
+    """Fix common PDF text extraction issues"""
+    if not text:
+        return text
+    
+    # Fix broken words (common PDF extraction issues)
+    text = re.sub(r'cephalizatio\s*n', 'cephalization', text, flags=re.IGNORECASE)
+    text = re.sub(r'segmentatio\s*n', 'segmentation', text, flags=re.IGNORECASE)
+    text = re.sub(r'classificatio\s*n', 'classification', text, flags=re.IGNORECASE)
+    text = re.sub(r'organizatio\s*n', 'organization', text, flags=re.IGNORECASE)
+    text = re.sub(r'observatio\s*n', 'observation', text, flags=re.IGNORECASE)
+    
+    # Fix spacing issues around punctuation
+    text = re.sub(r'\s+([.!?,:;])', r'\1', text)
+    
+    return text
+
+def clean_text(text):
+    """Clean and normalize extracted text"""
+    if not text:
+        return ''
+    
+    # Remove extra whitespace and normalize
+    text = re.sub(r'\s+', ' ', text.strip())
+    
+    # Remove common PDF artifacts
+    text = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', text)
+    
+    return text
+
+def generate_horizontal_lesson_plan(form):
+    """Generate a horizontal lesson plan using docxtpl"""
+    # Use the horizontal lesson plan master template
+    master_template_path = 'templates/docx_templates/horizontal_lesson_plan_master.docx'
+    
+    print(f"Looking for horizontal lesson plan master template at: {master_template_path}")
+    
+    # Check if master template exists
+    if not os.path.exists(master_template_path):
+        raise FileNotFoundError("Horizontal Lesson Plan master DOCX template not found. Please create the master template first.")
+    
+    # Create a temporary copy of the master template
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(master_template_path, temp_file.name)
+        temp_template_path = temp_file.name
+    
+    try:
+        # Load the temporary template
+        doc = DocxTemplate(temp_template_path)
+        
+        # Initialize the context with basic fields matching your template exactly
+        context = {
+            'school': {
+                'name': escape_xml(form.school_name.data)
+            },
+            'teacher': {
+                'name': escape_xml(form.teacher_name.data)
+            },
+            'term': escape_xml(form.term.data)
+        }
+        
+        # Process each module using your template's flat naming convention
+        for i, module in enumerate(form.modules):
+            module_num = i + 1  # m1, m2, m3, m4, m5
+            
+            if module.module_name.data or any(session.focus.data or session.objectives.data 
+                                           for session in module.sessions):
+                
+                # Add module name: {{ m1.name }}, {{ m2.name }}, etc.
+                context[f'm{module_num}'] = {
+                    'name': escape_xml(module.module_name.data or f"Module {module_num}"),
+                    'enrichment': escape_xml(module.enrichment_activities.data or '')
+                }
+                
+                # Process sessions for this module: {{ m1.s1.focus }}, {{ m1.s2.focus }}, etc.
+                for j, session in enumerate(module.sessions):
+                    session_num = j + 1  # s1, s2, s3, s4, s5, s6, s7
+                    
+                    # Create session data with your template's field names
+                    session_data = {
+                        'focus': escape_xml(session.focus.data or ''),
+                        'objectives': escape_xml(session.objectives.data or ''),
+                        'materials': escape_xml(session.materials.data or ''),
+                        'prep': escape_xml(session.teacher_prep.data or ''),  # 'prep' not 'teacher_prep'
+                        'pba': escape_xml(session.assessments.data or '')    # 'pba' not 'assessments'
+                    }
+                    
+                    # Add session to module: context['m1']['s1'] = session_data
+                    context[f'm{module_num}'][f's{session_num}'] = session_data
+        
+        print(f"Horizontal Lesson Plan context prepared")
+        # Count modules with data by checking for m1, m2, m3, m4, m5 keys
+        module_count = sum(1 for key in context.keys() if key.startswith('m') and key[1:].isdigit())
+        print(f"Number of modules with data: {module_count}")
+        
+        # Render the document
+        print("Rendering horizontal lesson plan document...")
+        doc.render(context)
+        
+        # Save to output directory
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        filename = f"Horizontal Lesson Plan {escape_xml(form.school_name.data).replace(' ', '_')} {escape_xml(form.teacher_name.data).replace(' ', '_')}_v2.0.docx"
+        output_path = os.path.join(output_dir, filename)
+        
+        print(f"Saving horizontal lesson plan document to: {output_path}")
+        doc.save(output_path)
+        
+        print("Horizontal lesson plan document saved successfully!")
+        return output_path, filename
+        
+    finally:
+        # Clean up the temporary file
+        try:
+            os.unlink(temp_template_path)
+        except:
+            pass  # Ignore cleanup errors
+
 @app.route('/debug/db-status')
 def debug_db_status():
     """Debug route to check database status - DEVELOPMENT ONLY"""
@@ -4714,6 +5455,123 @@ def load_generic_draft(draft_id):
 def delete_generic_draft(draft_id):
     """Delete generic worksheet draft"""
     draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='generic').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+# ===== HORIZONTAL LESSON PLAN DRAFT ROUTES =====
+
+@app.route('/autosave-horizontal-lesson-plan-draft', methods=['POST'])
+@login_required
+def autosave_horizontal_lesson_plan_draft():
+    """AJAX endpoint for autosaving horizontal lesson plan draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'school_name': data.get('school_name', ''),
+            'teacher_name': data.get('teacher_name', ''),
+            'term': data.get('term', ''),
+            'modules': data.get('modules', [])
+        }
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='horizontal_lesson_plan').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                # Update title if school name changed
+                if form_data['school_name']:
+                    draft.title = f"Horizontal Lesson Plan - {form_data['school_name']}"
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Horizontal Lesson Plan - {form_data['school_name']}" if form_data['school_name'] else "Horizontal Lesson Plan - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='horizontal_lesson_plan',
+                title=title,
+                form_data=form_data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+        
+    except Exception as e:
+        print(f"Error in autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-horizontal-lesson-plan-draft/<int:draft_id>')
+@login_required
+def load_horizontal_lesson_plan_draft(draft_id):
+    """Load horizontal lesson plan draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='horizontal_lesson_plan').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_horizontal_lesson_plan'))
+    
+    try:
+        # Create form and populate with draft data
+        form = HorizontalLessonPlanForm()
+        form_data = draft.form_data
+        
+        # Populate basic fields
+        form.school_name.data = form_data.get('school_name', '')
+        form.teacher_name.data = form_data.get('teacher_name', '')
+        form.term.data = form_data.get('term', '')
+        
+        # Populate modules
+        modules_data = form_data.get('modules', [])
+        for i, module_data in enumerate(modules_data):
+            if i < len(form.modules):
+                form.modules[i].module_name.data = module_data.get('module_name', '')
+                form.modules[i].enrichment_activities.data = module_data.get('enrichment_activities', '')
+                
+                # Populate sessions
+                sessions_data = module_data.get('sessions', [])
+                for j, session_data in enumerate(sessions_data):
+                    if j < len(form.modules[i].sessions):
+                        form.modules[i].sessions[j].focus.data = session_data.get('focus', '')
+                        form.modules[i].sessions[j].objectives.data = session_data.get('objectives', '')
+                        form.modules[i].sessions[j].materials.data = session_data.get('materials', '')
+                        form.modules[i].sessions[j].teacher_prep.data = session_data.get('teacher_prep', '')
+                        form.modules[i].sessions[j].assessments.data = session_data.get('assessments', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_horizontal_lesson_plan.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading horizontal lesson plan draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_horizontal_lesson_plan'))
+
+@app.route('/delete-horizontal-lesson-plan-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_horizontal_lesson_plan_draft(draft_id):
+    """Delete horizontal lesson plan draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='horizontal_lesson_plan').first()
     
     if not draft:
         flash('Draft not found', 'error')
