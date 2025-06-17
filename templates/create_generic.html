@@ -241,22 +241,36 @@
 </div>
 
 <script>
+    console.log('🔍 Generic Worksheet JavaScript starting...');
+    
     let fieldIndex = 0;
     
     // Autosave functionality
     class GenericAutosave {
         constructor() {
-            this.autosaveTimeout = null;
-            this.autosaveDelay = 3000; // 3 seconds (longer for complex form)
-            this.currentDraftId = document.getElementById('current_draft_id').value || null;
-            this.isAutosaving = false;
-            this.lastSaveData = null;
-            
-            this.initializeEventListeners();
-            this.showAutosaveStatus('Ready to autosave', 'saved');
-            
-            // Restore dynamic fields if loading a draft
-            this.restoreDynamicFields();
+            console.log('🔍 GenericAutosave constructor started');
+            try {
+                this.autosaveTimeout = null;
+                this.autosaveDelay = 3000; // 3 seconds (longer for complex form)
+                this.currentDraftId = document.getElementById('current_draft_id').value || null;
+                this.isAutosaving = false;
+                this.lastSaveData = null;
+                
+                console.log('🔍 Basic properties set, currentDraftId:', this.currentDraftId);
+                
+                this.initializeEventListeners();
+                console.log('🔍 Event listeners initialized');
+                
+                this.showAutosaveStatus('Ready to autosave', 'saved');
+                console.log('🔍 Autosave status shown');
+                
+                // Restore dynamic fields if loading a draft
+                console.log('🔍 About to call restoreDynamicFields');
+                this.restoreDynamicFields();
+                console.log('🔍 GenericAutosave constructor completed');
+            } catch (error) {
+                console.error('🔍 Error in GenericAutosave constructor:', error);
+            }
         }
         
         initializeEventListeners() {
@@ -398,9 +412,17 @@
         // Restore dynamic fields from draft data
         restoreDynamicFields() {
             console.log('🔍 restoreDynamicFields called');
+            
+            // First check if we even have the elements we need
+            console.log('🔍 Checking for required elements...');
+            console.log('🔍 current_draft_id element:', document.getElementById('current_draft_id'));
+            console.log('🔍 dynamic-fields-container element:', document.getElementById('dynamic-fields-container'));
+            
             const draftFieldsElement = document.getElementById('draft_dynamic_fields');
+            console.log('🔍 draft_dynamic_fields element:', draftFieldsElement);
+            
             if (!draftFieldsElement) {
-                console.log('🔍 No draft_dynamic_fields element found');
+                console.log('🔍 No draft_dynamic_fields element found - this means we\'re not loading a draft');
                 return;
             }
             
@@ -993,11 +1015,19 @@
     
     // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize autosave
-        autosaveInstance = new GenericAutosave();
+        console.log('🔍 DOM loaded, initializing Generic Worksheet');
         
-        // Initialize empty state
-        checkEmptyState();
+        try {
+            // Initialize autosave
+            autosaveInstance = new GenericAutosave();
+            console.log('🔍 GenericAutosave instance created');
+            
+            // Initialize empty state
+            checkEmptyState();
+            console.log('🔍 Empty state checked');
+        } catch (error) {
+            console.error('🔍 Error during initialization:', error);
+        }
         
         // Initialize symbol buttons
         document.querySelectorAll('.symbol-btn').forEach(btn => {
