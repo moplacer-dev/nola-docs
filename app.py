@@ -5479,14 +5479,6 @@ def load_generic_draft(draft_id):
         # Pass dynamic fields data to template for JavaScript reconstruction
         dynamic_fields_data = form_data.get('dynamic_fields', [])
         
-        # Debug logging
-        print(f"🔍 Loading draft {draft.id}:")
-        print(f"   Module acronym: {form_data.get('module_acronym', 'None')}")
-        print(f"   Worksheet title: {form_data.get('worksheet_title', 'None')}")
-        print(f"   Dynamic fields data: {dynamic_fields_data}")
-        print(f"   Dynamic fields type: {type(dynamic_fields_data)}")
-        print(f"   Dynamic fields length: {len(dynamic_fields_data) if hasattr(dynamic_fields_data, '__len__') else 'N/A'}")
-        
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         return render_template('create_generic.html', form=form, draft_id=draft.id, 
                              draft_data=form_data, dynamic_fields_data=dynamic_fields_data)
