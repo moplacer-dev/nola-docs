@@ -775,8 +775,8 @@
             {% endif %}
             
             <!-- JSON data for draft restoration -->
-            <script type="application/json" id="draft_enrichment_data">{{ enrichment_dynamic_content | tojson }}</script>
-            <script type="application/json" id="draft_worksheet_data">{{ worksheet_answer_keys | tojson }}</script>
+            <script type="application/json" id="draft_enrichment_data">{{ (enrichment_dynamic_content or []) | tojson }}</script>
+            <script type="application/json" id="draft_worksheet_data">{{ (worksheet_answer_keys or []) | tojson }}</script>
         </form>
     </div>
 </div>
@@ -1054,8 +1054,13 @@ class ModuleAnswerKeyAutosave {
         
         // Check what script elements exist
         console.log('🔍 All script elements:', document.querySelectorAll('script[type="application/json"]'));
+        console.log('🔍 All script elements (all types):', document.querySelectorAll('script'));
         console.log('🔍 draft_enrichment_data element:', document.getElementById('draft_enrichment_data'));
         console.log('🔍 draft_worksheet_data element:', document.getElementById('draft_worksheet_data'));
+        
+        // Debug: Show all elements with these IDs
+        const allElements = document.querySelectorAll('[id*="draft"]');
+        console.log('🔍 All elements with "draft" in ID:', allElements);
         
         // Restore enrichment dynamic content
         const enrichmentElement = document.getElementById('draft_enrichment_data');
