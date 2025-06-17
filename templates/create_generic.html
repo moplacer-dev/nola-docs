@@ -397,13 +397,23 @@
         
         // Restore dynamic fields from draft data
         restoreDynamicFields() {
+            console.log('🔍 restoreDynamicFields called');
             const draftFieldsElement = document.getElementById('draft_dynamic_fields');
-            if (!draftFieldsElement) return;
+            if (!draftFieldsElement) {
+                console.log('🔍 No draft_dynamic_fields element found');
+                return;
+            }
+            
+            console.log('🔍 Found draft_dynamic_fields element, value:', draftFieldsElement.value);
             
             try {
                 const dynamicFieldsData = JSON.parse(draftFieldsElement.value);
+                console.log('🔍 Parsed data:', dynamicFieldsData);
+                console.log('🔍 Data type:', typeof dynamicFieldsData);
+                console.log('🔍 Is array:', Array.isArray(dynamicFieldsData));
                 
                 if (!dynamicFieldsData || (Array.isArray(dynamicFieldsData) && dynamicFieldsData.length === 0)) {
+                    console.log('🔍 No data to restore');
                     return;
                 }
                 
@@ -415,19 +425,26 @@
                 
                 // Handle both arrays and objects (sparse arrays become objects)
                 let fieldsCreated = 0;
+                console.log('🔍 Processing fields...');
                 if (Array.isArray(dynamicFieldsData)) {
+                    console.log('🔍 Processing as array, length:', dynamicFieldsData.length);
                     // Handle array format
                     dynamicFieldsData.forEach((fieldData, index) => {
+                        console.log(`🔍 Array item ${index}:`, fieldData);
                         if (fieldData && Object.keys(fieldData).length > 0) {
+                            console.log(`🔍 Creating field ${fieldsCreated} from array index ${index}`);
                             this.recreateDynamicField(fieldData, fieldsCreated);
                             fieldsCreated++;
                         }
                     });
                 } else if (typeof dynamicFieldsData === 'object') {
+                    console.log('🔍 Processing as object, keys:', Object.keys(dynamicFieldsData));
                     // Handle object format (sparse array converted to object)
                     Object.keys(dynamicFieldsData).forEach((key, arrayIndex) => {
                         const fieldData = dynamicFieldsData[key];
+                        console.log(`🔍 Object key ${key}:`, fieldData);
                         if (fieldData && Object.keys(fieldData).length > 0) {
+                            console.log(`🔍 Creating field ${fieldsCreated} from object key ${key}`);
                             this.recreateDynamicField(fieldData, fieldsCreated);
                             fieldsCreated++;
                         }
@@ -449,13 +466,18 @@
         
         // Recreate a single dynamic field with its data
         recreateDynamicField(fieldData, index) {
+            console.log(`🔍 recreateDynamicField called - index: ${index}, fieldData:`, fieldData);
             const fieldType = fieldData.field_type || 'text';
+            console.log(`🔍 Determined field type: ${fieldType}`);
+            
             const fieldsContainer = document.getElementById('dynamic-fields-container');
             
             if (!fieldsContainer) {
-                console.error('dynamic-fields-container not found!');
+                console.error('🔍 dynamic-fields-container not found!');
                 return;
             }
+            
+            console.log(`🔍 Found fields container, creating field div`);
             
             // Create field container
             const fieldDiv = document.createElement('div');
@@ -463,20 +485,26 @@
             fieldDiv.setAttribute('data-field-index', index);
             
             // Generate field HTML based on type
+            console.log(`🔍 Generating HTML for field type: ${fieldType}`);
             let fieldHTML = this.generateFieldHTML(fieldType, index, fieldData);
+            console.log(`🔍 Generated HTML (first 200 chars):`, fieldHTML.substring(0, 200));
             fieldDiv.innerHTML = fieldHTML;
             
             // Add to container
             fieldsContainer.appendChild(fieldDiv);
+            console.log(`🔍 Field added to container successfully`);
             
             // Setup delete button functionality
             const deleteBtn = fieldDiv.querySelector('.delete-field-btn');
             if (deleteBtn) {
+                console.log(`🔍 Setting up delete button for field ${index}`);
                 deleteBtn.addEventListener('click', function() {
                     fieldDiv.remove();
                     autosaveInstance.scheduleAutosave();
                     checkEmptyState();
                 });
+            } else {
+                console.log(`🔍 No delete button found for field ${index}`);
             }
         }
         
