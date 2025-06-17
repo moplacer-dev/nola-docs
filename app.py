@@ -5077,10 +5077,13 @@ def load_moduleanswerkey_draft(draft_id):
         
         # Populate RCA sessions
         rca_data = form_data.get('rca_sessions', [])
+        print(f"🔍 RCA sessions data: {len(rca_data)} sessions found")
         for i, session_data in enumerate(rca_data):
+            print(f"🔍 RCA session {i+1}: {len(session_data.get('questions', []))} questions")
             if i < len(form.rca_sessions):
                 questions = session_data.get('questions', [])
                 for j, question_data in enumerate(questions):
+                    print(f"🔍 RCA session {i+1}, question {j+1}: {question_data.get('question_text', '')[:50]}...")
                     if j < len(form.rca_sessions[i].questions):
                         form.rca_sessions[i].questions[j].question_text.data = question_data.get('question_text', '')
                         form.rca_sessions[i].questions[j].choice_a.data = question_data.get('choice_a', '')
@@ -5102,13 +5105,16 @@ def load_moduleanswerkey_draft(draft_id):
         
         # Populate PBA sessions
         pba_data = form_data.get('pba_sessions', [])
+        print(f"🔍 PBA sessions data: {len(pba_data)} sessions found")
         for i, session_data in enumerate(pba_data):
+            print(f"🔍 PBA session {i+1}: {len(session_data.get('assessment_questions', []))} questions")
             if i < len(form.pba_sessions):
                 form.pba_sessions[i].session_number.data = session_data.get('session_number', '')
                 form.pba_sessions[i].activity_name.data = session_data.get('activity_name', '')
                 
                 questions = session_data.get('assessment_questions', [])
                 for j, question_data in enumerate(questions):
+                    print(f"🔍 PBA session {i+1}, question {j+1}: {question_data.get('question', '')[:50]}...")
                     if j < len(form.pba_sessions[i].assessment_questions):
                         form.pba_sessions[i].assessment_questions[j].question.data = question_data.get('question', '')
                         form.pba_sessions[i].assessment_questions[j].correct_answer.data = question_data.get('correct_answer', '')
@@ -5122,7 +5128,9 @@ def load_moduleanswerkey_draft(draft_id):
         
         # Populate portfolio checklist
         portfolio_data = form_data.get('portfolio_checklist', [])
+        print(f"🔍 Portfolio checklist data: {len(portfolio_data)} items found")
         for i, item_data in enumerate(portfolio_data):
+            print(f"🔍 Portfolio item {i+1}: {item_data.get('product', '')[:50]}... (Session {item_data.get('session_number', '')})")
             if i < len(form.portfolio_checklist):
                 form.portfolio_checklist[i].product.data = item_data.get('product', '')
                 form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
