@@ -773,6 +773,14 @@
             {% else %}
                 <input type="hidden" name="draft_id" value="" id="current_draft_id">
             {% endif %}
+            
+            <!-- JSON data for draft restoration -->
+            {% if enrichment_dynamic_content %}
+                <script type="application/json" id="draft_enrichment_data">{{ enrichment_dynamic_content | tojson }}</script>
+            {% endif %}
+            {% if worksheet_answer_keys %}
+                <script type="application/json" id="draft_worksheet_data">{{ worksheet_answer_keys | tojson }}</script>
+            {% endif %}
         </form>
     </div>
 </div>
@@ -790,6 +798,9 @@ class ModuleAnswerKeyAutosave {
         this.initializeEventListeners();
         this.initializeAccordion();
         this.showAutosaveStatus('Ready to autosave', 'saved');
+        
+        // Restore dynamic fields if loading a draft
+        this.restoreDynamicFields();
     }
     
     initializeEventListeners() {
@@ -1039,6 +1050,155 @@ class ModuleAnswerKeyAutosave {
         formData.portfolio_checklist = formData.portfolio_checklist.filter(item => item && (item.product || item.session_number));
         
         return formData;
+    }
+    
+    // Restore dynamic fields from draft data
+    restoreDynamicFields() {
+        console.log('🔍 Module Answer Key restoreDynamicFields called');
+        
+        // Restore enrichment dynamic content
+        const enrichmentElement = document.getElementById('draft_enrichment_data');
+        if (enrichmentElement) {
+            try {
+                const enrichmentData = JSON.parse(enrichmentElement.textContent);
+                console.log('🔍 Enrichment data:', enrichmentData);
+                this.restoreEnrichmentFields(enrichmentData);
+            } catch (error) {
+                console.error('🔍 Error parsing enrichment data:', error);
+            }
+        } else {
+            console.log('🔍 No enrichment data found');
+        }
+        
+        // Restore worksheet answer keys dynamic content
+        const worksheetElement = document.getElementById('draft_worksheet_data');
+        if (worksheetElement) {
+            try {
+                const worksheetData = JSON.parse(worksheetElement.textContent);
+                console.log('🔍 Worksheet data:', worksheetData);
+                this.restoreWorksheetFields(worksheetData);
+            } catch (error) {
+                console.error('🔍 Error parsing worksheet data:', error);
+            }
+        } else {
+            console.log('🔍 No worksheet data found');
+        }
+    }
+    
+    // Restore enrichment dynamic fields
+    restoreEnrichmentFields(enrichmentData) {
+        if (!Array.isArray(enrichmentData) || enrichmentData.length === 0) return;
+        
+        console.log(`🔍 Restoring ${enrichmentData.length} enrichment fields`);
+        
+        enrichmentData.forEach((fieldData, index) => {
+            if (fieldData && fieldData.field_type) {
+                console.log(`🔍 Creating enrichment field ${index}:`, fieldData);
+                this.createEnrichmentField(fieldData.field_type, index, fieldData);
+            }
+        });
+        
+        // Update enrichment field counter
+        enrichmentFieldIndex = enrichmentData.length;
+        
+        // Hide empty message
+        const emptyMessage = document.querySelector('.enrichment-empty-message');
+        if (emptyMessage) {
+            emptyMessage.style.display = 'none';
+        }
+    }
+    
+    // Restore worksheet dynamic fields
+    restoreWorksheetFields(worksheetData) {
+        if (!Array.isArray(worksheetData) || worksheetData.length === 0) return;
+        
+        console.log(`🔍 Restoring ${worksheetData.length} worksheet answer keys`);
+        
+        worksheetData.forEach((worksheetInfo, worksheetIndex) => {
+            if (worksheetInfo && worksheetInfo.dynamic_content) {
+                console.log(`🔍 Restoring worksheet ${worksheetIndex} with ${worksheetInfo.dynamic_content.length} fields`);
+                
+                // First add the worksheet if it doesn't exist
+                this.ensureWorksheetExists(worksheetIndex);
+                
+                // Then restore its dynamic fields
+                worksheetInfo.dynamic_content.forEach((fieldData, fieldIndex) => {
+                    if (fieldData && fieldData.field_type) {
+                        console.log(`🔍 Creating worksheet ${worksheetIndex} field ${fieldIndex}:`, fieldData);
+                        this.createWorksheetField(fieldData.field_type, worksheetIndex, fieldIndex, fieldData);
+                    }
+                });
+                
+                // Hide empty message for this worksheet
+                const emptyMessage = document.querySelector(`.worksheet-empty-message[data-worksheet-index="${worksheetIndex}"]`);
+                if (emptyMessage) {
+                    emptyMessage.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Create enrichment field with data
+    createEnrichmentField(fieldType, index, fieldData = {}) {
+        const container = document.querySelector('.enrichment-fields-container');
+        if (!container) return;
+        
+        const fieldHTML = this.generateEnrichmentFieldHTML(fieldType, index, fieldData);
+        container.insertAdjacentHTML('beforeend', fieldHTML);
+        
+        // Setup delete button
+        const fieldElement = container.lastElementChild;
+        const deleteBtn = fieldElement.querySelector('.delete-field-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                fieldElement.remove();
+                this.scheduleAutosave();
+                checkEnrichmentEmptyState();
+            });
+        }
+    }
+    
+    // Create worksheet field with data
+    createWorksheetField(fieldType, worksheetIndex, fieldIndex, fieldData = {}) {
+        const container = document.querySelector(`.worksheet-fields-container[data-worksheet-index="${worksheetIndex}"]`);
+        if (!container) return;
+        
+        const fieldHTML = this.generateWorksheetFieldHTML(fieldType, worksheetIndex, fieldIndex, fieldData);
+        container.insertAdjacentHTML('beforeend', fieldHTML);
+        
+        // Setup delete button
+        const fieldElement = container.lastElementChild;
+        const deleteBtn = fieldElement.querySelector('.delete-field-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                fieldElement.remove();
+                this.scheduleAutosave();
+                checkWorksheetEmptyState(worksheetIndex);
+            });
+        }
+    }
+    
+    // Generate enrichment field HTML with populated data
+    generateEnrichmentFieldHTML(fieldType, index, fieldData = {}) {
+        return generateEnrichmentFieldHTML(fieldType, index, fieldData);
+    }
+    
+    // Generate worksheet field HTML with populated data  
+    generateWorksheetFieldHTML(fieldType, worksheetIndex, fieldIndex, fieldData = {}) {
+        return generateWorksheetFieldHTML(fieldType, worksheetIndex, fieldIndex, fieldData);
+    }
+    
+    // Ensure worksheet exists (add it if missing)
+    ensureWorksheetExists(worksheetIndex) {
+        let worksheet = document.querySelector(`[data-worksheet-index="${worksheetIndex}"]`);
+        if (!worksheet) {
+            // Add worksheet if it doesn't exist
+            for (let i = 0; i <= worksheetIndex; i++) {
+                if (!document.querySelector(`[data-worksheet-index="${i}"]`)) {
+                    addWorksheetAnswerKey();
+                }
+            }
+        }
     }
     
     showAutosaveStatus(message, type) {

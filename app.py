@@ -5126,8 +5126,14 @@ def load_moduleanswerkey_draft(draft_id):
                 form.portfolio_checklist[i].product.data = item_data.get('product', '')
                 form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
         
+        # Pass dynamic fields data to template for JavaScript reconstruction
+        enrichment_data = form_data.get('enrichment_dynamic_content', [])
+        worksheet_data = form_data.get('worksheet_answer_keys', [])
+        
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
-        return render_template('create_moduleAnswerKey.html', form=form, draft_id=draft.id)
+        return render_template('create_moduleAnswerKey.html', form=form, draft_id=draft.id, 
+                             draft_data=form_data, enrichment_dynamic_content=enrichment_data, 
+                             worksheet_answer_keys=worksheet_data)
         
     except Exception as e:
         print(f"Error loading module answer key draft: {e}")
