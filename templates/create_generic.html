@@ -231,6 +231,11 @@
             {% else %}
                 <input type="hidden" name="draft_id" value="" id="current_draft_id">
             {% endif %}
+            
+            <!-- Hidden field to pass dynamic fields data for draft restoration -->
+            {% if dynamic_fields_data %}
+                <input type="hidden" id="draft_dynamic_fields" value="{{ dynamic_fields_data | tojson | e }}">
+            {% endif %}
         </form>
     </div>
 </div>
@@ -249,6 +254,9 @@
             
             this.initializeEventListeners();
             this.showAutosaveStatus('Ready to autosave', 'saved');
+            
+            // Restore dynamic fields if loading a draft
+            this.restoreDynamicFields();
         }
         
         initializeEventListeners() {
@@ -385,6 +393,218 @@
                     statusElement.classList.add('hidden');
                 }, 3000);
             }
+        }
+        
+        // Restore dynamic fields from draft data
+        restoreDynamicFields() {
+            const draftFieldsElement = document.getElementById('draft_dynamic_fields');
+            if (!draftFieldsElement) return;
+            
+            try {
+                const dynamicFieldsData = JSON.parse(draftFieldsElement.value);
+                if (!Array.isArray(dynamicFieldsData) || dynamicFieldsData.length === 0) {
+                    return;
+                }
+                
+                // Remove the empty state message if it exists
+                const emptyMessage = document.querySelector('.empty-fields-message');
+                if (emptyMessage) {
+                    emptyMessage.style.display = 'none';
+                }
+                
+                // Recreate each dynamic field
+                dynamicFieldsData.forEach((fieldData, index) => {
+                    if (fieldData && Object.keys(fieldData).length > 0) {
+                        this.recreateDynamicField(fieldData, index);
+                    }
+                });
+                
+                // Update field counter
+                fieldIndex = dynamicFieldsData.length;
+                
+                // Refresh autosave listeners for new fields
+                this.refreshListeners();
+                
+                console.log(`Restored ${dynamicFieldsData.length} dynamic fields from draft`);
+                
+            } catch (error) {
+                console.error('Error restoring dynamic fields:', error);
+            }
+        }
+        
+        // Recreate a single dynamic field with its data
+        recreateDynamicField(fieldData, index) {
+            const fieldType = fieldData.field_type || 'text';
+            const fieldsContainer = document.getElementById('dynamic-fields-container');
+            
+            // Create field container
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'dynamic-field bg-gray-50 p-4 rounded-lg border border-gray-200';
+            fieldDiv.setAttribute('data-field-index', index);
+            
+            // Generate field HTML based on type
+            let fieldHTML = this.generateFieldHTML(fieldType, index, fieldData);
+            fieldDiv.innerHTML = fieldHTML;
+            
+            // Add to container
+            fieldsContainer.appendChild(fieldDiv);
+            
+            // Setup delete button functionality
+            const deleteBtn = fieldDiv.querySelector('.delete-field-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    fieldDiv.remove();
+                    autosaveInstance.scheduleAutosave();
+                    checkEmptyState();
+                });
+            }
+        }
+        
+        // Generate HTML for different field types with populated data
+        generateFieldHTML(fieldType, index, fieldData = {}) {
+            const baseFieldName = `dynamic_fields-${index}`;
+            
+            const commonHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-medium text-gray-700">Field ${index + 1}: ${this.getFieldTypeName(fieldType)}</h4>
+                    <button type="button" class="delete-field-btn text-red-600 hover:text-red-800 px-2 py-1 rounded">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <input type="hidden" name="${baseFieldName}-field_type" value="${fieldType}">
+            `;
+            
+            // Generate specific field content based on type
+            switch(fieldType) {
+                case 'text':
+                    return commonHTML + `
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Text Content</label>
+                                <textarea name="${baseFieldName}-content" rows="3" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">${fieldData.content || ''}</textarea>
+                            </div>
+                        </div>`;
+                        
+                case 'multiple_choice':
+                    return commonHTML + `
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                                <textarea name="${baseFieldName}-question" rows="2" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">${fieldData.question || ''}</textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">A)</label>
+                                    <input type="text" name="${baseFieldName}-choice_a" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                        data-autosave="true" value="${fieldData.choice_a || ''}">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">B)</label>
+                                    <input type="text" name="${baseFieldName}-choice_b" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                        data-autosave="true" value="${fieldData.choice_b || ''}">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">C)</label>
+                                    <input type="text" name="${baseFieldName}-choice_c" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                        data-autosave="true" value="${fieldData.choice_c || ''}">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">D)</label>
+                                    <input type="text" name="${baseFieldName}-choice_d" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                        data-autosave="true" value="${fieldData.choice_d || ''}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Correct Answer</label>
+                                <select name="${baseFieldName}-correct_answer" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">
+                                    <option value="">Select correct answer</option>
+                                    <option value="A" ${fieldData.correct_answer === 'A' ? 'selected' : ''}>A</option>
+                                    <option value="B" ${fieldData.correct_answer === 'B' ? 'selected' : ''}>B</option>
+                                    <option value="C" ${fieldData.correct_answer === 'C' ? 'selected' : ''}>C</option>
+                                    <option value="D" ${fieldData.correct_answer === 'D' ? 'selected' : ''}>D</option>
+                                </select>
+                            </div>
+                        </div>`;
+                        
+                case 'short_answer':
+                    return commonHTML + `
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                                <textarea name="${baseFieldName}-question" rows="2" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">${fieldData.question || ''}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Answer Lines</label>
+                                <select name="${baseFieldName}-lines" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">
+                                    <option value="3" ${fieldData.lines === '3' ? 'selected' : ''}>3 lines</option>
+                                    <option value="5" ${fieldData.lines === '5' ? 'selected' : ''}>5 lines</option>
+                                    <option value="8" ${fieldData.lines === '8' ? 'selected' : ''}>8 lines</option>
+                                    <option value="10" ${fieldData.lines === '10' ? 'selected' : ''}>10 lines</option>
+                                </select>
+                            </div>
+                        </div>`;
+                        
+                case 'image':
+                    return commonHTML + `
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Image Description/Alt Text</label>
+                                <input type="text" name="${baseFieldName}-description" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true" value="${fieldData.description || ''}" 
+                                    placeholder="Brief description of the image">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                                <select name="${baseFieldName}-width" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">
+                                    <option value="2" ${fieldData.width === '2' ? 'selected' : ''}>2 inches</option>
+                                    <option value="3" ${fieldData.width === '3' ? 'selected' : ''}>3 inches</option>
+                                    <option value="4" ${fieldData.width === '4' ? 'selected' : ''}>4 inches</option>
+                                    <option value="5" ${fieldData.width === '5' ? 'selected' : ''}>5 inches</option>
+                                </select>
+                            </div>
+                        </div>`;
+                        
+                default:
+                    return commonHTML + `
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                                <textarea name="${baseFieldName}-content" rows="3" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                    data-autosave="true">${fieldData.content || ''}</textarea>
+                            </div>
+                        </div>`;
+            }
+        }
+        
+        // Get human-readable field type name
+        getFieldTypeName(fieldType) {
+            const typeNames = {
+                'text': 'Text Content',
+                'multiple_choice': 'Multiple Choice Question',
+                'short_answer': 'Short Answer Question',
+                'image': 'Image Placeholder'
+            };
+            return typeNames[fieldType] || 'Unknown Field';
         }
         
         // Re-setup listeners when new fields are added

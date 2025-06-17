@@ -5476,11 +5476,12 @@ def load_generic_draft(draft_id):
         form.module_acronym.data = form_data.get('module_acronym', '')
         form.worksheet_title.data = form_data.get('worksheet_title', '')
         
-        # Note: Dynamic field loading would require complex reconstruction
-        # For now, just load the basic fields and let user know about dynamic content
+        # Pass dynamic fields data to template for JavaScript reconstruction
+        dynamic_fields_data = form_data.get('dynamic_fields', [])
         
-        flash(f'Draft "{draft.title}" loaded successfully! Note: Dynamic fields will need to be recreated.', 'success')
-        return render_template('create_generic.html', form=form, draft_id=draft.id)
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_generic.html', form=form, draft_id=draft.id, 
+                             draft_data=form_data, dynamic_fields_data=dynamic_fields_data)
         
     except Exception as e:
         print(f"Error loading generic draft: {e}")
