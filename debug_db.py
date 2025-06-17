@@ -169,25 +169,8 @@ def create_default_admin():
                 print("⚠️  Admin user already exists. Use option 3 for custom admin.")
                 return False
             
-            # Create default admin
-            admin = User(
-                email="admin@nola.edu",
-                username="admin",
-                first_name="System",
-                last_name="Administrator",
-                is_admin=True,
-                is_active=True
-            )
-            admin.set_password("admin123")  # Change this immediately!
-            
-            db.session.add(admin)
-            db.session.commit()
-            
-            print("✅ Default admin created!")
-            print("   Email: admin@nola.edu")
-            print("   Username: admin")
-            print("   Password: admin123")
-            print("   ⚠️  CHANGE THIS PASSWORD IMMEDIATELY!")
+            print("❌ Cannot create default admin with hardcoded credentials.")
+            print("   Use the /setup route in your web browser to create an admin user.")
             
             return True
             

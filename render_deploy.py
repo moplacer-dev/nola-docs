@@ -43,27 +43,8 @@ def setup_for_render():
             admin = User.query.filter_by(is_admin=True).first()
             
             if not admin:
-                log_message("🔐 No admin user found. Creating default admin...")
-                
-                # Create default admin
-                admin = User(
-                    email="admin@nola.edu",
-                    username="admin",
-                    first_name="System",
-                    last_name="Administrator", 
-                    is_admin=True,
-                    is_active=True
-                )
-                admin.set_password("admin123")
-                
-                db.session.add(admin)
-                db.session.commit()
-                
-                log_message("✅ Default admin created!")
-                log_message("   Email: admin@nola.edu")
-                log_message("   Username: admin") 
-                log_message("   Password: admin123")
-                log_message("   ⚠️  CHANGE THIS PASSWORD IMMEDIATELY!")
+                log_message("🔐 No admin user found.")
+                log_message("   Use the /setup route to create an admin user via the web interface.")
                 
             else:
                 log_message(f"✅ Admin user exists: {admin.email}")
