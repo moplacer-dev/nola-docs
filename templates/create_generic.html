@@ -234,7 +234,7 @@
             
             <!-- Hidden field to pass dynamic fields data for draft restoration -->
             {% if dynamic_fields_data %}
-                <input type="hidden" id="draft_dynamic_fields" value="{{ dynamic_fields_data | tojson | e }}">
+                <script type="application/json" id="draft_dynamic_fields">{{ dynamic_fields_data | tojson }}</script>
             {% endif %}
         </form>
     </div>
@@ -426,10 +426,10 @@
                 return;
             }
             
-            console.log('🔍 Found draft_dynamic_fields element, value:', draftFieldsElement.value);
+            console.log('🔍 Found draft_dynamic_fields element, textContent:', draftFieldsElement.textContent);
             
             try {
-                const dynamicFieldsData = JSON.parse(draftFieldsElement.value);
+                const dynamicFieldsData = JSON.parse(draftFieldsElement.textContent);
                 console.log('🔍 Parsed data:', dynamicFieldsData);
                 console.log('🔍 Data type:', typeof dynamicFieldsData);
                 console.log('🔍 Is array:', Array.isArray(dynamicFieldsData));
