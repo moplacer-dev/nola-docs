@@ -4081,30 +4081,63 @@ def delete_vocabulary_draft(draft_id):
 @app.route('/download/<int:doc_id>')
 @login_required
 def download_document(doc_id):
-    """Download a generated document"""
-    document = GeneratedDocument.query.filter_by(id=doc_id, user_id=current_user.id).first()
-    
-    if not document:
-        flash('Document not found', 'error')
-        return redirect(url_for('dashboard'))
-    
-    # Check if file exists
-    if not os.path.exists(document.file_path):
-        flash('Document file not found', 'error')
-        return redirect(url_for('dashboard'))
-    
-    # Track download
-    document.increment_download()
-    db.session.commit()
-    
-    # Activity logging
-    ActivityLog.log_activity('document_downloaded', current_user.id, 
-                            {'document_type': document.document_type, 'filename': document.filename}, 
-                            request)
-    db.session.commit()
-    
-    # Return file for download
-    return send_file(document.file_path, as_attachment=True, download_name=document.filename)
+    """Download a generated document with improved error handling"""
+    try:
+        document = GeneratedDocument.query.filter_by(id=doc_id, user_id=current_user.id).first()
+        
+        if not document:
+            print(f"⚠️  Download attempt for non-existent document ID: {doc_id} by user: {current_user.id}")
+            flash('Document not found. It may have been removed or you may not have permission to access it.', 'error')
+            return redirect(url_for('my_documents'))
+        
+        # Enhanced file existence check
+        if not document.file_path:
+            print(f"❌ Document {doc_id} has no file path")
+            flash(f'Document "{document.filename}" has no file path. Please contact support.', 'error')
+            # Remove the broken record
+            db.session.delete(document)
+            db.session.commit()
+            return redirect(url_for('my_documents'))
+        
+        if not os.path.exists(document.file_path):
+            print(f"❌ File not found on disk: {document.file_path}")
+            flash(f'The file for "{document.filename}" is no longer available. The document record has been removed.', 'warning')
+            # Remove the broken record
+            db.session.delete(document)
+            db.session.commit()
+            return redirect(url_for('my_documents'))
+        
+        # Verify file is readable
+        try:
+            file_size = os.path.getsize(document.file_path)
+            if file_size == 0:
+                print(f"❌ File is empty: {document.file_path}")
+                flash(f'The file for "{document.filename}" appears to be corrupted (0 bytes).', 'error')
+                return redirect(url_for('my_documents'))
+        except OSError as e:
+            print(f"❌ Cannot access file: {document.file_path}, error: {e}")
+            flash(f'Cannot access the file for "{document.filename}". Please try again later.', 'error')
+            return redirect(url_for('my_documents'))
+        
+        # Track download
+        document.increment_download()
+        db.session.commit()
+        
+        # Activity logging
+        ActivityLog.log_activity('document_downloaded', current_user.id, 
+                                {'document_type': document.document_type, 'filename': document.filename}, 
+                                request)
+        db.session.commit()
+        
+        print(f"✅ Successful download: {document.filename} by user {current_user.id}")
+        
+        # Return file for download
+        return send_file(document.file_path, as_attachment=True, download_name=document.filename)
+        
+    except Exception as e:
+        print(f"🚨 Download error for doc_id {doc_id}: {str(e)}")
+        flash('An unexpected error occurred while downloading the document. Please try again or contact support.', 'error')
+        return redirect(url_for('my_documents'))
 
 @app.route('/my-documents')
 @login_required
