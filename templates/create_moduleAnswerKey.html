@@ -1056,33 +1056,45 @@ class ModuleAnswerKeyAutosave {
     restoreDynamicFields() {
         console.log('🔍 Module Answer Key restoreDynamicFields called');
         
+        // Check what script elements exist
+        console.log('🔍 All script elements:', document.querySelectorAll('script[type="application/json"]'));
+        console.log('🔍 draft_enrichment_data element:', document.getElementById('draft_enrichment_data'));
+        console.log('🔍 draft_worksheet_data element:', document.getElementById('draft_worksheet_data'));
+        
         // Restore enrichment dynamic content
         const enrichmentElement = document.getElementById('draft_enrichment_data');
         if (enrichmentElement) {
+            console.log('🔍 Raw enrichment element content:', enrichmentElement.textContent);
             try {
                 const enrichmentData = JSON.parse(enrichmentElement.textContent);
-                console.log('🔍 Enrichment data:', enrichmentData);
+                console.log('🔍 Parsed enrichment data:', enrichmentData);
+                console.log('🔍 Enrichment data length:', enrichmentData.length);
                 this.restoreEnrichmentFields(enrichmentData);
             } catch (error) {
                 console.error('🔍 Error parsing enrichment data:', error);
             }
         } else {
-            console.log('🔍 No enrichment data found');
+            console.log('🔍 No enrichment data element found');
         }
         
         // Restore worksheet answer keys dynamic content
         const worksheetElement = document.getElementById('draft_worksheet_data');
         if (worksheetElement) {
+            console.log('🔍 Raw worksheet element content:', worksheetElement.textContent);
             try {
                 const worksheetData = JSON.parse(worksheetElement.textContent);
-                console.log('🔍 Worksheet data:', worksheetData);
+                console.log('🔍 Parsed worksheet data:', worksheetData);
+                console.log('🔍 Worksheet data length:', worksheetData.length);
                 this.restoreWorksheetFields(worksheetData);
             } catch (error) {
                 console.error('🔍 Error parsing worksheet data:', error);
             }
         } else {
-            console.log('🔍 No worksheet data found');
+            console.log('🔍 No worksheet data element found');
         }
+        
+        // Also try to restore other form data (RCA, Portfolio, etc.)
+        this.restoreOtherFields();
     }
     
     // Restore enrichment dynamic fields
@@ -1199,6 +1211,57 @@ class ModuleAnswerKeyAutosave {
                 }
             }
         }
+    }
+    
+    // Restore other form fields (RCA, Portfolio, etc.)
+    restoreOtherFields() {
+        console.log('🔍 Attempting to restore other form fields');
+        
+        // Check if current_draft_id has draft data we can access
+        const draftId = this.currentDraftId;
+        if (!draftId) {
+            console.log('🔍 No draft ID found');
+            return;
+        }
+        
+        // The server already populated the basic form fields via WTForms
+        // But dynamic fields like extra RCA questions and portfolio items need special handling
+        
+        // Check for any RCA session fields that might need dynamic addition
+        this.checkRCAFields();
+        
+        // Check for portfolio checklist items that might need dynamic addition  
+        this.checkPortfolioFields();
+    }
+    
+    // Check and restore RCA fields
+    checkRCAFields() {
+        console.log('🔍 Checking RCA fields');
+        
+        // Check how many RCA sessions have data
+        for (let sessionIndex = 0; sessionIndex < 5; sessionIndex++) {
+            const hasData = document.querySelector(`[data-field-type="rca_question"][data-session-index="${sessionIndex}"]`);
+            if (hasData) {
+                console.log(`🔍 Found RCA session ${sessionIndex + 1} data`);
+            }
+        }
+    }
+    
+    // Check and restore portfolio fields
+    checkPortfolioFields() {
+        console.log('🔍 Checking portfolio fields');
+        
+        // Count how many portfolio items have data
+        const portfolioItems = document.querySelectorAll('[data-field-type="portfolio"]');
+        console.log(`🔍 Found ${portfolioItems.length} portfolio items`);
+        
+        portfolioItems.forEach((item, index) => {
+            const productField = item.querySelector('[data-field-name="product"]');
+            const sessionField = item.querySelector('[data-field-name="session_number"]');
+            if (productField && productField.value) {
+                console.log(`🔍 Portfolio item ${index} has product: ${productField.value}`);
+            }
+        });
     }
     
     showAutosaveStatus(message, type) {

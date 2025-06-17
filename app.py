@@ -5130,6 +5130,11 @@ def load_moduleanswerkey_draft(draft_id):
         enrichment_data = form_data.get('enrichment_dynamic_content', [])
         worksheet_data = form_data.get('worksheet_answer_keys', [])
         
+        # Debug logging
+        print(f"🔍 Module Answer Key draft {draft.id} data keys: {list(form_data.keys())}")
+        print(f"🔍 Enrichment data: {enrichment_data}")
+        print(f"🔍 Worksheet data: {worksheet_data}")
+        
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         return render_template('create_moduleAnswerKey.html', form=form, draft_id=draft.id, 
                              draft_data=form_data, enrichment_dynamic_content=enrichment_data, 
