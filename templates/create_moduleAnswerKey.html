@@ -1233,6 +1233,9 @@ class ModuleAnswerKeyAutosave {
         
         // Check for portfolio checklist items that might need dynamic addition  
         this.checkPortfolioFields();
+        
+        // Debug: Check what data is actually in the form fields
+        this.debugFormFieldValues();
     }
     
     // Check and restore RCA fields
@@ -1263,6 +1266,50 @@ class ModuleAnswerKeyAutosave {
                 console.log(`🔍 Portfolio item ${index} has product: ${productField.value}`);
             }
         });
+    }
+    
+    // Debug function to check actual form field values
+    debugFormFieldValues() {
+        console.log('🔍 DEBUG: Checking actual form field values');
+        
+        // Check RCA session fields
+        console.log('🔍 RCA Session Field Values:');
+        for (let sessionIndex = 0; sessionIndex < 4; sessionIndex++) {
+            console.log(`🔍 RCA Session ${sessionIndex + 1}:`);
+            for (let questionIndex = 0; questionIndex < 3; questionIndex++) {
+                const questionField = document.querySelector(`input[name="rca_sessions-${sessionIndex}-questions-${questionIndex}-question_text"]`);
+                if (questionField) {
+                    console.log(`🔍   Question ${questionIndex + 1} (${['Research', 'Challenge', 'Application'][questionIndex]}): "${questionField.value}"`);
+                }
+            }
+        }
+        
+        // Check PBA session fields
+        console.log('🔍 PBA Session Field Values:');
+        for (let sessionIndex = 0; sessionIndex < 3; sessionIndex++) {
+            console.log(`🔍 PBA Session ${sessionIndex + 1}:`);
+            const sessionField = document.querySelector(`input[name="pba_sessions-${sessionIndex}-session_number"]`);
+            const activityField = document.querySelector(`input[name="pba_sessions-${sessionIndex}-activity_name"]`);
+            if (sessionField) console.log(`🔍   Session Number: "${sessionField.value}"`);
+            if (activityField) console.log(`🔍   Activity Name: "${activityField.value}"`);
+            
+            for (let questionIndex = 0; questionIndex < 4; questionIndex++) {
+                const questionField = document.querySelector(`textarea[name="pba_sessions-${sessionIndex}-assessment_questions-${questionIndex}-question"]`);
+                const answerField = document.querySelector(`input[name="pba_sessions-${sessionIndex}-assessment_questions-${questionIndex}-correct_answer"]`);
+                if (questionField) console.log(`🔍   Question ${questionIndex + 1}: "${questionField.value}"`);
+                if (answerField) console.log(`🔍   Answer ${questionIndex + 1}: "${answerField.value}"`);
+            }
+        }
+        
+        // Check Portfolio fields
+        console.log('🔍 Portfolio Field Values:');
+        for (let itemIndex = 0; itemIndex < 10; itemIndex++) {
+            const productField = document.querySelector(`input[name="portfolio_checklist-${itemIndex}-product"]`);
+            const sessionField = document.querySelector(`input[name="portfolio_checklist-${itemIndex}-session_number"]`);
+            if (productField && productField.value) {
+                console.log(`🔍   Item ${itemIndex + 1}: "${productField.value}" (Session: "${sessionField ? sessionField.value : 'N/A'}")`);
+            }
+        }
     }
     
     showAutosaveStatus(message, type) {
