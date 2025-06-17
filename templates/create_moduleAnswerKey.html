@@ -775,12 +775,8 @@
             {% endif %}
             
             <!-- JSON data for draft restoration -->
-            {% if enrichment_dynamic_content %}
-                <script type="application/json" id="draft_enrichment_data">{{ enrichment_dynamic_content | tojson }}</script>
-            {% endif %}
-            {% if worksheet_answer_keys %}
-                <script type="application/json" id="draft_worksheet_data">{{ worksheet_answer_keys | tojson }}</script>
-            {% endif %}
+            <script type="application/json" id="draft_enrichment_data">{{ enrichment_dynamic_content | tojson }}</script>
+            <script type="application/json" id="draft_worksheet_data">{{ worksheet_answer_keys | tojson }}</script>
         </form>
     </div>
 </div>

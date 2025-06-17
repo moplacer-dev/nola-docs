@@ -1299,7 +1299,8 @@ def create_module_answer_key():
                 print(f"Error generating Module Answer Key: {e}")
                 flash(f'Error generating Module Answer Key: {str(e)}', 'error')
     
-    return render_template('create_moduleAnswerKey.html', form=form)
+    return render_template('create_moduleAnswerKey.html', form=form, 
+                         enrichment_dynamic_content=[], worksheet_answer_keys=[])
 
 @app.route('/create-moduleActivitySheet', methods=['GET', 'POST'])
 @login_required
