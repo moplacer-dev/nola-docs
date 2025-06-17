@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, FieldList, FormField, IntegerField, HiddenField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from docxtpl import DocxTemplate, RichText, InlineImage
@@ -60,6 +61,9 @@ login_manager.login_message_category = 'info'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# CSRF Protection setup
+csrf = CSRFProtect(app)
 
 # Register blueprints
 from auth import auth
