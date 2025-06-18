@@ -431,6 +431,7 @@
                         
                         <div class="space-y-6">
                             {% for session_form in form.pba_sessions %}
+                                {% set session_index = loop.index0 %}
                                 <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
                                     <h3 class="font-medium text-purple-800 mb-4">PBA {{ loop.index }}</h3>
                                     
