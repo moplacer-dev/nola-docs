@@ -271,7 +271,7 @@
                                                         placeholder="Enter the question", 
                                                         data_autosave="true",
                                                         data_field_type="rca_question",
-                                                        data_session_index=loop.index0,
+                                                        data_session_index=loop.outer.index0,
                                                         data_question_index=loop.index0,
                                                         data_field_name="question_text") }}
                                                 </div>
@@ -283,7 +283,7 @@
                                                             placeholder="Enter choice A", 
                                                             data_autosave="true",
                                                             data_field_type="rca_question",
-                                                            data_session_index=loop.index0,
+                                                            data_session_index=loop.outer.index0,
                                                             data_question_index=loop.index0,
                                                             data_field_name="choice_a") }}
                                                     </div>
@@ -293,7 +293,7 @@
                                                             placeholder="Enter choice B", 
                                                             data_autosave="true",
                                                             data_field_type="rca_question",
-                                                            data_session_index=loop.index0,
+                                                            data_session_index=loop.outer.index0,
                                                             data_question_index=loop.index0,
                                                             data_field_name="choice_b") }}
                                                     </div>
@@ -303,7 +303,7 @@
                                                             placeholder="Enter choice C", 
                                                             data_autosave="true",
                                                             data_field_type="rca_question",
-                                                            data_session_index=loop.index0,
+                                                            data_session_index=loop.outer.index0,
                                                             data_question_index=loop.index0,
                                                             data_field_name="choice_c") }}
                                                     </div>
@@ -313,7 +313,7 @@
                                                             placeholder="Enter choice D", 
                                                             data_autosave="true",
                                                             data_field_type="rca_question",
-                                                            data_session_index=loop.index0,
+                                                            data_session_index=loop.outer.index0,
                                                             data_question_index=loop.index0,
                                                             data_field_name="choice_d") }}
                                                     </div>
@@ -324,7 +324,7 @@
                                                     {{ question_form.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
                                                         data_autosave="true",
                                                         data_field_type="rca_question",
-                                                        data_session_index=loop.index0,
+                                                        data_session_index=loop.outer.index0,
                                                         data_question_index=loop.index0,
                                                         data_field_name="correct_answer") }}
                                                     <p class="mt-1 text-xs text-gray-500">Enter A, B, C, or D</p>
@@ -464,7 +464,7 @@
                                                         placeholder="Enter the assessment question", 
                                                         data_autosave="true",
                                                         data_field_type="pba_question",
-                                                        data_session_index=loop.index0,
+                                                        data_session_index=loop.outer.index0,
                                                         data_question_index=loop.index0,
                                                         data_field_name="question") }}
                                                 </div>
@@ -475,7 +475,7 @@
                                                         placeholder="Enter the correct answer", 
                                                         data_autosave="true",
                                                         data_field_type="pba_question",
-                                                        data_session_index=loop.index0,
+                                                        data_session_index=loop.outer.index0,
                                                         data_question_index=loop.index0,
                                                         data_field_name="correct_answer") }}
                                                 </div>
