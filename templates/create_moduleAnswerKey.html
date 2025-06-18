@@ -940,14 +940,12 @@ class ModuleAnswerKeyAutosave {
                 // Find all fields for this session and question
                 document.querySelectorAll(`[data-field-type="rca_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
                     const fieldName = field.dataset.fieldName;
-                    if (field.value.trim()) {
-                        questionData[fieldName] = field.value.trim();
-                    }
+                    // Save all fields, even if empty
+                    questionData[fieldName] = field.value.trim();
                 });
                 
-                if (Object.keys(questionData).length > 0) {
-                    sessionData.questions[questionIndex] = questionData;
-                }
+                // Always add question data (even if empty) to maintain proper array structure
+                sessionData.questions.push(questionData);
             }
             
             // Only add session if it has questions
@@ -995,14 +993,12 @@ class ModuleAnswerKeyAutosave {
                 
                 document.querySelectorAll(`[data-field-type="pba_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
                     const fieldName = field.dataset.fieldName;
-                    if (field.value.trim()) {
-                        questionData[fieldName] = field.value.trim();
-                    }
+                    // Save all fields, even if empty
+                    questionData[fieldName] = field.value.trim();
                 });
                 
-                if (Object.keys(questionData).length > 0) {
-                    sessionData.assessment_questions[questionIndex] = questionData;
-                }
+                // Always add question data (even if empty) to maintain proper array structure
+                sessionData.assessment_questions.push(questionData);
             }
             
             // Only add session if it has content
@@ -1037,13 +1033,12 @@ class ModuleAnswerKeyAutosave {
                 formData.portfolio_checklist[itemIndex] = {};
             }
             
-            if (field.value.trim()) {
-                formData.portfolio_checklist[itemIndex][fieldName] = field.value.trim();
-            }
+            // Save all fields, even if empty
+            formData.portfolio_checklist[itemIndex][fieldName] = field.value.trim();
         });
         
-        // Clean up sparse arrays
-        formData.portfolio_checklist = formData.portfolio_checklist.filter(item => item && (item.product || item.session_number));
+        // Convert sparse array to dense array and keep empty items for proper indexing
+        formData.portfolio_checklist = formData.portfolio_checklist.map(item => item || {});
         
         return formData;
     }
