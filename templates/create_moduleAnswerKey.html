@@ -764,7 +764,8 @@
             <div class="flex justify-end pt-6 border-t border-gray-200">
                 <!-- Only Generate Button -->
                 <button type="submit" name="action" value="generate" 
-                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium"
+                        onclick="console.log('🔍 Submit button clicked!'); return true;">
                     Generate Module Answer Key
                 </button>
             </div>
@@ -2007,26 +2008,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('module-answer-key-form');
     if (form) {
         form.addEventListener('submit', function(event) {
-            console.log('Form submission attempted...');
+            console.log('🔍 Form submission attempted...');
+            console.log('🔍 Form action:', form.action);
+            console.log('🔍 Form method:', form.method);
             
             // Check if module acronym is filled
             const moduleAcronym = document.getElementById('module_acronym').value.trim();
+            console.log('🔍 Module acronym value:', moduleAcronym);
+            
             if (!moduleAcronym) {
-                console.error('Module acronym is required but empty');
+                console.error('🔍 Module acronym is required but empty');
                 alert('Please enter a Module Acronym before generating the document.');
                 event.preventDefault();
                 return false;
             }
             
-            console.log('Form validation passed, submitting...');
+            // Check if the submit button has the correct action value
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                console.log('🔍 Submit button found:', submitBtn);
+                console.log('🔍 Submit button name:', submitBtn.name);
+                console.log('🔍 Submit button value:', submitBtn.value);
+            }
+            
+            console.log('🔍 Form validation passed, submitting...');
             
             // Show loading state on submit button
-            const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.textContent = 'Generating Document...';
                 submitBtn.disabled = true;
             }
         });
+    } else {
+        console.error('🔍 Form element not found!');
+    }
+    
+    // Force immediate check for form element
+    console.log('🔍 Script loaded - checking for form immediately...');
+    const immediateForm = document.getElementById('module-answer-key-form');
+    if (immediateForm) {
+        console.log('🔍 Form found immediately:', immediateForm);
+    } else {
+        console.log('🔍 Form not found immediately - will wait for DOMContentLoaded');
     }
 });
 

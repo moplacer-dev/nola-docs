@@ -1265,21 +1265,31 @@ def create_module_answer_key():
     form = ModuleAnswerKeyForm()
     
     if request.method == 'POST':
-        print("Module Answer Key form submitted!")
-        print(f"Form data: {request.form}")
-        print(f"Form valid: {form.validate_on_submit()}")
+        print("🔍 Module Answer Key form submitted!")
+        print(f"🔍 Request method: {request.method}")
+        print(f"🔍 Form data keys: {list(request.form.keys())}")
+        print(f"🔍 Action value: {request.form.get('action', 'NOT FOUND')}")
+        print(f"🔍 Module acronym: {request.form.get('module_acronym', 'NOT FOUND')}")
+        print(f"🔍 Form valid: {form.validate_on_submit()}")
         if form.errors:
-            print(f"Form errors: {form.errors}")
+            print(f"🔍 Form errors: {form.errors}")
+        
+        # Check if this is actually a generation request
+        action = request.form.get('action')
+        if action != 'generate':
+            print(f"🔍 Skipping generation - action is '{action}', not 'generate'")
+            return render_template('create_moduleAnswerKey.html', form=form, 
+                                 enrichment_dynamic_content=[], worksheet_answer_keys=[])
         
         # Only handle document generation now - autosave handles saving
         if form.validate_on_submit():
-            print("Module Answer Key form validation passed!")
+            print("🔍 Module Answer Key form validation passed!")
             try:
-                print("Attempting to generate Module Answer Key...")
+                print("🔍 Attempting to generate Module Answer Key...")
                 doc_path = generate_module_answer_key(form)
                 filename = os.path.basename(doc_path)
                 
-                print(f"Module Answer Key generated at: {doc_path}")
+                print(f"🔍 Module Answer Key generated at: {doc_path}")
                 
                 # Save document info to database
                 doc_record = GeneratedDocument(
@@ -1293,15 +1303,19 @@ def create_module_answer_key():
                 db.session.add(doc_record)
                 db.session.commit()
                 
+                print(f"🔍 Database record created successfully")
                 flash('Module Answer Key generated successfully!', 'success')
                 return redirect(url_for('my_documents'))
             except Exception as e:
-                print(f"Error generating Module Answer Key: {e}")
+                print(f"🔍 Error generating Module Answer Key: {e}")
                 import traceback
                 traceback.print_exc()  # Print full traceback for debugging
                 flash(f'Error generating Module Answer Key: {str(e)}', 'error')
                 return render_template('create_moduleAnswerKey.html', form=form, 
                                      enrichment_dynamic_content=[], worksheet_answer_keys=[])
+        else:
+            print(f"🔍 Form validation failed!")
+            print(f"🔍 Validation errors: {form.errors}")
     
     return render_template('create_moduleAnswerKey.html', form=form, 
                          enrichment_dynamic_content=[], worksheet_answer_keys=[])
