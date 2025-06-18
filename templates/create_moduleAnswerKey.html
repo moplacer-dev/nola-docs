@@ -864,6 +864,9 @@ class ModuleAnswerKeyAutosave {
             // Add draft_id to the data
             formData.draft_id = this.currentDraftId;
             
+            // Debug: Log the complete data being sent
+            console.log('🔍 AUTOSAVE COMPLETE DATA:', JSON.stringify(formData, null, 2));
+            
             const response = await fetch('/autosave-moduleanswerkey-draft', {
                 method: 'POST',
                 headers: {
@@ -938,8 +941,12 @@ class ModuleAnswerKeyAutosave {
                 const questionData = {};
                 
                 // Find all fields for this session and question
-                document.querySelectorAll(`[data-field-type="rca_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
+                const fields = document.querySelectorAll(`[data-field-type="rca_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`);
+                console.log(`🔍 AUTOSAVE DEBUG: RCA Session ${sessionIndex + 1}, Question ${questionIndex + 1} - Found ${fields.length} fields`);
+                
+                fields.forEach(field => {
                     const fieldName = field.dataset.fieldName;
+                    console.log(`🔍   Field: ${fieldName} = "${field.value}"`);
                     // Save all fields, even if empty
                     questionData[fieldName] = field.value.trim();
                 });
@@ -991,8 +998,12 @@ class ModuleAnswerKeyAutosave {
             for (let questionIndex = 0; questionIndex < 4; questionIndex++) {
                 const questionData = {};
                 
-                document.querySelectorAll(`[data-field-type="pba_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`).forEach(field => {
+                const fields = document.querySelectorAll(`[data-field-type="pba_question"][data-session-index="${sessionIndex}"][data-question-index="${questionIndex}"]`);
+                console.log(`🔍 AUTOSAVE DEBUG: PBA Session ${sessionIndex + 1}, Question ${questionIndex + 1} - Found ${fields.length} fields`);
+                
+                fields.forEach(field => {
                     const fieldName = field.dataset.fieldName;
+                    console.log(`🔍   Field: ${fieldName} = "${field.value}"`);
                     // Save all fields, even if empty
                     questionData[fieldName] = field.value.trim();
                 });
