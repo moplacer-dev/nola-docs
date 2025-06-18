@@ -763,9 +763,9 @@
             <!-- Form Actions -->
             <div class="flex justify-end pt-6 border-t border-gray-200">
                 <!-- Only Generate Button -->
-                <button type="submit" name="action" value="generate" 
+                <button type="button" 
                         class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium"
-                        onclick="console.log('🔍 Submit button clicked!'); return handleFormSubmission(event);">
+                        onclick="console.log('🔍 Manual submit clicked!'); submitFormManually(this);">
                     Generate Module Answer Key
                 </button>
             </div>
@@ -2053,9 +2053,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Direct form submission handler function
-function handleFormSubmission(event) {
-    console.log('🔍 handleFormSubmission called directly!');
+// Manual form submission function
+function submitFormManually(button) {
+    console.log('🔍 submitFormManually called!');
     
     // Check if module acronym is filled
     const moduleAcronym = document.getElementById('module_acronym').value.trim();
@@ -2064,21 +2064,25 @@ function handleFormSubmission(event) {
     if (!moduleAcronym) {
         console.error('🔍 Module acronym is required but empty');
         alert('Please enter a Module Acronym before generating the document.');
-        event.preventDefault();
         return false;
     }
     
-    console.log('🔍 Validation passed, allowing form submission...');
+    console.log('🔍 Validation passed, submitting form manually...');
     
-    // Show loading state on submit button
-    const submitBtn = event.target;
-    if (submitBtn) {
-        console.log('🔍 Setting button to loading state...');
-        submitBtn.textContent = 'Generating Document...';
-        submitBtn.disabled = true;
-    }
+    // Show loading state
+    button.textContent = 'Generating Document...';
+    button.disabled = true;
     
-    return true; // Allow form submission
+    // Create hidden input for action
+    const form = document.getElementById('module-answer-key-form');
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'generate';
+    form.appendChild(actionInput);
+    
+    console.log('🔍 Submitting form now...');
+    form.submit();
 }
 
 // Continue with existing scripts...
