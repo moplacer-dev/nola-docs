@@ -765,7 +765,7 @@
                 <!-- Only Generate Button -->
                 <button type="submit" name="action" value="generate" 
                         class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium"
-                        onclick="console.log('🔍 Submit button clicked!'); return true;">
+                        onclick="console.log('🔍 Submit button clicked!'); return handleFormSubmission(event);">
                     Generate Module Answer Key
                 </button>
             </div>
@@ -2052,6 +2052,34 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 Form not found immediately - will wait for DOMContentLoaded');
     }
 });
+
+// Direct form submission handler function
+function handleFormSubmission(event) {
+    console.log('🔍 handleFormSubmission called directly!');
+    
+    // Check if module acronym is filled
+    const moduleAcronym = document.getElementById('module_acronym').value.trim();
+    console.log('🔍 Module acronym value:', moduleAcronym);
+    
+    if (!moduleAcronym) {
+        console.error('🔍 Module acronym is required but empty');
+        alert('Please enter a Module Acronym before generating the document.');
+        event.preventDefault();
+        return false;
+    }
+    
+    console.log('🔍 Validation passed, allowing form submission...');
+    
+    // Show loading state on submit button
+    const submitBtn = event.target;
+    if (submitBtn) {
+        console.log('🔍 Setting button to loading state...');
+        submitBtn.textContent = 'Generating Document...';
+        submitBtn.disabled = true;
+    }
+    
+    return true; // Allow form submission
+}
 
 // Continue with existing scripts...
 </script>
