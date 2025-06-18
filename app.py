@@ -5154,7 +5154,7 @@ def load_moduleanswerkey_draft(draft_id):
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         return render_template('create_moduleAnswerKey.html', form=form, draft_id=draft.id, 
                              draft_data=form_data, enrichment_dynamic_content=enrichment_data, 
-                             worksheet_answer_keys=worksheet_data)
+                             worksheet_answer_keys=worksheet_data, portfolio_checklist_data=portfolio_data)
         
     except Exception as e:
         print(f"Error loading module answer key draft: {e}")

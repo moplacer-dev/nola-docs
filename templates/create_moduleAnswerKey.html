@@ -779,6 +779,7 @@
             <!-- JSON data for draft restoration -->
             <script type="application/json" id="draft_enrichment_data">{{ (enrichment_dynamic_content or []) | tojson }}</script>
             <script type="application/json" id="draft_worksheet_data">{{ (worksheet_answer_keys or []) | tojson }}</script>
+            <script type="application/json" id="draft_portfolio_data">{{ (portfolio_checklist_data or []) | tojson }}</script>
         </form>
     </div>
 </div>
@@ -1261,19 +1262,59 @@ class ModuleAnswerKeyAutosave {
     
     // Check and restore portfolio fields
     checkPortfolioFields() {
-        console.log('🔍 Checking portfolio fields');
+        console.log('🔍 Restoring portfolio fields');
         
-        // Count how many portfolio items have data
-        const portfolioItems = document.querySelectorAll('[data-field-type="portfolio"]');
-        console.log(`🔍 Found ${portfolioItems.length} portfolio items`);
+        // Get portfolio data from script element
+        const portfolioScript = document.getElementById('draft_portfolio_data');
+        if (!portfolioScript || !portfolioScript.textContent.trim()) {
+            console.log('🔍 No portfolio draft data found');
+            return;
+        }
         
-        portfolioItems.forEach((item, index) => {
-            const productField = item.querySelector('[data-field-name="product"]');
-            const sessionField = item.querySelector('[data-field-name="session_number"]');
-            if (productField && productField.value) {
-                console.log(`🔍 Portfolio item ${index} has product: ${productField.value}`);
-            }
-        });
+        try {
+            const portfolioData = JSON.parse(portfolioScript.textContent);
+            console.log(`🔍 Found ${portfolioData.length} portfolio items to restore:`, portfolioData);
+            
+            // Get all portfolio fields
+            const portfolioFields = document.querySelectorAll('[data-field-type="portfolio"]');
+            console.log(`🔍 Found ${portfolioFields.length} total portfolio fields`);
+            
+            // Group fields by item index
+            const portfolioItems = {};
+            portfolioFields.forEach(field => {
+                const itemIndex = parseInt(field.dataset.itemIndex);
+                const fieldName = field.dataset.fieldName;
+                
+                if (!portfolioItems[itemIndex]) {
+                    portfolioItems[itemIndex] = {};
+                }
+                portfolioItems[itemIndex][fieldName] = field;
+            });
+            
+            // Restore data for each portfolio item
+            portfolioData.forEach((item, index) => {
+                if (portfolioItems[index]) {
+                    console.log(`🔍 Restoring portfolio item ${index}:`, item);
+                    
+                    if (portfolioItems[index].product && item.product) {
+                        portfolioItems[index].product.value = item.product;
+                        console.log(`🔍 Set product[${index}] = "${item.product}"`);
+                    }
+                    
+                    if (portfolioItems[index].session_number && item.session_number) {
+                        portfolioItems[index].session_number.value = item.session_number;
+                        console.log(`🔍 Set session_number[${index}] = "${item.session_number}"`);
+                    }
+                } else {
+                    console.log(`🔍 No fields found for portfolio item ${index}`);
+                }
+            });
+            
+            console.log('🔍 Portfolio restoration complete');
+            
+        } catch (error) {
+            console.error('🔍 Error parsing portfolio draft data:', error);
+        }
     }
     
     // Debug function to check actual form field values
