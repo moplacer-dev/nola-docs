@@ -1297,7 +1297,11 @@ def create_module_answer_key():
                 return redirect(url_for('my_documents'))
             except Exception as e:
                 print(f"Error generating Module Answer Key: {e}")
+                import traceback
+                traceback.print_exc()  # Print full traceback for debugging
                 flash(f'Error generating Module Answer Key: {str(e)}', 'error')
+                return render_template('create_moduleAnswerKey.html', form=form, 
+                                     enrichment_dynamic_content=[], worksheet_answer_keys=[])
     
     return render_template('create_moduleAnswerKey.html', form=form, 
                          enrichment_dynamic_content=[], worksheet_answer_keys=[])
