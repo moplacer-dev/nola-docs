@@ -1312,6 +1312,10 @@ class ModuleAnswerKeyAutosave {
         
         // Get portfolio data from script element
         const portfolioScript = document.getElementById('draft_portfolio_data');
+        console.log('🔍 Portfolio script element:', portfolioScript);
+        console.log('🔍 Portfolio script content:', portfolioScript ? portfolioScript.textContent : 'null');
+        console.log('🔍 Portfolio script content trimmed:', portfolioScript ? portfolioScript.textContent.trim() : 'null');
+        
         if (!portfolioScript || !portfolioScript.textContent.trim()) {
             console.log('🔍 No portfolio draft data found');
             return;
@@ -1331,11 +1335,15 @@ class ModuleAnswerKeyAutosave {
                 const itemIndex = parseInt(field.dataset.itemIndex);
                 const fieldName = field.dataset.fieldName;
                 
+                console.log(`🔍 Processing field: itemIndex=${itemIndex}, fieldName=${fieldName}, element:`, field);
+                
                 if (!portfolioItems[itemIndex]) {
                     portfolioItems[itemIndex] = {};
                 }
                 portfolioItems[itemIndex][fieldName] = field;
             });
+            
+            console.log('🔍 Grouped portfolio items:', portfolioItems);
             
             // Restore data for each portfolio item
             portfolioData.forEach((item, index) => {
@@ -1357,6 +1365,15 @@ class ModuleAnswerKeyAutosave {
             });
             
             console.log('🔍 Portfolio restoration complete');
+            
+            // Debug: Check if fields were actually populated
+            const allPortfolioFields = document.querySelectorAll('[data-field-type="portfolio"]');
+            console.log('🔍 Final portfolio field values after restoration:');
+            allPortfolioFields.forEach((field, idx) => {
+                if (field.value) {
+                    console.log(`🔍   Field ${idx}: ${field.dataset.fieldName}[${field.dataset.itemIndex}] = "${field.value}"`);
+                }
+            });
             
         } catch (error) {
             console.error('🔍 Error parsing portfolio draft data:', error);
