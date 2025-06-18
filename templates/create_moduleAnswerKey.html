@@ -1055,6 +1055,79 @@ class ModuleAnswerKeyAutosave {
         // Convert sparse array to dense array and keep empty items for proper indexing
         formData.portfolio_checklist = formData.portfolio_checklist.map(item => item || {});
         
+        // Collect enrichment dynamic content
+        const enrichmentFields = document.querySelectorAll('[name*="enrichment_dynamic_content-"]');
+        console.log(`🔍 AUTOSAVE: Found ${enrichmentFields.length} enrichment fields`);
+        
+        enrichmentFields.forEach(field => {
+            const match = field.name.match(/enrichment_dynamic_content-(\d+)-(.+)/);
+            if (match) {
+                const fieldIndex = parseInt(match[1]);
+                const fieldProperty = match[2];
+                
+                if (!formData.enrichment_dynamic_content[fieldIndex]) {
+                    formData.enrichment_dynamic_content[fieldIndex] = {};
+                }
+                
+                formData.enrichment_dynamic_content[fieldIndex][fieldProperty] = field.value.trim();
+                console.log(`🔍 AUTOSAVE: Enrichment[${fieldIndex}].${fieldProperty} = "${field.value.trim()}"`);
+            }
+        });
+        
+        // Clean up sparse arrays for enrichment
+        formData.enrichment_dynamic_content = formData.enrichment_dynamic_content.filter(item => 
+            item && Object.keys(item).length > 0
+        );
+        
+        // Collect worksheet answer keys dynamic content
+        const worksheetFields = document.querySelectorAll('[name*="worksheet_answer_keys-"]');
+        console.log(`🔍 AUTOSAVE: Found ${worksheetFields.length} worksheet fields`);
+        
+        worksheetFields.forEach(field => {
+            const worksheetMatch = field.name.match(/worksheet_answer_keys-(\d+)-worksheet_title/);
+            const contentMatch = field.name.match(/worksheet_answer_keys-(\d+)-dynamic_content-(\d+)-(.+)/);
+            
+            if (worksheetMatch) {
+                // Worksheet title field
+                const worksheetIndex = parseInt(worksheetMatch[1]);
+                if (!formData.worksheet_answer_keys[worksheetIndex]) {
+                    formData.worksheet_answer_keys[worksheetIndex] = { dynamic_content: [] };
+                }
+                formData.worksheet_answer_keys[worksheetIndex].worksheet_title = field.value.trim();
+                console.log(`🔍 AUTOSAVE: Worksheet[${worksheetIndex}].title = "${field.value.trim()}"`);
+                
+            } else if (contentMatch) {
+                // Dynamic content field
+                const worksheetIndex = parseInt(contentMatch[1]);
+                const fieldIndex = parseInt(contentMatch[2]);
+                const fieldProperty = contentMatch[3];
+                
+                if (!formData.worksheet_answer_keys[worksheetIndex]) {
+                    formData.worksheet_answer_keys[worksheetIndex] = { dynamic_content: [] };
+                }
+                if (!formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex]) {
+                    formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex] = {};
+                }
+                
+                formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex][fieldProperty] = field.value.trim();
+                console.log(`🔍 AUTOSAVE: Worksheet[${worksheetIndex}][${fieldIndex}].${fieldProperty} = "${field.value.trim()}"`);
+            }
+        });
+        
+        // Clean up sparse arrays for worksheets
+        formData.worksheet_answer_keys = formData.worksheet_answer_keys.filter(worksheet => 
+            worksheet && (worksheet.worksheet_title || (worksheet.dynamic_content && worksheet.dynamic_content.length > 0))
+        );
+        
+        // Clean up dynamic content arrays within worksheets
+        formData.worksheet_answer_keys.forEach(worksheet => {
+            if (worksheet.dynamic_content) {
+                worksheet.dynamic_content = worksheet.dynamic_content.filter(item => 
+                    item && Object.keys(item).length > 0
+                );
+            }
+        });
+        
         return formData;
     }
     
