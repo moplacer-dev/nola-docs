@@ -1202,12 +1202,58 @@ class ModuleAnswerKeyAutosave {
     
     // Generate enrichment field HTML with populated data
     generateEnrichmentFieldHTML(fieldType, index, fieldData = {}) {
-        return generateEnrichmentFieldHTML(fieldType, index, fieldData);
+        const html = createEnrichmentFieldHtml(fieldType, index);
+        
+        // If we have field data, we need to populate it after creation
+        if (Object.keys(fieldData).length > 0) {
+            console.log(`🔍 Will populate enrichment field ${index} with data:`, fieldData);
+            // Create a temp div to modify the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Populate fields based on field type
+            Object.keys(fieldData).forEach(key => {
+                if (key !== 'field_type') {
+                    const input = tempDiv.querySelector(`[name="enrichment_dynamic_content-${index}-${key}"]`);
+                    if (input) {
+                        input.value = fieldData[key];
+                        console.log(`🔍 Set enrichment field ${key} = "${fieldData[key]}"`);
+                    }
+                }
+            });
+            
+            return tempDiv.innerHTML;
+        }
+        
+        return html;
     }
     
     // Generate worksheet field HTML with populated data  
     generateWorksheetFieldHTML(fieldType, worksheetIndex, fieldIndex, fieldData = {}) {
-        return generateWorksheetFieldHTML(fieldType, worksheetIndex, fieldIndex, fieldData);
+        const html = createWorksheetFieldHtml(fieldType, worksheetIndex, fieldIndex);
+        
+        // If we have field data, we need to populate it after creation
+        if (Object.keys(fieldData).length > 0) {
+            console.log(`🔍 Will populate worksheet ${worksheetIndex} field ${fieldIndex} with data:`, fieldData);
+            // Create a temp div to modify the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Populate fields based on field type
+            Object.keys(fieldData).forEach(key => {
+                if (key !== 'field_type') {
+                    const input = tempDiv.querySelector(`[name="worksheet_answer_keys-${worksheetIndex}-dynamic_content-${fieldIndex}-${key}"]`);
+                    if (input) {
+                        input.value = fieldData[key];
+                        console.log(`🔍 Set worksheet field ${key} = "${fieldData[key]}"`);
+                    }
+                }
+            });
+            
+            return tempDiv.innerHTML;
+        }
+        
+        return html;
     }
     
     // Ensure worksheet exists (add it if missing)
