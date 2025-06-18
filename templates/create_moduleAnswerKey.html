@@ -1293,23 +1293,25 @@ class ModuleAnswerKeyAutosave {
             if (sessionField) console.log(`🔍   Session Number: "${sessionField.value}"`);
             if (activityField) console.log(`🔍   Activity Name: "${activityField.value}"`);
             
-            for (let questionIndex = 0; questionIndex < 4; questionIndex++) {
-                const questionField = document.querySelector(`textarea[name="pba_sessions-${sessionIndex}-assessment_questions-${questionIndex}-question"]`);
-                const answerField = document.querySelector(`input[name="pba_sessions-${sessionIndex}-assessment_questions-${questionIndex}-correct_answer"]`);
-                if (questionField) console.log(`🔍   Question ${questionIndex + 1}: "${questionField.value}"`);
-                if (answerField) console.log(`🔍   Answer ${questionIndex + 1}: "${answerField.value}"`);
-            }
+            // Debug: Check what PBA question fields actually exist
+            const allPBAFields = document.querySelectorAll(`[name*="pba_sessions-${sessionIndex}-assessment_questions"]`);
+            console.log(`🔍   PBA Session ${sessionIndex + 1} - Found ${allPBAFields.length} assessment question fields:`);
+            allPBAFields.forEach((field, idx) => {
+                console.log(`🔍     Field ${idx + 1}: name="${field.name}" value="${field.value}"`);
+            });
         }
         
         // Check Portfolio fields
         console.log('🔍 Portfolio Field Values:');
-        for (let itemIndex = 0; itemIndex < 10; itemIndex++) {
-            const productField = document.querySelector(`input[name="portfolio_checklist-${itemIndex}-product"]`);
-            const sessionField = document.querySelector(`input[name="portfolio_checklist-${itemIndex}-session_number"]`);
-            if (productField && productField.value) {
-                console.log(`🔍   Item ${itemIndex + 1}: "${productField.value}" (Session: "${sessionField ? sessionField.value : 'N/A'}")`);
+        
+        // Debug: Check what portfolio fields actually exist
+        const allPortfolioFields = document.querySelectorAll(`[name*="portfolio_checklist"]`);
+        console.log(`🔍 Found ${allPortfolioFields.length} total portfolio fields:`);
+        allPortfolioFields.forEach((field, idx) => {
+            if (field.value) {
+                console.log(`🔍   Portfolio Field ${idx + 1}: name="${field.name}" value="${field.value}"`);
             }
-        }
+        });
     }
     
     showAutosaveStatus(message, type) {
