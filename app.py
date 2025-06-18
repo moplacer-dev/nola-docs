@@ -2736,51 +2736,65 @@ def generate_module_answer_key(form):
                 'session_number': i + 2,  # Sessions 2-5
             }
             
-            # Process the 3 questions in each session (Research, Challenge, Application)
-            questions = session_data.get('questions', [])
+            # Handle both form data structure (when coming from form submission)
+            # and autosave data structure (when coming from draft loading)
+            questions = []
+            
+            if 'questions' in session_data and isinstance(session_data['questions'], list):
+                # Autosave/draft structure: questions as array
+                questions = session_data['questions']
+                print(f"🔍 RCA Session {i+1}: Using autosave structure with {len(questions)} questions")
+            else:
+                # Form submission structure: individual question objects
+                questions = session_data.get('questions', [])
+                print(f"🔍 RCA Session {i+1}: Using form structure with {len(questions)} questions")
             
             # Add research question (first question)
             if len(questions) > 0 and questions[0].get('question_text'):
                 session_obj['research_question'] = {
                     'text': escape_xml(questions[0]['question_text']),
                     'choice': [
-                        escape_xml(questions[0]['choice_a']),
-                        escape_xml(questions[0]['choice_b']),
-                        escape_xml(questions[0]['choice_c']),
-                        escape_xml(questions[0]['choice_d'])
+                        escape_xml(questions[0].get('choice_a', '')),
+                        escape_xml(questions[0].get('choice_b', '')),
+                        escape_xml(questions[0].get('choice_c', '')),
+                        escape_xml(questions[0].get('choice_d', ''))
                     ],
                     'correct_answer': questions[0].get('correct_answer', '').upper()
                 }
+                print(f"🔍   Research question: {questions[0]['question_text'][:50]}...")
             
             # Add challenge question (second question)
             if len(questions) > 1 and questions[1].get('question_text'):
                 session_obj['challenge_question'] = {
                     'text': escape_xml(questions[1]['question_text']),
                     'choice': [
-                        escape_xml(questions[1]['choice_a']),
-                        escape_xml(questions[1]['choice_b']),
-                        escape_xml(questions[1]['choice_c']),
-                        escape_xml(questions[1]['choice_d'])
+                        escape_xml(questions[1].get('choice_a', '')),
+                        escape_xml(questions[1].get('choice_b', '')),
+                        escape_xml(questions[1].get('choice_c', '')),
+                        escape_xml(questions[1].get('choice_d', ''))
                     ],
                     'correct_answer': questions[1].get('correct_answer', '').upper()
                 }
+                print(f"🔍   Challenge question: {questions[1]['question_text'][:50]}...")
             
             # Add application question (third question)
             if len(questions) > 2 and questions[2].get('question_text'):
                 session_obj['application_question'] = {
                     'text': escape_xml(questions[2]['question_text']),
                     'choice': [
-                        escape_xml(questions[2]['choice_a']),
-                        escape_xml(questions[2]['choice_b']),
-                        escape_xml(questions[2]['choice_c']),
-                        escape_xml(questions[2]['choice_d'])
+                        escape_xml(questions[2].get('choice_a', '')),
+                        escape_xml(questions[2].get('choice_b', '')),
+                        escape_xml(questions[2].get('choice_c', '')),
+                        escape_xml(questions[2].get('choice_d', ''))
                     ],
                     'correct_answer': questions[2].get('correct_answer', '').upper()
                 }
+                print(f"🔍   Application question: {questions[2]['question_text'][:50]}...")
             
             # Only add sessions that have at least one question
             if any(key in session_obj for key in ['research_question', 'challenge_question', 'application_question']):
                 rca_sessions_data.append(session_obj)
+                print(f"🔍 Added RCA Session {i+1} with {len([k for k in ['research_question', 'challenge_question', 'application_question'] if k in session_obj])} questions")
         
         # Post-test questions
         posttest_questions_data = []
