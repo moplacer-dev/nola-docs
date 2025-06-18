@@ -5129,11 +5129,18 @@ def load_moduleanswerkey_draft(draft_id):
         # Populate portfolio checklist
         portfolio_data = form_data.get('portfolio_checklist', [])
         print(f"🔍 Portfolio checklist data: {len(portfolio_data)} items found")
+        print(f"🔍 Raw portfolio data: {portfolio_data}")
+        print(f"🔍 Form portfolio_checklist length: {len(form.portfolio_checklist)}")
+        
         for i, item_data in enumerate(portfolio_data):
-            print(f"🔍 Portfolio item {i+1}: {item_data.get('product', '')[:50]}... (Session {item_data.get('session_number', '')})")
+            print(f"🔍 Portfolio item {i+1}: {item_data}")
             if i < len(form.portfolio_checklist):
+                print(f"🔍 Setting portfolio_checklist[{i}].product = '{item_data.get('product', '')}'")
+                print(f"🔍 Setting portfolio_checklist[{i}].session_number = '{item_data.get('session_number', '')}'")
                 form.portfolio_checklist[i].product.data = item_data.get('product', '')
                 form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
+            else:
+                print(f"🔍 Skipping item {i+1} - index {i} >= form length {len(form.portfolio_checklist)}")
         
         # Pass dynamic fields data to template for JavaScript reconstruction
         enrichment_data = form_data.get('enrichment_dynamic_content', [])
