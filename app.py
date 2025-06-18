@@ -5105,7 +5105,9 @@ def load_moduleanswerkey_draft(draft_id):
                 form.pretest_questions[i].choice_b.data = question_data.get('choice_b', '')
                 form.pretest_questions[i].choice_c.data = question_data.get('choice_c', '')
                 form.pretest_questions[i].choice_d.data = question_data.get('choice_d', '')
-                form.pretest_questions[i].correct_answer.data = question_data.get('correct_answer', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.pretest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
         
         # Populate RCA sessions
         rca_data = form_data.get('rca_sessions', [])
@@ -5122,7 +5124,9 @@ def load_moduleanswerkey_draft(draft_id):
                         form.rca_sessions[i].questions[j].choice_b.data = question_data.get('choice_b', '')
                         form.rca_sessions[i].questions[j].choice_c.data = question_data.get('choice_c', '')
                         form.rca_sessions[i].questions[j].choice_d.data = question_data.get('choice_d', '')
-                        form.rca_sessions[i].questions[j].correct_answer.data = question_data.get('correct_answer', '')
+                        # Clean correct_answer to ensure it's valid
+                        correct_answer = question_data.get('correct_answer', '').strip().upper()
+                        form.rca_sessions[i].questions[j].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
         
         # Populate post-test questions
         posttest_data = form_data.get('posttest_questions', [])
@@ -5133,7 +5137,9 @@ def load_moduleanswerkey_draft(draft_id):
                 form.posttest_questions[i].choice_b.data = question_data.get('choice_b', '')
                 form.posttest_questions[i].choice_c.data = question_data.get('choice_c', '')
                 form.posttest_questions[i].choice_d.data = question_data.get('choice_d', '')
-                form.posttest_questions[i].correct_answer.data = question_data.get('correct_answer', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.posttest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
         
         # Populate PBA sessions
         pba_data = form_data.get('pba_sessions', [])
