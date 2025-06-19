@@ -5034,9 +5034,10 @@ def autosave_moduleanswerkey_draft():
         for item in portfolio_data:
             # Check if item is a valid dictionary (not None)
             if item and isinstance(item, dict):
-                if item.get('item'):
+                if item.get('product') or item.get('session_number'):
                     form_data['portfolio_checklist'].append({
-                        'item': item.get('item', '')
+                        'product': item.get('product', ''),
+                        'session_number': item.get('session_number', '')
                     })
         
         # Check if this is updating an existing draft
