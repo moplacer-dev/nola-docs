@@ -329,11 +329,13 @@ class FamilyBriefingForm(FlaskForm):
                                 validators=[Optional(), Length(max=500)],
                                 render_kw={"placeholder": "Enter 1-2 sentences from the original Parent Briefing document (e.g., explore the properties of matter and how it interacts with the environment.)"})
     
-    # Learning Objectives (4)
+    # Learning Objectives (6)
     learningobjective1 = TextAreaField('Learning Objective 1', validators=[Optional(), Length(max=300)])
     learningobjective2 = TextAreaField('Learning Objective 2', validators=[Optional(), Length(max=300)])
     learningobjective3 = TextAreaField('Learning Objective 3', validators=[Optional(), Length(max=300)])
     learningobjective4 = TextAreaField('Learning Objective 4', validators=[Optional(), Length(max=300)])
+    learningobjective5 = TextAreaField('Learning Objective 5', validators=[Optional(), Length(max=300)])
+    learningobjective6 = TextAreaField('Learning Objective 6', validators=[Optional(), Length(max=300)])
     
     # Session Activities (7)
     activityname1 = StringField('Activity 1', validators=[Optional(), Length(max=300)])
@@ -368,13 +370,13 @@ class FamilyBriefingForm(FlaskForm):
     term21 = StringField('Term 21', validators=[Optional(), Length(max=100)])
     
     # Key Concepts (3 concepts with explanations)
-    keyconcept1_name = StringField('Key Concept 1 Name', validators=[Optional(), Length(max=100)])
+    keyconcept1_name = StringField('Key Concept 1 Name', validators=[Optional(), Length(max=300)])
     keyconcept1_explanation = TextAreaField('Key Concept 1 Explanation', validators=[Optional(), Length(max=600)])
     
-    keyconcept2_name = StringField('Key Concept 2 Name', validators=[Optional(), Length(max=100)])
+    keyconcept2_name = StringField('Key Concept 2 Name', validators=[Optional(), Length(max=300)])
     keyconcept2_explanation = TextAreaField('Key Concept 2 Explanation', validators=[Optional(), Length(max=600)])
     
-    keyconcept3_name = StringField('Key Concept 3 Name', validators=[Optional(), Length(max=100)])
+    keyconcept3_name = StringField('Key Concept 3 Name', validators=[Optional(), Length(max=300)])
     keyconcept3_explanation = TextAreaField('Key Concept 3 Explanation', validators=[Optional(), Length(max=600)])
     
     submit = SubmitField('Generate Family Briefing')
@@ -2209,6 +2211,8 @@ def generate_family_briefing(form):
             'learningobjective2': escape_xml(form.learningobjective2.data) if form.learningobjective2.data else '',
             'learningobjective3': escape_xml(form.learningobjective3.data) if form.learningobjective3.data else '',
             'learningobjective4': escape_xml(form.learningobjective4.data) if form.learningobjective4.data else '',
+            'learningobjective5': escape_xml(form.learningobjective5.data) if form.learningobjective5.data else '',
+            'learningobjective6': escape_xml(form.learningobjective6.data) if form.learningobjective6.data else '',
             
             # Session Activities
             'activityname1': escape_xml(form.activityname1.data) if form.activityname1.data else '',
@@ -5233,6 +5237,8 @@ def autosave_familybriefing_draft():
             'learningobjective2': data.get('learningobjective2', ''),
             'learningobjective3': data.get('learningobjective3', ''),
             'learningobjective4': data.get('learningobjective4', ''),
+            'learningobjective5': data.get('learningobjective5', ''),
+            'learningobjective6': data.get('learningobjective6', ''),
             'activityname1': data.get('activityname1', ''),
             'activityname2': data.get('activityname2', ''),
             'activityname3': data.get('activityname3', ''),
@@ -5413,6 +5419,8 @@ def load_familybriefing_draft(draft_id):
         form.learningobjective2.data = form_data.get('learningobjective2', '')
         form.learningobjective3.data = form_data.get('learningobjective3', '')
         form.learningobjective4.data = form_data.get('learningobjective4', '')
+        form.learningobjective5.data = form_data.get('learningobjective5', '')
+        form.learningobjective6.data = form_data.get('learningobjective6', '')
         form.activityname1.data = form_data.get('activityname1', '')
         form.activityname2.data = form_data.get('activityname2', '')
         form.activityname3.data = form_data.get('activityname3', '')
