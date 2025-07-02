@@ -90,6 +90,171 @@ def escape_xml(text):
     
     return text
 
+def load_moduleanswerkey_draft_into_form(form, user_id):
+    """Load the most recent moduleanswerkey draft data into the provided form"""
+    try:
+        # Get the most recent draft for this user
+        latest_draft = FormDraft.query.filter_by(
+            user_id=user_id, 
+            form_type='moduleanswerkey'
+        ).order_by(FormDraft.updated_at.desc()).first()
+        
+        if not latest_draft:
+            print("🔍 No moduleanswerkey draft found for user")
+            return False
+            
+        print(f"🔍 Loading draft data from draft ID {latest_draft.id}")
+        form_data = latest_draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate pre-test questions
+        pretest_data = form_data.get('pretest_questions', [])
+        for i, question_data in enumerate(pretest_data):
+            if i < len(form.pretest_questions):
+                form.pretest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.pretest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.pretest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.pretest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.pretest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.pretest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate RCA sessions
+        rca_data = form_data.get('rca_sessions', [])
+        print(f"🔍 Loading RCA sessions data: {len(rca_data)} sessions found")
+        for i, session_data in enumerate(rca_data):
+            if i < len(form.rca_sessions):
+                questions = session_data.get('questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.rca_sessions[i].questions):
+                        form.rca_sessions[i].questions[j].question_text.data = question_data.get('question_text', '')
+                        form.rca_sessions[i].questions[j].choice_a.data = question_data.get('choice_a', '')
+                        form.rca_sessions[i].questions[j].choice_b.data = question_data.get('choice_b', '')
+                        form.rca_sessions[i].questions[j].choice_c.data = question_data.get('choice_c', '')
+                        form.rca_sessions[i].questions[j].choice_d.data = question_data.get('choice_d', '')
+                        # Clean correct_answer to ensure it's valid
+                        correct_answer = question_data.get('correct_answer', '').strip().upper()
+                        form.rca_sessions[i].questions[j].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate post-test questions
+        posttest_data = form_data.get('posttest_questions', [])
+        for i, question_data in enumerate(posttest_data):
+            if i < len(form.posttest_questions):
+                form.posttest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.posttest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.posttest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.posttest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.posttest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.posttest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate PBA sessions
+        pba_data = form_data.get('pba_sessions', [])
+        print(f"🔍 Loading PBA sessions data: {len(pba_data)} sessions found")
+        for i, session_data in enumerate(pba_data):
+            if i < len(form.pba_sessions):
+                form.pba_sessions[i].session_number.data = session_data.get('session_number', '')
+                form.pba_sessions[i].activity_name.data = session_data.get('activity_name', '')
+                
+                questions = session_data.get('assessment_questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.pba_sessions[i].assessment_questions):
+                        form.pba_sessions[i].assessment_questions[j].question.data = question_data.get('question', '')
+                        form.pba_sessions[i].assessment_questions[j].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate vocabulary
+        vocab_data = form_data.get('vocabulary', [])
+        for i, term_data in enumerate(vocab_data):
+            if i < len(form.vocabulary):
+                form.vocabulary[i].term.data = term_data.get('term', '')
+                form.vocabulary[i].definition.data = term_data.get('definition', '')
+        
+        # Populate portfolio checklist
+        portfolio_data = form_data.get('portfolio_checklist', [])
+        for i, item_data in enumerate(portfolio_data):
+            if i < len(form.portfolio_checklist):
+                form.portfolio_checklist[i].product.data = item_data.get('product', '')
+                form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
+        
+        # CRITICAL FIX: Populate worksheet answer keys
+        worksheet_data = form_data.get('worksheet_answer_keys', [])
+        print(f"🔍 Loading worksheet data: {len(worksheet_data)} worksheets found")
+        
+        # Dynamically adjust the number of worksheet entries in the form
+        while len(form.worksheet_answer_keys) < len(worksheet_data):
+            form.worksheet_answer_keys.append_entry()
+        
+        for i, worksheet_info in enumerate(worksheet_data):
+            if i < len(form.worksheet_answer_keys):
+                # Set worksheet title
+                form.worksheet_answer_keys[i].worksheet_title.data = worksheet_info.get('worksheet_title', '')
+                print(f"🔍 Loading worksheet {i+1}: '{worksheet_info.get('worksheet_title', '')}'")
+                
+                # Load dynamic content for this worksheet
+                dynamic_content_data = worksheet_info.get('dynamic_content', [])
+                print(f"🔍 Worksheet {i+1} has {len(dynamic_content_data)} dynamic content fields")
+                
+                # Dynamically adjust the number of dynamic content entries for this worksheet
+                while len(form.worksheet_answer_keys[i].dynamic_content) < len(dynamic_content_data):
+                    form.worksheet_answer_keys[i].dynamic_content.append_entry()
+                
+                for j, field_data in enumerate(dynamic_content_data):
+                    if j < len(form.worksheet_answer_keys[i].dynamic_content):
+                        # Populate all the dynamic field data
+                        dynamic_field = form.worksheet_answer_keys[i].dynamic_content[j]
+                        dynamic_field.field_type.data = field_data.get('field_type', '')
+                        dynamic_field.section_title.data = field_data.get('section_title', '')
+                        dynamic_field.question_number.data = field_data.get('question_number', '')
+                        dynamic_field.question_text.data = field_data.get('question_text', '')
+                        dynamic_field.choice_count.data = field_data.get('choice_count', '4')
+                        dynamic_field.choice_a.data = field_data.get('choice_a', '')
+                        dynamic_field.choice_b.data = field_data.get('choice_b', '')
+                        dynamic_field.choice_c.data = field_data.get('choice_c', '')
+                        dynamic_field.choice_d.data = field_data.get('choice_d', '')
+                        dynamic_field.instructions_text.data = field_data.get('instructions_text', '')
+                        dynamic_field.paragraph_text.data = field_data.get('paragraph_text', '')
+                        dynamic_field.math_expression.data = field_data.get('math_expression', '')
+                        
+                        print(f"🔍 Loaded field {j+1} type '{field_data.get('field_type', '')}' for worksheet {i+1}")
+        
+        # Populate enrichment dynamic content
+        enrichment_data = form_data.get('enrichment_dynamic_content', [])
+        print(f"🔍 Loading enrichment data: {len(enrichment_data)} fields found")
+        
+        # Dynamically adjust the number of enrichment entries in the form
+        while len(form.enrichment_dynamic_content) < len(enrichment_data):
+            form.enrichment_dynamic_content.append_entry()
+        
+        for i, field_data in enumerate(enrichment_data):
+            if i < len(form.enrichment_dynamic_content):
+                # Populate all the dynamic field data
+                dynamic_field = form.enrichment_dynamic_content[i]
+                dynamic_field.field_type.data = field_data.get('field_type', '')
+                dynamic_field.section_title.data = field_data.get('section_title', '')
+                dynamic_field.question_number.data = field_data.get('question_number', '')
+                dynamic_field.question_text.data = field_data.get('question_text', '')
+                dynamic_field.choice_count.data = field_data.get('choice_count', '4')
+                dynamic_field.choice_a.data = field_data.get('choice_a', '')
+                dynamic_field.choice_b.data = field_data.get('choice_b', '')
+                dynamic_field.choice_c.data = field_data.get('choice_c', '')
+                dynamic_field.choice_d.data = field_data.get('choice_d', '')
+                dynamic_field.instructions_text.data = field_data.get('instructions_text', '')
+                dynamic_field.paragraph_text.data = field_data.get('paragraph_text', '')
+                dynamic_field.math_expression.data = field_data.get('math_expression', '')
+        
+        print(f"🔍 Successfully loaded draft data into form - {len(worksheet_data)} worksheets with data")
+        return True
+        
+    except Exception as e:
+        print(f"🔍 Error loading draft data into form: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 # Custom validator for correct answer field
 def validate_answer_choice(form, field):
     """Validate that the answer is A, B, C, or D"""
@@ -1286,8 +1451,35 @@ def create_module_answer_key():
         # Only handle document generation now - autosave handles saving
         if form.validate_on_submit():
             print("🔍 Module Answer Key form validation passed!")
+            
+            # CRITICAL FIX: Load autosaved draft data directly for generation
+            print("🔍 Loading autosaved draft data for generation...")
+            latest_draft = FormDraft.query.filter_by(
+                user_id=current_user.id, 
+                form_type='moduleanswerkey'
+            ).order_by(FormDraft.updated_at.desc()).first()
+            
+            if latest_draft and latest_draft.form_data:
+                print("🔍 Found draft data - merging with form data for generation")
+                # Create a merged form that combines submitted data with autosaved data
+                merged_form = ModuleAnswerKeyForm()
+                
+                # Use basic fields from submitted form (like module_acronym)
+                merged_form.module_acronym.data = form.module_acronym.data
+                
+                # Load all data from the draft to ensure completeness
+                draft_loaded = load_moduleanswerkey_draft_into_form(merged_form, current_user.id)
+                if draft_loaded:
+                    print(f"🔍 Successfully loaded draft - using merged form with {len(merged_form.worksheet_answer_keys.data)} worksheets")
+                    form = merged_form  # Use the merged form for generation
+                else:
+                    print("🔍 Failed to load draft - using submitted form")
+            else:
+                print("🔍 No draft data found - using submitted form")
+            
             try:
                 print("🔍 Attempting to generate Module Answer Key...")
+                print(f"🔍 Form now has {len(form.worksheet_answer_keys.data)} worksheets with data")
                 doc_path = generate_module_answer_key(form)
                 filename = os.path.basename(doc_path)
                 
@@ -3001,7 +3193,10 @@ def generate_module_answer_key(form):
         worksheet_keys_subdoc = doc.new_subdoc()
         overall_question_counter = 1
         
+        print(f"🔍 GENERATION: Processing {len(form.worksheet_answer_keys.data)} worksheets")
         for worksheet_index, worksheet_data in enumerate(form.worksheet_answer_keys.data):
+            print(f"🔍 GENERATION: Processing worksheet {worksheet_index + 1}: '{worksheet_data.get('worksheet_title', 'No Title')}'")
+            print(f"🔍 GENERATION: Worksheet {worksheet_index + 1} has {len(worksheet_data.get('dynamic_content', []))} dynamic content fields")
             worksheet_title = (worksheet_data.get('worksheet_title') or '').strip()
             
             # Add worksheet title as a major section header if provided
@@ -3128,18 +3323,15 @@ def generate_module_answer_key(form):
                                             run.font.name = 'Segoe UI'
                                             run.font.size = Pt(11)
                                             run.font.bold = False
-                                    
-                                    # Add choice text
-                                    text_cell = table.cell(row, text_col)
-                                    text_cell.text = choice_text.strip()
-                                    for paragraph in text_cell.paragraphs:
-                                        paragraph.paragraph_format.space_before = Pt(6)
-                                        for run in paragraph.runs:
-                                            run.font.name = 'Segoe UI'
-                                            run.font.size = Pt(11)
-                            
-                            # Add spacing after the table
-                            worksheet_keys_subdoc.add_paragraph().paragraph_format.space_after = Pt(6)
+                                
+                                # Add choice text
+                                text_cell = table.cell(row, text_col)
+                                text_cell.text = choice_text.strip()
+                                for paragraph in text_cell.paragraphs:
+                                    paragraph.paragraph_format.space_before = Pt(6)
+                                    for run in paragraph.runs:
+                                        run.font.name = 'Segoe UI'
+                                        run.font.size = Pt(11)
                         
                         elif field_type == 'fill_in_blank':
                             p = worksheet_keys_subdoc.add_paragraph("_________________________________________")
