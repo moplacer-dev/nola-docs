@@ -1238,7 +1238,7 @@ class ModuleAnswerKeyAutosave {
     
     // Create enrichment field with data
     createEnrichmentField(fieldType, index, fieldData = {}) {
-        const container = document.querySelector('.enrichment-fields-container');
+        const container = document.getElementById('enrichment-fields-container');
         if (!container) return;
         
         const fieldHTML = this.generateEnrichmentFieldHTML(fieldType, index, fieldData);
@@ -1339,7 +1339,7 @@ class ModuleAnswerKeyAutosave {
             // Add worksheet if it doesn't exist
             for (let i = 0; i <= worksheetIndex; i++) {
                 if (!document.querySelector(`[data-worksheet-index="${i}"]`)) {
-                    addWorksheetAnswerKey();
+                    addWorksheet();
                 }
             }
         }
