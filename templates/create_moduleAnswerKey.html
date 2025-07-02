@@ -1216,16 +1216,25 @@ class ModuleAnswerKeyAutosave {
             if (worksheetInfo && worksheetInfo.dynamic_content) {
                 console.log(`🔍 Restoring worksheet ${worksheetIndex} with ${worksheetInfo.dynamic_content.length} fields`);
                 
-                // First add the worksheet if it doesn't exist
-                this.ensureWorksheetExists(worksheetIndex);
-                
-                // Then restore its dynamic fields
-                worksheetInfo.dynamic_content.forEach((fieldData, fieldIndex) => {
-                    if (fieldData && fieldData.field_type) {
-                        console.log(`🔍 Creating worksheet ${worksheetIndex} field ${fieldIndex}:`, fieldData);
-                        this.createWorksheetField(fieldData.field_type, worksheetIndex, fieldIndex, fieldData);
-                    }
-                });
+                            // First add the worksheet if it doesn't exist
+            this.ensureWorksheetExists(worksheetIndex);
+            
+            // Populate worksheet title if it exists
+            if (worksheetInfo.worksheet_title) {
+                const titleInput = document.querySelector(`[name="worksheet_answer_keys-${worksheetIndex}-worksheet_title"]`);
+                if (titleInput) {
+                    titleInput.value = worksheetInfo.worksheet_title;
+                    console.log(`🔍 Set worksheet ${worksheetIndex} title = "${worksheetInfo.worksheet_title}"`);
+                }
+            }
+            
+            // Then restore its dynamic fields
+            worksheetInfo.dynamic_content.forEach((fieldData, fieldIndex) => {
+                if (fieldData && fieldData.field_type) {
+                    console.log(`🔍 Creating worksheet ${worksheetIndex} field ${fieldIndex}:`, fieldData);
+                    this.createWorksheetField(fieldData.field_type, worksheetIndex, fieldIndex, fieldData);
+                }
+            });
                 
                 // Hide empty message for this worksheet
                 const emptyMessage = document.querySelector(`.worksheet-empty-message[data-worksheet-index="${worksheetIndex}"]`);
@@ -1292,7 +1301,12 @@ class ModuleAnswerKeyAutosave {
                 if (key !== 'field_type') {
                     const input = tempDiv.querySelector(`[name="enrichment_dynamic_content-${index}-${key}"]`);
                     if (input) {
-                        input.value = fieldData[key];
+                        // Set value differently for textarea vs input elements
+                        if (input.tagName.toLowerCase() === 'textarea') {
+                            input.textContent = fieldData[key];
+                        } else {
+                            input.setAttribute('value', fieldData[key]);
+                        }
                         console.log(`🔍 Set enrichment field ${key} = "${fieldData[key]}"`);
                     }
                 }
@@ -1320,7 +1334,12 @@ class ModuleAnswerKeyAutosave {
                 if (key !== 'field_type') {
                     const input = tempDiv.querySelector(`[name="worksheet_answer_keys-${worksheetIndex}-dynamic_content-${fieldIndex}-${key}"]`);
                     if (input) {
-                        input.value = fieldData[key];
+                        // Set value differently for textarea vs input elements
+                        if (input.tagName.toLowerCase() === 'textarea') {
+                            input.textContent = fieldData[key];
+                        } else {
+                            input.setAttribute('value', fieldData[key]);
+                        }
                         console.log(`🔍 Set worksheet field ${key} = "${fieldData[key]}"`);
                     }
                 }
