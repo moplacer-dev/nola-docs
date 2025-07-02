@@ -630,9 +630,7 @@
                                 <button type="button" class="field-type-btn bg-red-100 hover:bg-red-200 text-red-800 px-4 py-3 rounded-md transition-colors" data-type="text_entry" data-section="enrichment">
                                     📄 Text Entry
                                 </button>
-                                <button type="button" class="field-type-btn bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-4 py-3 rounded-md transition-colors" data-type="image" data-section="enrichment">
-                                    🖼️ Image
-                                </button>
+
                             </div>
                             <button type="button" class="mt-3 text-gray-600 hover:text-gray-800" onclick="hideFieldTypeSelector('enrichment')">Cancel</button>
                         </div>
@@ -722,9 +720,7 @@
                                                         <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="{{ loop.index0 }}">
                                                             📄 Paragraph Text
                                                         </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="image" data-worksheet-index="{{ loop.index0 }}">
-                                                            🖼️ Image
-                                                        </button>
+
                                                     </div>
                                                     <div class="mt-3 text-center">
                                                         <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="{{ loop.index0 }}">Cancel</button>
@@ -1301,27 +1297,13 @@ class ModuleAnswerKeyAutosave {
                 if (key !== 'field_type') {
                     const input = tempDiv.querySelector(`[name="enrichment_dynamic_content-${index}-${key}"]`);
                     if (input) {
-                        // Handle file inputs differently (show preview instead of setting value)
-                        if (input.type === 'file' && fieldData[key]) {
-                            // Show image preview info
-                            const previewDiv = tempDiv.querySelector(`#enrichment_image_preview_${index}`);
-                            if (previewDiv) {
-                                previewDiv.classList.remove('hidden');
-                                const filenameSpan = previewDiv.querySelector('.image-filename');
-                                if (filenameSpan) {
-                                    filenameSpan.textContent = fieldData[key];
-                                }
-                            }
-                            console.log(`🔍 Set enrichment image preview ${key} = "${fieldData[key]}"`);
+                        // Set value differently for textarea vs input elements
+                        if (input.tagName.toLowerCase() === 'textarea') {
+                            input.textContent = fieldData[key];
                         } else {
-                            // Set value differently for textarea vs input elements
-                            if (input.tagName.toLowerCase() === 'textarea') {
-                                input.textContent = fieldData[key];
-                            } else {
-                                input.setAttribute('value', fieldData[key]);
-                            }
-                            console.log(`🔍 Set enrichment field ${key} = "${fieldData[key]}"`);
+                            input.setAttribute('value', fieldData[key]);
                         }
+                        console.log(`🔍 Set enrichment field ${key} = "${fieldData[key]}"`);
                     }
                 }
             });
@@ -1348,27 +1330,13 @@ class ModuleAnswerKeyAutosave {
                 if (key !== 'field_type') {
                     const input = tempDiv.querySelector(`[name="worksheet_answer_keys-${worksheetIndex}-dynamic_content-${fieldIndex}-${key}"]`);
                     if (input) {
-                        // Handle file inputs differently (show preview instead of setting value)
-                        if (input.type === 'file' && fieldData[key]) {
-                            // Show image preview info
-                            const previewDiv = tempDiv.querySelector(`#worksheet_${worksheetIndex}_image_preview_${fieldIndex}`);
-                            if (previewDiv) {
-                                previewDiv.classList.remove('hidden');
-                                const filenameSpan = previewDiv.querySelector('.image-filename');
-                                if (filenameSpan) {
-                                    filenameSpan.textContent = fieldData[key];
-                                }
-                            }
-                            console.log(`🔍 Set worksheet image preview ${key} = "${fieldData[key]}"`);
+                        // Set value differently for textarea vs input elements
+                        if (input.tagName.toLowerCase() === 'textarea') {
+                            input.textContent = fieldData[key];
                         } else {
-                            // Set value differently for textarea vs input elements
-                            if (input.tagName.toLowerCase() === 'textarea') {
-                                input.textContent = fieldData[key];
-                            } else {
-                                input.setAttribute('value', fieldData[key]);
-                            }
-                            console.log(`🔍 Set worksheet field ${key} = "${fieldData[key]}"`);
+                            input.setAttribute('value', fieldData[key]);
                         }
+                        console.log(`🔍 Set worksheet field ${key} = "${fieldData[key]}"`);
                     }
                 }
             });
@@ -1721,18 +1689,7 @@ function createEnrichmentFieldHtml(fieldType, index) {
             `;
             break;
             
-        case 'image':
-            specificFields = `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                    <input type="file" name="enrichment_dynamic_content-${index}-image_file" accept=".jpg,.jpeg,.png,.gif" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div id="enrichment_image_preview_${index}" class="image-preview-info hidden mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                        <span class="image-filename"></span> was previously selected
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF</p>
-                </div>
-            `;
-            break;
+
     }
     
     return baseFields + specificFields;
@@ -1876,18 +1833,7 @@ function createWorksheetFieldHtml(fieldType, worksheetIndex, fieldIndex) {
             `;
             break;
             
-        case 'image':
-            specificFields = `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                    <input type="file" name="worksheet_answer_keys-${worksheetIndex}-dynamic_content-${fieldIndex}-image_file" accept=".jpg,.jpeg,.png,.gif" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div id="worksheet_${worksheetIndex}_image_preview_${fieldIndex}" class="image-preview-info hidden mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                        <span class="image-filename"></span> was previously selected
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF</p>
-                </div>
-            `;
-            break;
+
     }
     
     return baseFields + specificFields;
@@ -1926,8 +1872,7 @@ function getFieldTypeLabel(fieldType) {
         'multiple_choice': '☑️ Multiple Choice',
         'fill_in_blank': '✏️ Fill-in-the-Blank',
         'math_problem': '🔢 Math Problem',
-        'text_entry': '📝 Text Entry',
-        'image': '🖼️ Image'
+        'text_entry': '📝 Text Entry'
     };
     return labels[fieldType] || fieldType;
 }
@@ -2026,9 +1971,7 @@ function createWorksheetHtml(index) {
                     <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="${index}">
                         📄 Paragraph Text
                     </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="image" data-worksheet-index="${index}">
-                        🖼️ Image
-                    </button>
+
                 </div>
                 <div class="mt-3 text-center">
                     <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="${index}">Cancel</button>
