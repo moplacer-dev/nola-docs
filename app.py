@@ -3310,12 +3310,12 @@ def generate_module_answer_key2(form):
         
         # Prepare context data matching the template structure (simplified version)
         
-        # 1. Pre-test questions
+        # 1. Pre-test questions - Fixed to match template expectation of {{ question.question }}
         pretest_questions_data = []
         for question_data in form.pretest_questions.data:
             if question_data.get('question_text'):
                 pretest_questions_data.append({
-                    'question': escape_xml(question_data['question_text']),
+                    'question': escape_xml(question_data['question_text']),  # Template uses {{ question.question }}
                     'choice': [
                         escape_xml(question_data.get('choice_a', '')),
                         escape_xml(question_data.get('choice_b', '')),
@@ -3391,12 +3391,12 @@ def generate_module_answer_key2(form):
                 rca_sessions_data.append(session_obj)
                 print(f"🔍 Added RCA Session {i+1} with {len([k for k in ['research_question', 'challenge_question', 'application_question'] if k in session_obj])} questions")
         
-        # 3. Post-test questions
+        # 3. Post-test questions - Fixed to match template expectation of {{ question.question }}
         posttest_questions_data = []
         for question_data in form.posttest_questions.data:
             if question_data.get('question_text'):
                 posttest_questions_data.append({
-                    'question': escape_xml(question_data['question_text']),
+                    'question': escape_xml(question_data['question_text']),  # Template uses {{ question.question }}
                     'choice': [
                         escape_xml(question_data.get('choice_a', '')),
                         escape_xml(question_data.get('choice_b', '')),
