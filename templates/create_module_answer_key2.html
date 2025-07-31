@@ -166,7 +166,7 @@
         </div>
 
         <!-- Form -->
-        <form method="POST" id="module-answer-key2-form" class="space-y-8">
+        <form method="POST" action="{{ url_for('create_module_answer_key2') }}" id="module-answer-key2-form" class="space-y-8">
             {{ form.hidden_tag() }}
             
             <!-- Hidden field for draft ID -->
