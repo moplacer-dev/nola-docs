@@ -1,0 +1,843 @@
+{% extends "base.html" %}
+
+{% block title %}Create Module Answer Key 2.0 - NOLA.docs{% endblock %}
+
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    /* Accordion styles */
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .accordion-content.expanded {
+        max-height: none;
+        overflow: visible;
+    }
+    .accordion-icon {
+        transition: transform 0.3s ease;
+    }
+    .accordion-icon.expanded {
+        transform: rotate(90deg);
+    }
+    
+    /* Math Symbols Toolbar Styles */
+    .math-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+    }
+    
+    .math-toolbar.active {
+        transform: translateY(0);
+    }
+    
+    .math-toolbar-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 999;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .math-toolbar-toggle:hover {
+        background: #2563eb;
+    }
+    
+    .symbol-category {
+        border-right: 1px solid #e5e7eb;
+        padding: 12px;
+    }
+    
+    .symbol-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+        gap: 4px;
+        margin-top: 8px;
+    }
+    
+    .symbol-button {
+        padding: 8px;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 18px;
+        transition: all 0.2s;
+    }
+    
+    .symbol-button:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+    }
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Draft saved</span>
+</div>
+
+<div class="container mx-auto py-8 px-4 mb-20">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white shadow-lg rounded-lg p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Module Answer Key 2.0</h1>
+                    <p class="text-gray-600 mt-2">Streamlined answer key template - cleaner, faster, more reliable</p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{{ url_for('drafts') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        📝 My Drafts
+                    </a>
+                    <a href="{{ url_for('my_documents') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        📄 My Documents
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Key Improvements Notice -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>New in 2.0:</strong> Enhanced auto-save reliability, cleaner interface, and faster performance. 
+                            This version focuses on core answer key content without the complex dynamic sections.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" id="module-answer-key2-form" class="space-y-8">
+            {{ form.hidden_tag() }}
+            
+            <!-- Hidden field for draft ID -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}">
+            {% endif %}
+
+            <!-- Module Information -->
+            <div class="bg-white shadow-lg rounded-lg p-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Module Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true") }}
+                        {% if form.module_acronym.errors %}
+                            <div class="text-red-600 text-sm mt-1">
+                                {% for error in form.module_acronym.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assessment Questions Section -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-8 py-4 border-b border-gray-200">
+                    <button type="button" class="w-full flex items-center justify-between text-left accordion-toggle" data-target="assessments-section">
+                        <h2 class="text-xl font-semibold text-gray-800">📝 Assessment Questions</h2>
+                        <svg class="w-5 h-5 text-gray-600 accordion-icon expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="assessments-section" class="accordion-content expanded">
+                    <div class="p-8 space-y-8">
+                        
+                        <!-- Pre-Test Questions -->
+                        <div class="border-l-4 border-blue-500 pl-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pre-Test Questions (10 questions)</h3>
+                            <div class="space-y-6">
+                                {% for question in form.pretest_questions %}
+                                    <div class="bg-gray-50 p-6 rounded-lg">
+                                        <h4 class="font-medium text-gray-800 mb-4">Question {{ loop.index }}</h4>
+                                        <div class="space-y-4">
+                                            <div>
+                                                {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                                </div>
+                                            </div>
+                                            <div class="w-32">
+                                                {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-medium", data_autosave="true", data_question_index=loop.index0, data_section="pretest") }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- RCA Sessions -->
+                        <div class="border-l-4 border-green-500 pl-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">RCA Sessions (Sessions 2-5)</h3>
+                            <div class="space-y-6">
+                                {% for session in form.rca_sessions %}
+                                    <div class="bg-green-50 p-6 rounded-lg">
+                                        <h4 class="font-medium text-gray-800 mb-4">Session {{ loop.index + 1 }} ({{ ['Research', 'Challenge', 'Application'][loop.index0 % 3] if loop.index0 < 3 else 'Mixed' }})</h4>
+                                        {% for question in session.questions %}
+                                            <div class="mb-6 p-4 bg-white rounded-md">
+                                                <h5 class="font-medium text-gray-700 mb-3">
+                                                    {% if loop.index0 == 0 %}Research Question
+                                                    {% elif loop.index0 == 1 %}Challenge Question  
+                                                    {% else %}Application Question
+                                                    {% endif %}
+                                                </h5>
+                                                <div class="space-y-4">
+                                                    <div>
+                                                        {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                        {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                            {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                        </div>
+                                                        <div>
+                                                            {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                            {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                        </div>
+                                                        <div>
+                                                            {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                            {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                        </div>
+                                                        <div>
+                                                            {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                            {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="w-32">
+                                                        {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center font-medium", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="rca") }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Post-Test Questions -->
+                        <div class="border-l-4 border-purple-500 pl-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Post-Test Questions (10 questions)</h3>
+                            <div class="space-y-6">
+                                {% for question in form.posttest_questions %}
+                                    <div class="bg-purple-50 p-6 rounded-lg">
+                                        <h4 class="font-medium text-gray-800 mb-4">Question {{ loop.index }}</h4>
+                                        <div class="space-y-4">
+                                            <div>
+                                                {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                                </div>
+                                                <div>
+                                                    {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                                </div>
+                                            </div>
+                                            <div class="w-32">
+                                                {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center font-medium", data_autosave="true", data_question_index=loop.index0, data_section="posttest") }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Based Assessments Section -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-8 py-4 border-b border-gray-200">
+                    <button type="button" class="w-full flex items-center justify-between text-left accordion-toggle" data-target="pba-section">
+                        <h2 class="text-xl font-semibold text-gray-800">🎯 Performance Based Assessments</h2>
+                        <svg class="w-5 h-5 text-gray-600 accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="pba-section" class="accordion-content">
+                    <div class="p-8 space-y-6">
+                        {% for session in form.pba_sessions %}
+                            <div class="border-l-4 border-orange-500 pl-6 bg-orange-50 p-6 rounded-lg">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">PBA Session {{ loop.index }}</h3>
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            {{ session.session_number.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ session.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_section="pba") }}
+                                        </div>
+                                        <div>
+                                            {{ session.activity_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ session.activity_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_section="pba") }}
+                                        </div>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <h4 class="font-medium text-gray-700">Assessment Questions</h4>
+                                        {% for question in session.assessment_questions %}
+                                            <div class="bg-white p-4 rounded-md">
+                                                <h5 class="font-medium text-gray-600 mb-3">Question {{ loop.index }}</h5>
+                                                <div class="space-y-3">
+                                                    <div>
+                                                        {{ question.question.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                        {{ question.question(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="pba") }}
+                                                    </div>
+                                                    <div>
+                                                        {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", rows="3", data_autosave="true", data_session_index=loop.index0, data_question_index=loop.index0, data_section="pba") }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Section -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-8 py-4 border-b border-gray-200">
+                    <button type="button" class="w-full flex items-center justify-between text-left accordion-toggle" data-target="vocabulary-section">
+                        <h2 class="text-xl font-semibold text-gray-800">📚 Vocabulary</h2>
+                        <svg class="w-5 h-5 text-gray-600 accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="vocabulary-section" class="accordion-content">
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {% for term in form.vocabulary %}
+                                <div class="bg-teal-50 p-4 rounded-lg">
+                                    <h4 class="font-medium text-gray-800 mb-3">Term {{ loop.index }}</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            {{ term.term.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ term.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", data_autosave="true", data_term_index=loop.index0, data_section="vocabulary") }}
+                                        </div>
+                                        <div>
+                                            {{ term.definition.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ term.definition(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", rows="3", data_autosave="true", data_term_index=loop.index0, data_section="vocabulary") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Checklist Section -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-8 py-4 border-b border-gray-200">
+                    <button type="button" class="w-full flex items-center justify-between text-left accordion-toggle" data-target="portfolio-section">
+                        <h2 class="text-xl font-semibold text-gray-800">📋 Student Portfolio Checklist</h2>
+                        <svg class="w-5 h-5 text-gray-600 accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="portfolio-section" class="accordion-content">
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {% for item in form.portfolio_checklist %}
+                                <div class="bg-indigo-50 p-4 rounded-lg">
+                                    <h4 class="font-medium text-gray-800 mb-3">Item {{ loop.index }}</h4>
+                                    <div class="space-y-3">
+                                        <div>
+                                            {{ item.product.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ item.product(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", data_autosave="true", data_item_index=loop.index0, data_section="portfolio") }}
+                                        </div>
+                                        <div>
+                                            {{ item.session_number.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                            {{ item.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", data_autosave="true", data_item_index=loop.index0, data_section="portfolio") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="bg-white shadow-lg rounded-lg p-8">
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-3">
+                        <a href="{{ url_for('dashboard') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            ← Dashboard
+                        </a>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="submit" name="action" value="generate" class="bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
+                            🚀 Generate Module Answer Key 2.0
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Math Symbols Toolbar -->
+<div class="math-toolbar-toggle" onclick="toggleMathToolbar()">
+    <span>𝝿</span>
+    <span id="toolbar-toggle-text">Math Symbols</span>
+</div>
+
+<div class="math-toolbar" id="math-toolbar">
+    <div class="flex overflow-x-auto">
+        <!-- Basic Math -->
+        <div class="symbol-category">
+            <h4 class="font-medium text-gray-700 mb-2">Basic</h4>
+            <div class="symbol-grid">
+                <button type="button" class="symbol-button" onclick="insertSymbol('±')">±</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('×')">×</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('÷')">÷</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('=')">≠</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('≈')">≈</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('∞')">∞</button>
+            </div>
+        </div>
+        
+        <!-- Greek Letters -->
+        <div class="symbol-category">
+            <h4 class="font-medium text-gray-700 mb-2">Greek</h4>
+            <div class="symbol-grid">
+                <button type="button" class="symbol-button" onclick="insertSymbol('α')">α</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('β')">β</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('γ')">γ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('δ')">δ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('π')">π</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('θ')">θ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('λ')">λ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('μ')">μ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('σ')">σ</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('Ω')">Ω</button>
+            </div>
+        </div>
+        
+        <!-- Superscripts -->
+        <div class="symbol-category">
+            <h4 class="font-medium text-gray-700 mb-2">Superscript</h4>
+            <div class="symbol-grid">
+                <button type="button" class="symbol-button" onclick="insertSymbol('²')">²</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('³')">³</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('⁴')">⁴</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('⁵')">⁵</button>
+                <button type="button" class="symbol-button" onclick="insertSymbol('⁻¹')">⁻¹</button>
+            </div>
+        </div>
+        
+        <!-- Close Button -->
+        <div class="symbol-category border-r-0">
+            <button type="button" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onclick="toggleMathToolbar()">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Module Answer Key 2.0 Auto-save Class with Enhanced Reliability
+class ModuleAnswerKey2Autosave {
+    constructor() {
+        this.debounceTimer = null;
+        this.isAutoSaving = false;
+        this.lastActiveField = null;
+        this.initializeEventListeners();
+        console.log('🔍 Module Answer Key 2.0 Autosave initialized');
+    }
+
+    initializeEventListeners() {
+        // Get all form fields with autosave attribute
+        const autosaveFields = document.querySelectorAll('[data_autosave="true"]');
+        console.log(`🔍 Found ${autosaveFields.length} autosave fields`);
+
+        autosaveFields.forEach(field => {
+            // Input/change events for immediate response
+            field.addEventListener('input', (e) => {
+                this.lastActiveField = e.target;
+                this.scheduleAutosave();
+            });
+            
+            field.addEventListener('change', (e) => {
+                this.lastActiveField = e.target;
+                this.scheduleAutosave();
+            });
+
+            // Blur event for immediate save when leaving field
+            field.addEventListener('blur', (e) => {
+                this.lastActiveField = e.target;
+                this.performAutosave();
+            });
+        });
+    }
+
+    scheduleAutosave() {
+        // Clear existing timer
+        if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+        }
+
+        // Schedule new autosave with 2-second delay
+        this.debounceTimer = setTimeout(() => {
+            this.performAutosave();
+        }, 2000);
+    }
+
+    async performAutosave() {
+        if (this.isAutoSaving) {
+            console.log('🔍 Autosave already in progress, skipping');
+            return;
+        }
+
+        this.isAutoSaving = true;
+        this.showAutosaveStatus('saving');
+
+        try {
+            const formData = this.collectFormData();
+            console.log('🔍 Collected form data for autosave:', formData);
+
+            const response = await fetch('/autosave-module-answer-key2-draft', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showAutosaveStatus('saved');
+                console.log('🔍 Module Answer Key 2.0 draft autosaved successfully');
+            } else {
+                this.showAutosaveStatus('error');
+                console.error('🔍 Autosave failed:', result.error);
+            }
+        } catch (error) {
+            this.showAutosaveStatus('error');
+            console.error('🔍 Autosave error:', error);
+        } finally {
+            this.isAutoSaving = false;
+        }
+    }
+
+    collectFormData() {
+        const data = {
+            module_acronym: document.querySelector('[name="module_acronym"]')?.value || '',
+            pretest_questions: [],
+            rca_sessions: [],
+            posttest_questions: [],
+            pba_sessions: [],
+            vocabulary: [],
+            portfolio_checklist: []
+        };
+
+        // Collect Pre-test Questions with enhanced validation
+        for (let i = 0; i < 10; i++) {
+            const questionText = document.querySelector(`[name="pretest_questions-${i}-question_text"]`)?.value || '';
+            const choiceA = document.querySelector(`[name="pretest_questions-${i}-choice_a"]`)?.value || '';
+            const choiceB = document.querySelector(`[name="pretest_questions-${i}-choice_b"]`)?.value || '';
+            const choiceC = document.querySelector(`[name="pretest_questions-${i}-choice_c"]`)?.value || '';
+            const choiceD = document.querySelector(`[name="pretest_questions-${i}-choice_d"]`)?.value || '';
+            const correctAnswer = document.querySelector(`[name="pretest_questions-${i}-correct_answer"]`)?.value || '';
+
+            // Always include the question object, even if empty (maintains array structure)
+            data.pretest_questions.push({
+                question_text: questionText,
+                choice_a: choiceA,
+                choice_b: choiceB,
+                choice_c: choiceC,
+                choice_d: choiceD,
+                correct_answer: correctAnswer.toUpperCase()
+            });
+        }
+
+        // Collect RCA Sessions with nested structure validation
+        for (let i = 0; i < 4; i++) {
+            const session = { questions: [] };
+            
+            for (let j = 0; j < 3; j++) {
+                const questionText = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-question_text"]`)?.value || '';
+                const choiceA = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-choice_a"]`)?.value || '';
+                const choiceB = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-choice_b"]`)?.value || '';
+                const choiceC = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-choice_c"]`)?.value || '';
+                const choiceD = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-choice_d"]`)?.value || '';
+                const correctAnswer = document.querySelector(`[name="rca_sessions-${i}-questions-${j}-correct_answer"]`)?.value || '';
+
+                session.questions.push({
+                    question_text: questionText,
+                    choice_a: choiceA,
+                    choice_b: choiceB,
+                    choice_c: choiceC,
+                    choice_d: choiceD,
+                    correct_answer: correctAnswer.toUpperCase()
+                });
+            }
+            
+            data.rca_sessions.push(session);
+        }
+
+        // Collect Post-test Questions with enhanced validation
+        for (let i = 0; i < 10; i++) {
+            const questionText = document.querySelector(`[name="posttest_questions-${i}-question_text"]`)?.value || '';
+            const choiceA = document.querySelector(`[name="posttest_questions-${i}-choice_a"]`)?.value || '';
+            const choiceB = document.querySelector(`[name="posttest_questions-${i}-choice_b"]`)?.value || '';
+            const choiceC = document.querySelector(`[name="posttest_questions-${i}-choice_c"]`)?.value || '';
+            const choiceD = document.querySelector(`[name="posttest_questions-${i}-choice_d"]`)?.value || '';
+            const correctAnswer = document.querySelector(`[name="posttest_questions-${i}-correct_answer"]`)?.value || '';
+
+            data.posttest_questions.push({
+                question_text: questionText,
+                choice_a: choiceA,
+                choice_b: choiceB,
+                choice_c: choiceC,
+                choice_d: choiceD,
+                correct_answer: correctAnswer.toUpperCase()
+            });
+        }
+
+        // Collect PBA Sessions with validation
+        for (let i = 0; i < 3; i++) {
+            const sessionNumber = document.querySelector(`[name="pba_sessions-${i}-session_number"]`)?.value || '';
+            const activityName = document.querySelector(`[name="pba_sessions-${i}-activity_name"]`)?.value || '';
+            const assessmentQuestions = [];
+
+            for (let j = 0; j < 4; j++) {
+                const question = document.querySelector(`[name="pba_sessions-${i}-assessment_questions-${j}-question"]`)?.value || '';
+                const correctAnswer = document.querySelector(`[name="pba_sessions-${i}-assessment_questions-${j}-correct_answer"]`)?.value || '';
+
+                assessmentQuestions.push({
+                    question: question,
+                    correct_answer: correctAnswer
+                });
+            }
+
+            data.pba_sessions.push({
+                session_number: sessionNumber,
+                activity_name: activityName,
+                assessment_questions: assessmentQuestions
+            });
+        }
+
+        // Collect Vocabulary with validation
+        for (let i = 0; i < 30; i++) {
+            const term = document.querySelector(`[name="vocabulary-${i}-term"]`)?.value || '';
+            const definition = document.querySelector(`[name="vocabulary-${i}-definition"]`)?.value || '';
+
+            data.vocabulary.push({
+                term: term,
+                definition: definition
+            });
+        }
+
+        // Collect Portfolio Checklist with validation
+        for (let i = 0; i < 10; i++) {
+            const product = document.querySelector(`[name="portfolio_checklist-${i}-product"]`)?.value || '';
+            const sessionNumber = document.querySelector(`[name="portfolio_checklist-${i}-session_number"]`)?.value || '';
+
+            data.portfolio_checklist.push({
+                product: product,
+                session_number: sessionNumber
+            });
+        }
+
+        return data;
+    }
+
+    showAutosaveStatus(status) {
+        const statusElement = document.getElementById('autosave-status');
+        const textElement = document.getElementById('autosave-text');
+
+        // Remove all status classes
+        statusElement.classList.remove('saving', 'saved', 'error', 'hidden');
+
+        // Add appropriate class and show
+        statusElement.classList.add(status);
+
+        // Update text
+        switch (status) {
+            case 'saving':
+                textElement.textContent = 'Saving draft...';
+                break;
+            case 'saved':
+                textElement.textContent = 'Draft saved';
+                break;
+            case 'error':
+                textElement.textContent = 'Save failed';
+                break;
+        }
+
+        // Auto-hide after 3 seconds for saved/error states
+        if (status === 'saved' || status === 'error') {
+            setTimeout(() => {
+                statusElement.classList.add('hidden');
+            }, 3000);
+        }
+    }
+}
+
+// Accordion functionality
+function initializeAccordions() {
+    const accordionToggles = document.querySelectorAll('.accordion-toggle');
+    
+    accordionToggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const content = document.getElementById(targetId);
+            const icon = this.querySelector('.accordion-icon');
+            
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        });
+    });
+}
+
+// Math toolbar functionality
+function toggleMathToolbar() {
+    const toolbar = document.getElementById('math-toolbar');
+    const toggleText = document.getElementById('toolbar-toggle-text');
+    
+    toolbar.classList.toggle('active');
+    
+    if (toolbar.classList.contains('active')) {
+        toggleText.textContent = 'Close';
+    } else {
+        toggleText.textContent = 'Math Symbols';
+    }
+}
+
+function insertSymbol(symbol) {
+    // Get the last active field or currently focused field
+    let targetField = document.activeElement;
+    
+    // If no active field or it's not a text input, try to use the last active field from autosave
+    if (!targetField || !['INPUT', 'TEXTAREA'].includes(targetField.tagName)) {
+        targetField = window.moduleAnswerKey2Autosave?.lastActiveField;
+    }
+    
+    if (targetField && ['INPUT', 'TEXTAREA'].includes(targetField.tagName)) {
+        const start = targetField.selectionStart;
+        const end = targetField.selectionEnd;
+        const value = targetField.value;
+        
+        targetField.value = value.substring(0, start) + symbol + value.substring(end);
+        targetField.setSelectionRange(start + symbol.length, start + symbol.length);
+        targetField.focus();
+        
+        // Trigger input event to activate autosave
+        targetField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize autosave
+    window.moduleAnswerKey2Autosave = new ModuleAnswerKey2Autosave();
+    
+    // Initialize accordions
+    initializeAccordions();
+    
+    console.log('🔍 Module Answer Key 2.0 page initialized');
+});
+</script>
+
+{% endblock %}

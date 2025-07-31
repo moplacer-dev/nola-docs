@@ -180,77 +180,110 @@ def load_moduleanswerkey_draft_into_form(form, user_id):
                 form.portfolio_checklist[i].product.data = item_data.get('product', '')
                 form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
         
-        # CRITICAL FIX: Populate worksheet answer keys
-        worksheet_data = form_data.get('worksheet_answer_keys', [])
-        print(f"🔍 Loading worksheet data: {len(worksheet_data)} worksheets found")
-        
-        # Dynamically adjust the number of worksheet entries in the form
-        while len(form.worksheet_answer_keys) < len(worksheet_data):
-            form.worksheet_answer_keys.append_entry()
-        
-        for i, worksheet_info in enumerate(worksheet_data):
-            if i < len(form.worksheet_answer_keys):
-                # Set worksheet title
-                form.worksheet_answer_keys[i].worksheet_title.data = worksheet_info.get('worksheet_title', '')
-                print(f"🔍 Loading worksheet {i+1}: '{worksheet_info.get('worksheet_title', '')}'")
-                
-                # Load dynamic content for this worksheet
-                dynamic_content_data = worksheet_info.get('dynamic_content', [])
-                print(f"🔍 Worksheet {i+1} has {len(dynamic_content_data)} dynamic content fields")
-                
-                # Dynamically adjust the number of dynamic content entries for this worksheet
-                while len(form.worksheet_answer_keys[i].dynamic_content) < len(dynamic_content_data):
-                    form.worksheet_answer_keys[i].dynamic_content.append_entry()
-                
-                for j, field_data in enumerate(dynamic_content_data):
-                    if j < len(form.worksheet_answer_keys[i].dynamic_content):
-                        # Populate all the dynamic field data
-                        dynamic_field = form.worksheet_answer_keys[i].dynamic_content[j]
-                        dynamic_field.field_type.data = field_data.get('field_type', '')
-                        dynamic_field.section_title.data = field_data.get('section_title', '')
-                        dynamic_field.question_number.data = field_data.get('question_number', '')
-                        dynamic_field.question_text.data = field_data.get('question_text', '')
-                        dynamic_field.choice_count.data = field_data.get('choice_count', '4')
-                        dynamic_field.choice_a.data = field_data.get('choice_a', '')
-                        dynamic_field.choice_b.data = field_data.get('choice_b', '')
-                        dynamic_field.choice_c.data = field_data.get('choice_c', '')
-                        dynamic_field.choice_d.data = field_data.get('choice_d', '')
-                        dynamic_field.instructions_text.data = field_data.get('instructions_text', '')
-                        dynamic_field.paragraph_text.data = field_data.get('paragraph_text', '')
-                        dynamic_field.math_expression.data = field_data.get('math_expression', '')
-                        
-                        print(f"🔍 Loaded field {j+1} type '{field_data.get('field_type', '')}' for worksheet {i+1}")
-        
-        # Populate enrichment dynamic content
-        enrichment_data = form_data.get('enrichment_dynamic_content', [])
-        print(f"🔍 Loading enrichment data: {len(enrichment_data)} fields found")
-        
-        # Dynamically adjust the number of enrichment entries in the form
-        while len(form.enrichment_dynamic_content) < len(enrichment_data):
-            form.enrichment_dynamic_content.append_entry()
-        
-        for i, field_data in enumerate(enrichment_data):
-            if i < len(form.enrichment_dynamic_content):
-                # Populate all the dynamic field data
-                dynamic_field = form.enrichment_dynamic_content[i]
-                dynamic_field.field_type.data = field_data.get('field_type', '')
-                dynamic_field.section_title.data = field_data.get('section_title', '')
-                dynamic_field.question_number.data = field_data.get('question_number', '')
-                dynamic_field.question_text.data = field_data.get('question_text', '')
-                dynamic_field.choice_count.data = field_data.get('choice_count', '4')
-                dynamic_field.choice_a.data = field_data.get('choice_a', '')
-                dynamic_field.choice_b.data = field_data.get('choice_b', '')
-                dynamic_field.choice_c.data = field_data.get('choice_c', '')
-                dynamic_field.choice_d.data = field_data.get('choice_d', '')
-                dynamic_field.instructions_text.data = field_data.get('instructions_text', '')
-                dynamic_field.paragraph_text.data = field_data.get('paragraph_text', '')
-                dynamic_field.math_expression.data = field_data.get('math_expression', '')
-        
-        print(f"🔍 Successfully loaded draft data into form - {len(worksheet_data)} worksheets with data")
+        print(f"🔍 Successfully loaded simplified module answer key draft data")
         return True
         
     except Exception as e:
         print(f"🔍 Error loading draft data into form: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def load_module_answer_key2_draft_into_form(form, user_id):
+    """Load the most recent module_answer_key2 draft data into the provided form"""
+    try:
+        # Get the most recent draft for this user
+        latest_draft = FormDraft.query.filter_by(
+            user_id=user_id, 
+            form_type='module_answer_key2'
+        ).order_by(FormDraft.updated_at.desc()).first()
+        
+        if not latest_draft:
+            print("🔍 No module_answer_key2 draft found for user")
+            return False
+            
+        print(f"🔍 Loading draft data from Module Answer Key 2.0 draft ID {latest_draft.id}")
+        form_data = latest_draft.form_data
+        
+        # Populate basic fields
+        form.module_acronym.data = form_data.get('module_acronym', '')
+        
+        # Populate pre-test questions
+        pretest_data = form_data.get('pretest_questions', [])
+        for i, question_data in enumerate(pretest_data):
+            if i < len(form.pretest_questions):
+                form.pretest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.pretest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.pretest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.pretest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.pretest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.pretest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate RCA sessions
+        rca_data = form_data.get('rca_sessions', [])
+        print(f"🔍 Loading RCA sessions data: {len(rca_data)} sessions found")
+        for i, session_data in enumerate(rca_data):
+            if i < len(form.rca_sessions):
+                questions = session_data.get('questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.rca_sessions[i].questions):
+                        form.rca_sessions[i].questions[j].question_text.data = question_data.get('question_text', '')
+                        form.rca_sessions[i].questions[j].choice_a.data = question_data.get('choice_a', '')
+                        form.rca_sessions[i].questions[j].choice_b.data = question_data.get('choice_b', '')
+                        form.rca_sessions[i].questions[j].choice_c.data = question_data.get('choice_c', '')
+                        form.rca_sessions[i].questions[j].choice_d.data = question_data.get('choice_d', '')
+                        # Clean correct_answer to ensure it's valid
+                        correct_answer = question_data.get('correct_answer', '').strip().upper()
+                        form.rca_sessions[i].questions[j].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate post-test questions
+        posttest_data = form_data.get('posttest_questions', [])
+        for i, question_data in enumerate(posttest_data):
+            if i < len(form.posttest_questions):
+                form.posttest_questions[i].question_text.data = question_data.get('question_text', '')
+                form.posttest_questions[i].choice_a.data = question_data.get('choice_a', '')
+                form.posttest_questions[i].choice_b.data = question_data.get('choice_b', '')
+                form.posttest_questions[i].choice_c.data = question_data.get('choice_c', '')
+                form.posttest_questions[i].choice_d.data = question_data.get('choice_d', '')
+                # Clean correct_answer to ensure it's valid
+                correct_answer = question_data.get('correct_answer', '').strip().upper()
+                form.posttest_questions[i].correct_answer.data = correct_answer if correct_answer in ['A', 'B', 'C', 'D'] else ''
+        
+        # Populate PBA sessions
+        pba_data = form_data.get('pba_sessions', [])
+        print(f"🔍 Loading PBA sessions data: {len(pba_data)} sessions found")
+        for i, session_data in enumerate(pba_data):
+            if i < len(form.pba_sessions):
+                form.pba_sessions[i].session_number.data = session_data.get('session_number', '')
+                form.pba_sessions[i].activity_name.data = session_data.get('activity_name', '')
+                
+                questions = session_data.get('assessment_questions', [])
+                for j, question_data in enumerate(questions):
+                    if j < len(form.pba_sessions[i].assessment_questions):
+                        form.pba_sessions[i].assessment_questions[j].question.data = question_data.get('question', '')
+                        form.pba_sessions[i].assessment_questions[j].correct_answer.data = question_data.get('correct_answer', '')
+        
+        # Populate vocabulary
+        vocab_data = form_data.get('vocabulary', [])
+        for i, term_data in enumerate(vocab_data):
+            if i < len(form.vocabulary):
+                form.vocabulary[i].term.data = term_data.get('term', '')
+                form.vocabulary[i].definition.data = term_data.get('definition', '')
+        
+        # Populate portfolio checklist
+        portfolio_data = form_data.get('portfolio_checklist', [])
+        for i, item_data in enumerate(portfolio_data):
+            if i < len(form.portfolio_checklist):
+                form.portfolio_checklist[i].product.data = item_data.get('product', '')
+                form.portfolio_checklist[i].session_number.data = item_data.get('session_number', '')
+        
+        print(f"🔍 Successfully loaded Module Answer Key 2.0 draft data")
+        return True
+        
+    except Exception as e:
+        print(f"🔍 Error loading Module Answer Key 2.0 draft data into form: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -812,13 +845,54 @@ class ModuleAnswerKeyForm(FlaskForm):
     # Student Portfolio Checklist (at least 6 items)
     portfolio_checklist = FieldList(FormField(PortfolioChecklistItemForm), min_entries=6, max_entries=10)
     
-    # Enrichment Activities - Dynamic content field (like generic worksheet)
-    enrichment_dynamic_content = FieldList(FormField(DynamicFieldForm), min_entries=0)
-    
-    # Worksheet Answer Keys - Now structured as nested worksheets
-    worksheet_answer_keys = FieldList(FormField(WorksheetAnswerKeyForm), min_entries=0)
-    
     submit = SubmitField('Generate Module Answer Key')
+    
+    def validate_pretest_questions(self, field):
+        # Check if at least one question is provided
+        has_questions = any(q['question_text'] for q in field.data if q.get('question_text'))
+        if not has_questions:
+            raise ValidationError('Please enter at least one pre-test question.')
+    
+    def validate_posttest_questions(self, field):
+        # Check if at least one question is provided
+        has_questions = any(q['question_text'] for q in field.data if q.get('question_text'))
+        if not has_questions:
+            raise ValidationError('Please enter at least one post-test question.')
+    
+    def validate_vocabulary(self, field):
+        # Check if at least one vocabulary term is provided
+        has_terms = any(v['term'] for v in field.data if v.get('term'))
+        if not has_terms:
+            raise ValidationError('Please enter at least one vocabulary term.')
+
+# ===== MODULE ANSWER KEY 2.0 FORM =====
+
+# Main Module Answer Key 2.0 form - Streamlined version without Enrichment and Worksheet sections
+class ModuleAnswerKey2Form(FlaskForm):
+    module_acronym = StringField('Module Acronym', 
+                               validators=[DataRequired(), Length(min=1, max=20)],
+                               render_kw={"placeholder": "e.g., APHY, CHEM, BIOE", "data_autosave": "true"})
+    
+    # Assessments Section
+    # Pre-test questions (10 questions)
+    pretest_questions = FieldList(FormField(AnswerKeyQuestionForm), min_entries=10, max_entries=10)
+    
+    # RCA sessions (sessions 2-5, each with 3 questions)
+    rca_sessions = FieldList(FormField(RCASessionForm), min_entries=4, max_entries=4)
+    
+    # Post-test questions (10 questions)
+    posttest_questions = FieldList(FormField(AnswerKeyQuestionForm), min_entries=10, max_entries=10)
+    
+    # Performance Based Assessments (3 sessions, numbered 1-3)
+    pba_sessions = FieldList(FormField(PBASessionForm), min_entries=3, max_entries=3)
+    
+    # Vocabulary (25-30 terms)
+    vocabulary = FieldList(FormField(VocabularyTermForm), min_entries=25, max_entries=30)
+    
+    # Student Portfolio Checklist (6-10 items)
+    portfolio_checklist = FieldList(FormField(PortfolioChecklistItemForm), min_entries=6, max_entries=10)
+    
+    submit = SubmitField('Generate Module Answer Key 2.0')
     
     def validate_pretest_questions(self, field):
         # Check if at least one question is provided
@@ -1445,8 +1519,7 @@ def create_module_answer_key():
         action = request.form.get('action')
         if action != 'generate':
             print(f"🔍 Skipping generation - action is '{action}', not 'generate'")
-            return render_template('create_moduleAnswerKey.html', form=form, 
-                                 enrichment_dynamic_content=[], worksheet_answer_keys=[])
+            return render_template('create_moduleAnswerKey.html', form=form)
         
         # Only handle document generation now - autosave handles saving
         if form.validate_on_submit():
@@ -1470,7 +1543,7 @@ def create_module_answer_key():
                 # Load all data from the draft to ensure completeness
                 draft_loaded = load_moduleanswerkey_draft_into_form(merged_form, current_user.id)
                 if draft_loaded:
-                    print(f"🔍 Successfully loaded draft - using merged form with {len(merged_form.worksheet_answer_keys.data)} worksheets")
+                    print(f"🔍 Successfully loaded draft - using merged form (worksheet sections removed for simplification)")
                     form = merged_form  # Use the merged form for generation
                 else:
                     print("🔍 Failed to load draft - using submitted form")
@@ -1479,7 +1552,7 @@ def create_module_answer_key():
             
             try:
                 print("🔍 Attempting to generate Module Answer Key...")
-                print(f"🔍 Form now has {len(form.worksheet_answer_keys.data)} worksheets with data")
+                print(f"🔍 Form simplified - worksheet sections moved to separate template")
                 doc_path = generate_module_answer_key(form)
                 filename = os.path.basename(doc_path)
                 
@@ -1505,14 +1578,98 @@ def create_module_answer_key():
                 import traceback
                 traceback.print_exc()  # Print full traceback for debugging
                 flash(f'Error generating Module Answer Key: {str(e)}', 'error')
-                return render_template('create_moduleAnswerKey.html', form=form, 
-                                     enrichment_dynamic_content=[], worksheet_answer_keys=[])
+                return render_template('create_moduleAnswerKey.html', form=form)
         else:
             print(f"🔍 Form validation failed!")
             print(f"🔍 Validation errors: {form.errors}")
     
-    return render_template('create_moduleAnswerKey.html', form=form, 
-                         enrichment_dynamic_content=[], worksheet_answer_keys=[])
+    return render_template('create_moduleAnswerKey.html', form=form)
+
+# ===== MODULE ANSWER KEY 2.0 ROUTES =====
+
+@app.route('/create-module-answer-key2', methods=['GET', 'POST'])
+@login_required
+def create_module_answer_key2():
+    form = ModuleAnswerKey2Form()
+    
+    if request.method == 'POST':
+        print("🔍 Module Answer Key 2.0 form submitted!")
+        print(f"🔍 Request method: {request.method}")
+        print(f"🔍 Form data keys: {list(request.form.keys())}")
+        print(f"🔍 Action value: {request.form.get('action', 'NOT FOUND')}")
+        print(f"🔍 Module acronym: {request.form.get('module_acronym', 'NOT FOUND')}")
+        print(f"🔍 Form valid: {form.validate_on_submit()}")
+        if form.errors:
+            print(f"🔍 Form errors: {form.errors}")
+        
+        # Check if this is actually a generation request
+        action = request.form.get('action')
+        if action != 'generate':
+            print(f"🔍 Skipping generation - action is '{action}', not 'generate'")
+            return render_template('create_module_answer_key2.html', form=form)
+        
+        # Only handle document generation - autosave handles saving
+        if form.validate_on_submit():
+            print("🔍 Module Answer Key 2.0 form validation passed!")
+            
+            # Load autosaved draft data for generation reliability
+            print("🔍 Loading autosaved draft data for generation...")
+            latest_draft = FormDraft.query.filter_by(
+                user_id=current_user.id, 
+                form_type='module_answer_key2'
+            ).order_by(FormDraft.updated_at.desc()).first()
+            
+            if latest_draft and latest_draft.form_data:
+                print("🔍 Found draft data - merging with form data for generation")
+                # Create a merged form that combines submitted data with autosaved data
+                merged_form = ModuleAnswerKey2Form()
+                
+                # Use basic fields from submitted form (like module_acronym)
+                merged_form.module_acronym.data = form.module_acronym.data
+                
+                # Load all data from the draft to ensure completeness
+                draft_loaded = load_module_answer_key2_draft_into_form(merged_form, current_user.id)
+                if draft_loaded:
+                    print(f"🔍 Successfully loaded draft - using merged form for generation")
+                    form = merged_form  # Use the merged form for generation
+                else:
+                    print("🔍 Failed to load draft - using submitted form")
+            else:
+                print("🔍 No draft data found - using submitted form")
+            
+            try:
+                print("🔍 Attempting to generate Module Answer Key 2.0...")
+                doc_path = generate_module_answer_key2(form)
+                filename = os.path.basename(doc_path)
+                
+                print(f"🔍 Module Answer Key 2.0 generated at: {doc_path}")
+                
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='module_answer_key2',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                print(f"🔍 Database record created successfully")
+                flash('Module Answer Key 2.0 generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"🔍 Error generating Module Answer Key 2.0: {e}")
+                import traceback
+                traceback.print_exc()  # Print full traceback for debugging
+                flash(f'Error generating Module Answer Key 2.0: {str(e)}', 'error')
+                return render_template('create_module_answer_key2.html', form=form)
+        else:
+            print(f"🔍 Form validation failed!")
+            print(f"🔍 Validation errors: {form.errors}")
+    
+    return render_template('create_module_answer_key2.html', form=form)
 
 @app.route('/create-moduleActivitySheet', methods=['GET', 'POST'])
 @login_required
@@ -3046,16 +3203,16 @@ def generate_module_answer_key(form):
                     'session_number': escape_xml(item_data.get('session_number', ''))
                 })
         
-        # 5. Enrichment Activities - Dynamic content (build as string instead of RichText)
-        enrichment_subdoc = doc.new_subdoc()
-        question_counter = 1
+        # 5. Enrichment Activities & Worksheet Answer Keys - REMOVED FOR SIMPLIFICATION
+        # These complex sections have been moved to separate "Academic Worksheet Builder" template
         
-        for i, field_data in enumerate(form.enrichment_dynamic_content.data):
-            field_type = field_data.get('field_type')
-            
-            print(f"Processing enrichment field {i}: type = {field_type}")
-            
-            if field_type == 'section_header':
+        # Create empty subdocuments for template compatibility
+        enrichment_subdoc = doc.new_subdoc()
+        worksheet_keys_subdoc = doc.new_subdoc()
+        
+        # Skip complex enrichment and worksheet processing - moved to separate template
+        
+        # Build the complete context
                 title = (field_data.get('section_title') or '').strip()
                 if title:
                     p = enrichment_subdoc.add_paragraph(title)
@@ -3193,8 +3350,8 @@ def generate_module_answer_key(form):
         worksheet_keys_subdoc = doc.new_subdoc()
         overall_question_counter = 1
         
-        print(f"🔍 GENERATION: Processing {len(form.worksheet_answer_keys.data)} worksheets")
-        for worksheet_index, worksheet_data in enumerate(form.worksheet_answer_keys.data):
+        print(f"🔍 GENERATION: Worksheet section removed - using empty subdocument")
+        # Worksheet processing removed - moved to separate Academic Worksheet Builder template
             print(f"🔍 GENERATION: Processing worksheet {worksheet_index + 1}: '{worksheet_data.get('worksheet_title', 'No Title')}'")
             print(f"🔍 GENERATION: Worksheet {worksheet_index + 1} has {len(worksheet_data.get('dynamic_content', []))} dynamic content fields")
             worksheet_title = (worksheet_data.get('worksheet_title') or '').strip()
@@ -3348,7 +3505,7 @@ def generate_module_answer_key(form):
                         overall_question_counter += 1
                 
                 # Add spacing between worksheets
-                if worksheet_index < len(form.worksheet_answer_keys.data) - 1:
+                if worksheet_index < len(worksheet_keys_list) - 1:
                     worksheet_keys_subdoc.add_paragraph()
                     worksheet_keys_subdoc.add_paragraph()
             
@@ -3360,57 +3517,14 @@ def generate_module_answer_key(form):
         # Process images separately (like RCA worksheets)
         images_context = {}
         
-        # Process enrichment images
-        for i, field_data in enumerate(form.enrichment_dynamic_content.data):
-            field_type = field_data.get('field_type')
-            
-            if field_type == 'image':
-                # Handle enrichment image upload
-                image_file = None
-                field_name = f'enrichment_dynamic_content-{i}-image_file'
-                
-                # First try the expected field name
-                if field_name in request.files:
-                    image_file = request.files[field_name]
-                else:
-                    # If not found, search through all files for this field pattern
-                    for file_key in request.files.keys():
-                        if file_key.startswith('enrichment_dynamic_content-') and file_key.endswith('-image_file'):
-                            # Extract the index from the field name
-                            try:
-                                parts = file_key.split('-')
-                                if len(parts) >= 3:
-                                    file_index = int(parts[2])
-                                    # Check if this file hasn't been processed yet
-                                    if file_key not in processed_enrichment_image_fields:
-                                        image_file = request.files[file_key]
-                                        processed_enrichment_image_fields.add(file_key)
-                                        print(f"Found enrichment image file with key: {file_key} for field at position {i}")
-                                        break
-                            except (ValueError, IndexError):
-                                continue
-                
-                if image_file and image_file.filename:
-                    # Save the uploaded file temporarily
-                    filename = secure_filename(image_file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
-                    # Save the file
-                    image_file.save(filepath)
-                    saved_images.append(filepath)  # Track for cleanup
-                    
-                    # Create InlineImage for the template (like RCA worksheets)
-                    image_obj = InlineImage(doc, filepath, width=Inches(4))
-                    
-                    # Add to context with a unique key
-                    image_key = f'enrichment_image_{i}'
-                    images_context[image_key] = image_obj
-                    print(f"Added enrichment image to context with key: {image_key}")
+        # Enrichment section removed - moved to separate Academic Worksheet Builder template
+        # No enrichment image processing needed
         
         # Process worksheet images
-        for worksheet_index, worksheet_data in enumerate(form.worksheet_answer_keys.data):
+        # Safety check: worksheet_answer_keys field removed
+        worksheet_keys_data = getattr(form, 'worksheet_answer_keys', None)
+        worksheet_keys_list = worksheet_keys_data.data if worksheet_keys_data else []
+        for worksheet_index, worksheet_data in enumerate(worksheet_keys_list):
             for field_index, field_data in enumerate(worksheet_data.get('dynamic_content', [])):
                 field_type = field_data.get('field_type')
                 
@@ -3530,6 +3644,236 @@ def generate_module_answer_key(form):
                     print(f"✓ Cleaned up temporary image: {image_path}")
             except Exception as e:
                 print(f"Warning: Could not clean up image {image_path}: {e}")
+
+def generate_module_answer_key2(form):
+    """Generate a Module Answer Key 2.0 using docxtpl - streamlined version without complex sections"""
+    # Use the new master template for Module Answer Key 2.0
+    master_template_path = 'templates/docx_templates/module_answer_key2_master.docx'
+    working_template_path = 'templates/docx_templates/module_answer_key2.docx'
+    
+    print(f"🔍 Looking for Module Answer Key 2.0 master template at: {master_template_path}")
+    
+    # Check if master template exists
+    if not os.path.exists(master_template_path):
+        raise FileNotFoundError("Module Answer Key 2.0 master DOCX template not found. Please create the master template first.")
+    
+    # PROTECTION: Verify master template integrity before proceeding
+    master_stat = os.stat(master_template_path)
+    print(f"🔍 Master template size: {master_stat.st_size} bytes, modified: {datetime.fromtimestamp(master_stat.st_mtime)}")
+    
+    # Always copy from master to working template before processing
+    print("🔍 Copying fresh Module Answer Key 2.0 template from master...")
+    try:
+        shutil.copy2(master_template_path, working_template_path)
+        print(f"✓ Successfully copied master to working template")
+    except Exception as e:
+        raise Exception(f"Failed to copy master template: {e}")
+    
+    print("🔍 Loading Module Answer Key 2.0 working template...")
+    
+    # Create a temporary copy of the working template - NEVER touch master directly
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        try:
+            shutil.copy2(working_template_path, temp_file.name)
+            temp_template_path = temp_file.name
+            print(f"✓ Created temporary template at: {temp_template_path}")
+        except Exception as e:
+            raise Exception(f"Failed to create temporary template: {e}")
+    
+    try:
+        # Load the temporary template - NEVER the master
+        print(f"🔍 Loading DocxTemplate from temporary file: {temp_template_path}")
+        doc = DocxTemplate(temp_template_path)
+        
+        # Prepare context data matching the template structure (simplified version)
+        
+        # 1. Pre-test questions
+        pretest_questions_data = []
+        for question_data in form.pretest_questions.data:
+            if question_data.get('question_text'):
+                pretest_questions_data.append({
+                    'question': escape_xml(question_data['question_text']),
+                    'choice': [
+                        escape_xml(question_data.get('choice_a', '')),
+                        escape_xml(question_data.get('choice_b', '')),
+                        escape_xml(question_data.get('choice_c', '')),
+                        escape_xml(question_data.get('choice_d', ''))
+                    ],
+                    'correct_answer': question_data.get('correct_answer', '').upper()
+                })
+        
+        # 2. RCA sessions (sessions 2-5, each with 3 questions)
+        rca_sessions_data = []
+        for i, session_data in enumerate(form.rca_sessions.data):
+            session_obj = {
+                'session_number': i + 2,  # Sessions 2-5
+            }
+            
+            # Handle both form data structure and autosave data structure
+            questions = []
+            
+            if 'questions' in session_data and isinstance(session_data['questions'], list):
+                # Autosave/draft structure: questions as array
+                questions = session_data['questions']
+                print(f"🔍 RCA Session {i+1}: Using autosave structure with {len(questions)} questions")
+            else:
+                # Form submission structure: individual question objects
+                questions = session_data.get('questions', [])
+                print(f"🔍 RCA Session {i+1}: Using form structure with {len(questions)} questions")
+            
+            # Add research question (first question)
+            if len(questions) > 0 and questions[0].get('question_text'):
+                session_obj['research_question'] = {
+                    'text': escape_xml(questions[0]['question_text']),
+                    'choice': [
+                        escape_xml(questions[0].get('choice_a', '')),
+                        escape_xml(questions[0].get('choice_b', '')),
+                        escape_xml(questions[0].get('choice_c', '')),
+                        escape_xml(questions[0].get('choice_d', ''))
+                    ],
+                    'correct_answer': questions[0].get('correct_answer', '').upper()
+                }
+                print(f"🔍   Research question: {questions[0]['question_text'][:50]}...")
+            
+            # Add challenge question (second question)
+            if len(questions) > 1 and questions[1].get('question_text'):
+                session_obj['challenge_question'] = {
+                    'text': escape_xml(questions[1]['question_text']),
+                    'choice': [
+                        escape_xml(questions[1].get('choice_a', '')),
+                        escape_xml(questions[1].get('choice_b', '')),
+                        escape_xml(questions[1].get('choice_c', '')),
+                        escape_xml(questions[1].get('choice_d', ''))
+                    ],
+                    'correct_answer': questions[1].get('correct_answer', '').upper()
+                }
+                print(f"🔍   Challenge question: {questions[1]['question_text'][:50]}...")
+            
+            # Add application question (third question)
+            if len(questions) > 2 and questions[2].get('question_text'):
+                session_obj['application_question'] = {
+                    'text': escape_xml(questions[2]['question_text']),
+                    'choice': [
+                        escape_xml(questions[2].get('choice_a', '')),
+                        escape_xml(questions[2].get('choice_b', '')),
+                        escape_xml(questions[2].get('choice_c', '')),
+                        escape_xml(questions[2].get('choice_d', ''))
+                    ],
+                    'correct_answer': questions[2].get('correct_answer', '').upper()
+                }
+                print(f"🔍   Application question: {questions[2]['question_text'][:50]}...")
+            
+            # Only add sessions that have at least one question
+            if any(key in session_obj for key in ['research_question', 'challenge_question', 'application_question']):
+                rca_sessions_data.append(session_obj)
+                print(f"🔍 Added RCA Session {i+1} with {len([k for k in ['research_question', 'challenge_question', 'application_question'] if k in session_obj])} questions")
+        
+        # 3. Post-test questions
+        posttest_questions_data = []
+        for question_data in form.posttest_questions.data:
+            if question_data.get('question_text'):
+                posttest_questions_data.append({
+                    'question': escape_xml(question_data['question_text']),
+                    'choice': [
+                        escape_xml(question_data.get('choice_a', '')),
+                        escape_xml(question_data.get('choice_b', '')),
+                        escape_xml(question_data.get('choice_c', '')),
+                        escape_xml(question_data.get('choice_d', ''))
+                    ],
+                    'correct_answer': question_data.get('correct_answer', '').upper()
+                })
+        
+        # 4. Performance Based Assessments (3 sessions, numbered 1-3)
+        pba_sessions_data = []
+        for i, session_data in enumerate(form.pba_sessions.data):
+            if session_data.get('activity_name'):
+                session_obj = {
+                    'session_number': session_data.get('session_number', i + 1),  # Default to index + 1 if not provided
+                    'activity_name': escape_xml(session_data['activity_name']),
+                    'assessment_questions': []
+                }
+                
+                # Process assessment questions for this session
+                for question_data in session_data.get('assessment_questions', []):
+                    if question_data.get('question'):
+                        session_obj['assessment_questions'].append({
+                            'question': escape_xml(question_data['question']),
+                            'correct_answer': escape_xml(question_data.get('correct_answer', ''))
+                        })
+                
+                if session_obj['assessment_questions']:  # Only add sessions with questions
+                    pba_sessions_data.append(session_obj)
+        
+        # 5. Vocabulary
+        vocabulary_data = []
+        for term_data in form.vocabulary.data:
+            if term_data.get('term'):
+                vocabulary_data.append({
+                    'term': escape_xml(term_data['term']),
+                    'definition': escape_xml(term_data.get('definition', ''))
+                })
+        
+        # 6. Student Portfolio Checklist
+        portfolio_checklist_data = []
+        for item_data in form.portfolio_checklist.data:
+            if item_data.get('product'):
+                portfolio_checklist_data.append({
+                    'product': escape_xml(item_data['product']),
+                    'session_number': escape_xml(item_data.get('session_number', ''))
+                })
+        
+        # Build the complete context (simplified - no enrichment or worksheet sections)
+        context = {
+            'module_acronym': escape_xml(form.module_acronym.data),
+            'pretest_questions': pretest_questions_data,
+            'rca_sessions': rca_sessions_data,
+            'posttest_questions': posttest_questions_data,
+            'pba_sessions': pba_sessions_data,
+            'vocabulary': vocabulary_data,
+            'portfolio_checklist': portfolio_checklist_data
+        }
+        
+        print(f"🔍 Module Answer Key 2.0 context data prepared")
+        print(f"🔍 Number of pre-test questions: {len(pretest_questions_data)}")
+        print(f"🔍 Number of RCA sessions: {len(rca_sessions_data)}")
+        print(f"🔍 Number of post-test questions: {len(posttest_questions_data)}")
+        print(f"🔍 Number of PBA sessions: {len(pba_sessions_data)}")
+        print(f"🔍 Number of vocabulary terms: {len(vocabulary_data)}")
+        print(f"🔍 Number of portfolio checklist items: {len(portfolio_checklist_data)}")
+        
+        # Render the document
+        print("🔍 Rendering Module Answer Key 2.0 document...")
+        doc.render(context)
+        
+        # Save to output directory
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        filename = f"Module Answer Key 2.0 {escape_xml(form.module_acronym.data).replace(' ', '_')}_v2.0.docx"
+        output_path = os.path.join(output_dir, filename)
+        
+        print(f"🔍 Saving Module Answer Key 2.0 document to: {output_path}")
+        doc.save(output_path)
+        
+        print("✅ Module Answer Key 2.0 document saved successfully!")
+        
+        # PROTECTION: Verify master template wasn't accidentally modified
+        master_stat_after = os.stat(master_template_path)
+        if master_stat.st_mtime != master_stat_after.st_mtime:
+            print("⚠️  WARNING: Master template modification time changed during processing!")
+        else:
+            print("✓ Master template integrity verified - no accidental changes")
+            
+        return output_path
+        
+    finally:
+        # Clean up the temporary file
+        try:
+            if os.path.exists(temp_template_path):
+                os.unlink(temp_template_path)
+                print(f"✓ Cleaned up temporary file: {temp_template_path}")
+        except Exception as e:
+            print(f"Warning: Could not clean up temporary file {temp_template_path}: {e}")
 
 def generate_module_activity_sheet(form):
     """Generate a Module Activity Sheet using docxtpl"""
@@ -5408,6 +5752,195 @@ def delete_moduleanswerkey_draft(draft_id):
         db.session.delete(draft)
         db.session.commit()
         flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+# ===== MODULE ANSWER KEY 2.0 DRAFT MANAGEMENT ROUTES =====
+
+@app.route('/autosave-module-answer-key2-draft', methods=['POST'])
+@login_required
+def autosave_module_answer_key2_draft():
+    """AJAX endpoint for autosaving Module Answer Key 2.0 draft with enhanced reliability"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage with explicit validation
+        form_data = {
+            'module_acronym': data.get('module_acronym', ''),
+            'pretest_questions': [],
+            'rca_sessions': [],
+            'posttest_questions': [],
+            'pba_sessions': [],
+            'vocabulary': [],
+            'portfolio_checklist': []
+        }
+        
+        # Process pre-test questions with index validation
+        pretest_questions = data.get('pretest_questions', [])
+        for i, question in enumerate(pretest_questions):
+            if question and any(question.get(key, '') for key in ['question_text', 'choice_a', 'choice_b', 'choice_c', 'choice_d', 'correct_answer']):
+                form_data['pretest_questions'].append({
+                    'question_text': question.get('question_text', ''),
+                    'choice_a': question.get('choice_a', ''),
+                    'choice_b': question.get('choice_b', ''),
+                    'choice_c': question.get('choice_c', ''),
+                    'choice_d': question.get('choice_d', ''),
+                    'correct_answer': question.get('correct_answer', '').upper() if question.get('correct_answer') else ''
+                })
+        
+        # Process RCA sessions with nested question validation
+        rca_sessions = data.get('rca_sessions', [])
+        for session in rca_sessions:
+            if session:
+                questions = []
+                for question in session.get('questions', []):
+                    if question and any(question.get(key, '') for key in ['question_text', 'choice_a', 'choice_b', 'choice_c', 'choice_d', 'correct_answer']):
+                        questions.append({
+                            'question_text': question.get('question_text', ''),
+                            'choice_a': question.get('choice_a', ''),
+                            'choice_b': question.get('choice_b', ''),
+                            'choice_c': question.get('choice_c', ''),
+                            'choice_d': question.get('choice_d', ''),
+                            'correct_answer': question.get('correct_answer', '').upper() if question.get('correct_answer') else ''
+                        })
+                if questions:  # Only add session if it has questions
+                    form_data['rca_sessions'].append({'questions': questions})
+        
+        # Process post-test questions with index validation
+        posttest_questions = data.get('posttest_questions', [])
+        for i, question in enumerate(posttest_questions):
+            if question and any(question.get(key, '') for key in ['question_text', 'choice_a', 'choice_b', 'choice_c', 'choice_d', 'correct_answer']):
+                form_data['posttest_questions'].append({
+                    'question_text': question.get('question_text', ''),
+                    'choice_a': question.get('choice_a', ''),
+                    'choice_b': question.get('choice_b', ''),
+                    'choice_c': question.get('choice_c', ''),
+                    'choice_d': question.get('choice_d', ''),
+                    'correct_answer': question.get('correct_answer', '').upper() if question.get('correct_answer') else ''
+                })
+        
+        # Process PBA sessions with validation
+        pba_sessions = data.get('pba_sessions', [])
+        for session in pba_sessions:
+            if session and (session.get('session_number') or session.get('activity_name') or session.get('assessment_questions')):
+                assessment_questions = []
+                for question in session.get('assessment_questions', []):
+                    if question and (question.get('question') or question.get('correct_answer')):
+                        assessment_questions.append({
+                            'question': question.get('question', ''),
+                            'correct_answer': question.get('correct_answer', '')
+                        })
+                form_data['pba_sessions'].append({
+                    'session_number': session.get('session_number', ''),
+                    'activity_name': session.get('activity_name', ''),
+                    'assessment_questions': assessment_questions
+                })
+        
+        # Process vocabulary with validation
+        vocabulary = data.get('vocabulary', [])
+        for term in vocabulary:
+            if term and (term.get('term') or term.get('definition')):
+                form_data['vocabulary'].append({
+                    'term': term.get('term', ''),
+                    'definition': term.get('definition', '')
+                })
+        
+        # Process portfolio checklist with validation
+        portfolio_checklist = data.get('portfolio_checklist', [])
+        for item in portfolio_checklist:
+            if item and (item.get('product') or item.get('session_number')):
+                form_data['portfolio_checklist'].append({
+                    'product': item.get('product', ''),
+                    'session_number': item.get('session_number', '')
+                })
+        
+        # Create title from module acronym
+        module_acronym = form_data.get('module_acronym', 'Untitled')
+        title = f"Module Answer Key 2.0 - {module_acronym}" if module_acronym else "Module Answer Key 2.0 - Untitled"
+        
+        # Check if user already has a draft for this form type
+        existing_draft = FormDraft.query.filter_by(
+            user_id=current_user.id, 
+            form_type='module_answer_key2',
+            is_current=True
+        ).first()
+        
+        if existing_draft:
+            # Update existing draft
+            existing_draft.form_data = form_data
+            existing_draft.title = title
+            existing_draft.module_acronym = module_acronym
+            existing_draft.updated_at = datetime.utcnow()
+            print(f"🔍 Updated existing Module Answer Key 2.0 draft {existing_draft.id}")
+        else:
+            # Create new draft
+            new_draft = FormDraft(
+                user_id=current_user.id,
+                form_type='module_answer_key2',
+                title=title,
+                module_acronym=module_acronym,
+                form_data=form_data,
+                is_current=True
+            )
+            db.session.add(new_draft)
+            print(f"🔍 Created new Module Answer Key 2.0 draft")
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Draft saved successfully'})
+        
+    except Exception as e:
+        print(f"🔍 Error autosaving Module Answer Key 2.0 draft: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-module-answer-key2-draft/<int:draft_id>')
+@login_required
+def load_module_answer_key2_draft(draft_id):
+    """Load Module Answer Key 2.0 draft"""
+    try:
+        # Get the draft
+        draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='module_answer_key2').first()
+        
+        if not draft:
+            flash('Draft not found', 'error')
+            return redirect(url_for('create_module_answer_key2'))
+        
+        # Create form and load data
+        form = ModuleAnswerKey2Form()
+        form_data = draft.form_data
+        
+        # Load data into form with enhanced error handling
+        success = load_module_answer_key2_draft_into_form(form, current_user.id)
+        
+        if not success:
+            flash('Error loading draft data', 'error')
+            return redirect(url_for('create_module_answer_key2'))
+        
+        print(f"🔍 Module Answer Key 2.0 draft {draft.id} loaded successfully")
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_module_answer_key2.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading Module Answer Key 2.0 draft: {e}")
+        flash(f'Error loading draft: {str(e)}', 'error')
+        return redirect(url_for('create_module_answer_key2'))
+
+@app.route('/delete-module-answer-key2-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_module_answer_key2_draft(draft_id):
+    """Delete Module Answer Key 2.0 draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='module_answer_key2').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Module Answer Key 2.0 draft deleted successfully!', 'success')
     
     return redirect(url_for('drafts'))
 

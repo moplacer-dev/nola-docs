@@ -42,6 +42,7 @@
                                         {% elif draft.form_type == 'moduleguide' %}bg-yellow-100 text-yellow-800
                                         {% elif draft.form_type == 'moduleGuide' %}bg-yellow-100 text-yellow-800
                                         {% elif draft.form_type == 'moduleAnswerKey' %}bg-red-100 text-red-800
+                                        {% elif draft.form_type == 'module_answer_key2' %}bg-pink-100 text-pink-800
                                         {% elif draft.form_type == 'moduleActivitySheet' %}bg-blue-100 text-blue-800
                                         {% elif draft.form_type == 'horizontal_lesson_plan' %}bg-emerald-100 text-emerald-800
                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
@@ -225,6 +226,19 @@
                                         📝 Edit
                                     </a>
                                     <form method="POST" action="/delete-moduleanswerkey-draft/{{ draft.id }}" 
+                                          class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" 
+                                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
+                                            🗑️ Delete
+                                        </button>
+                                    </form>
+                                {% elif draft.form_type == 'module_answer_key2' %}
+                                    <a href="/load-module-answer-key2-draft/{{ draft.id }}" 
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                        📝 Edit
+                                    </a>
+                                    <form method="POST" action="/delete-module-answer-key2-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
