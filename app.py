@@ -3270,9 +3270,10 @@ def generate_module_answer_key(form):
 
 def generate_module_answer_key2(form):
     """Generate a Module Answer Key 2.0 using docxtpl - streamlined version without complex sections"""
-    # Use the new master template for Module Answer Key 2.0
-    master_template_path = 'templates/docx_templates/module_answer_key2_master.docx'
-    working_template_path = 'templates/docx_templates/module_answer_key2.docx'
+    # TEMPORARY FALLBACK: Use the original module answer key template until the 2.0 template is fixed
+    # Original line: master_template_path = 'templates/docx_templates/module_answer_key2_master.docx'
+    master_template_path = 'templates/docx_templates/module_ak_master.docx'
+    working_template_path = 'templates/docx_templates/module_ak.docx'
     
     print(f"🔍 Looking for Module Answer Key 2.0 master template at: {master_template_path}")
     
@@ -3466,7 +3467,13 @@ def generate_module_answer_key2(form):
         
         # Render the document
         print("🔍 Rendering Module Answer Key 2.0 document...")
-        doc.render(context)
+        try:
+            doc.render(context)
+        except Exception as template_error:
+            print(f"🚨 Template rendering error: {str(template_error)}")
+            print(f"🔍 This suggests a Jinja2 syntax error in the DOCX template file")
+            print(f"🔍 Check the module_answer_key2_master.docx file for missing {% endfor %} tags")
+            raise Exception(f"DOCX template syntax error: {str(template_error)}. Please check the module_answer_key2_master.docx template for missing {{% endfor %}} tags in loops.")
         
         # Save to output directory
         output_dir = 'generated_docs'
