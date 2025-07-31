@@ -180,7 +180,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true") }}
+                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true"}) }}
                         {% if form.module_acronym.errors %}
                             <div class="text-red-600 text-sm mt-1">
                                 {% for error in form.module_acronym.errors %}
@@ -215,29 +215,29 @@
                                         <div class="space-y-4">
                                             <div>
                                                 {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                             </div>
                                             <div class="grid grid-cols-2 gap-4">
                                                 <div>
                                                     {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                                 </div>
                                             </div>
                                             <div class="w-32">
                                                 {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-medium", data-autosave="true", data-question-index=loop.index0, data-section="pretest") }}
+                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-medium", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "pretest"}) }}
                                             </div>
                                         </div>
                                     </div>
@@ -263,29 +263,29 @@
                                                 <div class="space-y-4">
                                                     <div>
                                                         {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                        {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                        {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                     </div>
                                                     <div class="grid grid-cols-2 gap-4">
                                                         <div>
                                                             {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                            {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                            {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                         </div>
                                                         <div>
                                                             {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                            {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                            {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                         </div>
                                                         <div>
                                                             {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                            {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                            {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                         </div>
                                                         <div>
                                                             {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                            {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                            {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                         </div>
                                                     </div>
                                                     <div class="w-32">
                                                         {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center font-medium", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="rca") }}
+                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center font-medium", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "rca"}) }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -305,29 +305,29 @@
                                         <div class="space-y-4">
                                             <div>
                                                 {{ question.question_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                {{ question.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                             </div>
                                             <div class="grid grid-cols-2 gap-4">
                                                 <div>
                                                     {{ question.choice_a.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                    {{ question.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_b.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                    {{ question.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_c.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                    {{ question.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                                 </div>
                                                 <div>
                                                     {{ question.choice_d.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                    {{ question.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                                 </div>
                                             </div>
                                             <div class="w-32">
                                                 {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center font-medium", data-autosave="true", data-question-index=loop.index0, data-section="posttest") }}
+                                                {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center font-medium", **{"data-autosave": "true", "data-question-index": loop.index0, "data-section": "posttest"}) }}
                                             </div>
                                         </div>
                                     </div>
@@ -357,11 +357,11 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             {{ session.session_number.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ session.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-section="pba") }}
+                                            {{ session.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-section": "pba"}) }}
                                         </div>
                                         <div>
                                             {{ session.activity_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ session.activity_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-section="pba") }}
+                                            {{ session.activity_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-section": "pba"}) }}
                                         </div>
                                     </div>
                                     <div class="space-y-4">
@@ -372,11 +372,11 @@
                                                 <div class="space-y-3">
                                                     <div>
                                                         {{ question.question.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                        {{ question.question(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="pba") }}
+                                                        {{ question.question(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "pba"}) }}
                                                     </div>
                                                     <div>
                                                         {{ question.correct_answer.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", rows="3", data-autosave="true", data-session-index=loop.index0, data-question-index=loop.index0, data-section="pba") }}
+                                                        {{ question.correct_answer(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent", rows="3", **{"data-autosave": "true", "data-session-index": loop.index0, "data-question-index": loop.index0, "data-section": "pba"}) }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -408,11 +408,11 @@
                                     <div class="space-y-3">
                                         <div>
                                             {{ term.term.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ term.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", data-autosave="true", data-term-index=loop.index0, data-section="vocabulary") }}
+                                            {{ term.term(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", **{"data-autosave": "true", "data-term-index": loop.index0, "data-section": "vocabulary"}) }}
                                         </div>
                                         <div>
                                             {{ term.definition.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ term.definition(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", rows="3", data-autosave="true", data-term-index=loop.index0, data-section="vocabulary") }}
+                                            {{ term.definition(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent", rows="3", **{"data-autosave": "true", "data-term-index": loop.index0, "data-section": "vocabulary"}) }}
                                         </div>
                                     </div>
                                 </div>
@@ -441,11 +441,11 @@
                                     <div class="space-y-3">
                                         <div>
                                             {{ item.product.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ item.product(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", data-autosave="true", data-item-index=loop.index0, data-section="portfolio") }}
+                                            {{ item.product(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", **{"data-autosave": "true", "data-item-index": loop.index0, "data-section": "portfolio"}) }}
                                         </div>
                                         <div>
                                             {{ item.session_number.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                            {{ item.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", data-autosave="true", data-item-index=loop.index0, data-section="portfolio") }}
+                                            {{ item.session_number(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", **{"data-autosave": "true", "data-item-index": loop.index0, "data-section": "portfolio"}) }}
                                         </div>
                                     </div>
                                 </div>
