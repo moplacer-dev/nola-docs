@@ -3270,10 +3270,9 @@ def generate_module_answer_key(form):
 
 def generate_module_answer_key2(form):
     """Generate a Module Answer Key 2.0 using docxtpl - streamlined version without complex sections"""
-    # TEMPORARY FALLBACK: Use the original module answer key template until the 2.0 template is fixed
-    # Original line: master_template_path = 'templates/docx_templates/module_answer_key2_master.docx'
-    master_template_path = 'templates/docx_templates/module_ak_master.docx'
-    working_template_path = 'templates/docx_templates/module_ak.docx'
+    # Use the dedicated Module Answer Key 2.0 template (same Jinja syntax, no enrichment/worksheet sections)
+    master_template_path = 'templates/docx_templates/module_answer_key2_master.docx'
+    working_template_path = 'templates/docx_templates/module_answer_key2.docx'
     
     print(f"🔍 Looking for Module Answer Key 2.0 master template at: {master_template_path}")
     
