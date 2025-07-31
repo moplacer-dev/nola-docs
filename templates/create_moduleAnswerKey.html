@@ -578,35 +578,7 @@
                 </div>
             </div>
 
-            <!-- Enrichment Activities Section -->
-            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="enrichment">
-                    <h2 class="text-xl font-semibold text-gray-800">🌟 Enrichment Answer Key</h2>
-                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-                
-                <div class="accordion-content" id="enrichment-content">
-                    <div class="p-6">
-                        <p class="text-sm text-gray-600 mb-4">Build enrichment answer key content using dynamic fields.</p>
-                        
-                        <!-- Dynamic fields container -->
-                        <div id="enrichment-fields-container">
-                            {% for field_form in form.enrichment_dynamic_content %}
-                                <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-index="{{ loop.index0 }}">
-                                    <!-- Field content will be populated by JavaScript -->
-                                </div>
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- Empty state message -->
-                        <div id="enrichment-empty-message" class="text-gray-500 text-center py-8">
-                            <p>Click "Add Field" to start building content.</p>
-                        </div>
-                        
-                        <!-- Field Type Selector for Enrichment (moved to bottom for better UX) -->
-                        <div id="enrichment-field-type-selector" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <!-- Enrichment section removed - moved to separate Academic Worksheet Builder template -->
                             <h3 class="text-lg font-medium text-gray-800 mb-3">Select Field Type to Add:</h3>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 <button type="button" class="field-type-btn bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-3 rounded-md transition-colors" data-type="section_header" data-section="enrichment">
@@ -644,117 +616,7 @@
                 </div>
             </div>
 
-            <!-- Worksheet Answer Keys Section -->
-            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                <button type="button" class="accordion-header w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left transition-colors" data-section="worksheet_keys">
-                    <h2 class="text-xl font-semibold text-gray-800">📝 Worksheet Answer Keys</h2>
-                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-                
-                <div class="accordion-content" id="worksheet_keys-content">
-                    <div class="p-6">
-                        <p class="text-sm text-gray-600 mb-4">Create worksheet answer keys organized by individual worksheets. Each worksheet can contain multiple sections and questions.</p>
-                        
-                        <div class="bg-gray-50 rounded-lg p-6">
-                            <div class="p-6">
-                                <p class="text-sm text-gray-600 mb-4">Add worksheet containers to organize your answer keys. Each worksheet can have its own title and content.</p>
-                                
-                                <!-- Worksheets container -->
-                                <div id="worksheets-container">
-                                    {% for worksheet_form in form.worksheet_answer_keys %}
-                                        <div class="worksheet-container mb-8 p-6 border border-gray-300 rounded-lg bg-white" data-worksheet-index="{{ loop.index0 }}">
-                                            <!-- Worksheet header -->
-                                            <div class="flex justify-between items-center mb-4">
-                                                <h3 class="text-lg font-semibold text-gray-800">📄 Worksheet Answer Key #{{ loop.index }}</h3>
-                                                <button type="button" class="delete-worksheet-btn text-red-600 hover:text-red-800 font-medium">
-                                                    🗑️ Delete Worksheet
-                                                </button>
-                                            </div>
-                                            
-                                            <!-- Worksheet title field -->
-                                            <div class="mb-4">
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Worksheet Title (optional)</label>
-                                                {{ worksheet_form.worksheet_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500") }}
-                                            </div>
-                                            
-                                            <!-- Fields container for this worksheet -->
-                                            <div class="worksheet-fields-container" data-worksheet-index="{{ loop.index0 }}">
-                                                {% for field_form in worksheet_form.dynamic_content %}
-                                                    <div class="dynamic-field mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50" data-field-index="{{ loop.index0 }}">
-                                                        <!-- Field content will be populated by JavaScript -->
-                                                    </div>
-                                                {% endfor %}
-                                            </div>
-                                            
-                                            <!-- Empty state message for this worksheet -->
-                                            <div class="worksheet-empty-message text-gray-500 text-center py-4" data-worksheet-index="{{ loop.index0 }}">
-                                                <p>No fields added to this worksheet yet.</p>
-                                                <p class="text-sm">Click "Add Field" below to start building this worksheet's content.</p>
-                                            </div>
-                                            
-                                            <!-- Field Type Selector for this worksheet -->
-                                            <div class="worksheet-field-type-selector hidden" data-worksheet-index="{{ loop.index0 }}">
-                                                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                                    <h4 class="font-medium text-gray-800 mb-3">Select Field Type to Add:</h4>
-                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_header" data-worksheet-index="{{ loop.index0 }}">
-                                                            📝 Section Header
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_instructions" data-worksheet-index="{{ loop.index0 }}">
-                                                            📋 Instructions
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="multiple_choice" data-worksheet-index="{{ loop.index0 }}">
-                                                            ✅ Multiple Choice
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="fill_in_blank" data-worksheet-index="{{ loop.index0 }}">
-                                                            ✏️ Fill in Blank
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="text_entry" data-worksheet-index="{{ loop.index0 }}">
-                                                            📝 Text Entry
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="math_problem" data-worksheet-index="{{ loop.index0 }}">
-                                                            🔢 Math Problem
-                                                        </button>
-                                                        <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="{{ loop.index0 }}">
-                                                            📄 Paragraph Text
-                                                        </button>
-
-                                                    </div>
-                                                    <div class="mt-3 text-center">
-                                                        <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="{{ loop.index0 }}">Cancel</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Add Field Button for this worksheet -->
-                                            <div class="text-center mt-4">
-                                                <button type="button" class="add-field-btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-worksheet-index="{{ loop.index0 }}">
-                                                    ➕ Add Field
-                                                </button>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                
-                                <!-- Empty state message when no worksheets -->
-                                <div id="worksheets-empty-message" class="text-gray-500 text-center py-8">
-                                    <p class="text-lg">No worksheet answer keys created yet.</p>
-                                    <p class="text-sm">Click "Add Worksheet Answer Key" to start organizing your answer keys.</p>
-                                </div>
-                                
-                                <!-- Add Worksheet Button -->
-                                <div class="text-center mt-6">
-                                    <button type="button" id="add-worksheet-btn" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                                        📄 Add Worksheet Answer Key
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Worksheet Answer Keys section removed - moved to separate Academic Worksheet Builder template -->
 
             <!-- Form Actions -->
             <div class="flex justify-end pt-6 border-t border-gray-200">
@@ -774,8 +636,7 @@
             {% endif %}
             
             <!-- JSON data for draft restoration -->
-            <script type="application/json" id="draft_enrichment_data">{{ (enrichment_dynamic_content or []) | tojson }}</script>
-            <script type="application/json" id="draft_worksheet_data">{{ (worksheet_answer_keys or []) | tojson }}</script>
+                    <!-- Enrichment and worksheet data scripts removed - sections moved to separate template -->
             <script type="application/json" id="draft_portfolio_data">{{ (portfolio_checklist_data or []) | tojson }}</script>
         </form>
     </div>
@@ -911,8 +772,8 @@ class ModuleAnswerKeyAutosave {
             pba_sessions: [],
             vocabulary: [],
             portfolio_checklist: [],
-            enrichment_dynamic_content: [],
-            worksheet_answer_keys: []
+            // enrichment_dynamic_content: [], // Removed - moved to separate template
+            // worksheet_answer_keys: [] // Removed - moved to separate template
         };
         
         // Collect pre-test questions
@@ -1053,78 +914,9 @@ class ModuleAnswerKeyAutosave {
         // Convert sparse array to dense array and keep empty items for proper indexing
         formData.portfolio_checklist = formData.portfolio_checklist.map(item => item || {});
         
-        // Collect enrichment dynamic content
-        const enrichmentFields = document.querySelectorAll('[name*="enrichment_dynamic_content-"]');
-        console.log(`🔍 AUTOSAVE: Found ${enrichmentFields.length} enrichment fields`);
+        // Enrichment collection removed - moved to separate template
         
-        enrichmentFields.forEach(field => {
-            const match = field.name.match(/enrichment_dynamic_content-(\d+)-(.+)/);
-            if (match) {
-                const fieldIndex = parseInt(match[1]);
-                const fieldProperty = match[2];
-                
-                if (!formData.enrichment_dynamic_content[fieldIndex]) {
-                    formData.enrichment_dynamic_content[fieldIndex] = {};
-                }
-                
-                formData.enrichment_dynamic_content[fieldIndex][fieldProperty] = field.value.trim();
-                console.log(`🔍 AUTOSAVE: Enrichment[${fieldIndex}].${fieldProperty} = "${field.value.trim()}"`);
-            }
-        });
-        
-        // Clean up sparse arrays for enrichment
-        formData.enrichment_dynamic_content = formData.enrichment_dynamic_content.filter(item => 
-            item && Object.keys(item).length > 0
-        );
-        
-        // Collect worksheet answer keys dynamic content
-        const worksheetFields = document.querySelectorAll('[name*="worksheet_answer_keys-"]');
-        console.log(`🔍 AUTOSAVE: Found ${worksheetFields.length} worksheet fields`);
-        
-        worksheetFields.forEach(field => {
-            const worksheetMatch = field.name.match(/worksheet_answer_keys-(\d+)-worksheet_title/);
-            const contentMatch = field.name.match(/worksheet_answer_keys-(\d+)-dynamic_content-(\d+)-(.+)/);
-            
-            if (worksheetMatch) {
-                // Worksheet title field
-                const worksheetIndex = parseInt(worksheetMatch[1]);
-                if (!formData.worksheet_answer_keys[worksheetIndex]) {
-                    formData.worksheet_answer_keys[worksheetIndex] = { dynamic_content: [] };
-                }
-                formData.worksheet_answer_keys[worksheetIndex].worksheet_title = field.value.trim();
-                console.log(`🔍 AUTOSAVE: Worksheet[${worksheetIndex}].title = "${field.value.trim()}"`);
-                
-            } else if (contentMatch) {
-                // Dynamic content field
-                const worksheetIndex = parseInt(contentMatch[1]);
-                const fieldIndex = parseInt(contentMatch[2]);
-                const fieldProperty = contentMatch[3];
-                
-                if (!formData.worksheet_answer_keys[worksheetIndex]) {
-                    formData.worksheet_answer_keys[worksheetIndex] = { dynamic_content: [] };
-                }
-                if (!formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex]) {
-                    formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex] = {};
-                }
-                
-                formData.worksheet_answer_keys[worksheetIndex].dynamic_content[fieldIndex][fieldProperty] = field.value.trim();
-                console.log(`🔍 AUTOSAVE: Worksheet[${worksheetIndex}][${fieldIndex}].${fieldProperty} = "${field.value.trim()}"`);
-            }
-        });
-        
-        // Clean up sparse arrays for worksheets
-        formData.worksheet_answer_keys = formData.worksheet_answer_keys.filter(worksheet => 
-            worksheet && (worksheet.worksheet_title || (worksheet.dynamic_content && worksheet.dynamic_content.length > 0))
-        );
-        
-        // Clean up dynamic content arrays within worksheets
-        formData.worksheet_answer_keys.forEach(worksheet => {
-            if (worksheet.dynamic_content) {
-                worksheet.dynamic_content = worksheet.dynamic_content.filter(item => 
-                    item && Object.keys(item).length > 0
-                );
-            }
-        });
+        // Worksheet collection removed - moved to separate template
         
         return formData;
     }
