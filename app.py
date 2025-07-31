@@ -3464,6 +3464,12 @@ def generate_module_answer_key2(form):
         print(f"🔍 Number of vocabulary terms: {len(vocabulary_data)}")
         print(f"🔍 Number of portfolio checklist items: {len(portfolio_checklist_data)}")
         
+        # Debug: Print first few items to verify structure
+        if vocabulary_data:
+            print(f"🔍 First vocabulary item: {vocabulary_data[0]}")
+        if portfolio_checklist_data:
+            print(f"🔍 First portfolio item: {portfolio_checklist_data[0]}")
+        
         # Render the document
         print("🔍 Rendering Module Answer Key 2.0 document...")
         try:
