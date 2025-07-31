@@ -871,7 +871,7 @@ class ModuleAnswerKeyForm(FlaskForm):
 class ModuleAnswerKey2Form(FlaskForm):
     module_acronym = StringField('Module Acronym', 
                                validators=[DataRequired(), Length(min=1, max=20)],
-                               render_kw={"placeholder": "e.g., APHY, CHEM, BIOE", "data_autosave": "true"})
+                               render_kw={"placeholder": "e.g., APHY, CHEM, BIOE", "data-autosave": "true"})
     
     # Assessments Section
     # Pre-test questions (10 questions)
