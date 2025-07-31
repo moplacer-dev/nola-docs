@@ -3472,8 +3472,8 @@ def generate_module_answer_key2(form):
         except Exception as template_error:
             print(f"🚨 Template rendering error: {str(template_error)}")
             print(f"🔍 This suggests a Jinja2 syntax error in the DOCX template file")
-            print(f"🔍 Check the module_answer_key2_master.docx file for missing {% endfor %} tags")
-            raise Exception(f"DOCX template syntax error: {str(template_error)}. Please check the module_answer_key2_master.docx template for missing {{% endfor %}} tags in loops.")
+            print("🔍 Check the module_answer_key2_master.docx file for missing {% endfor %} tags")
+            raise Exception("DOCX template syntax error: " + str(template_error) + ". Please check the module_answer_key2_master.docx template for missing {% endfor %} tags in loops.")
         
         # Save to output directory
         output_dir = 'generated_docs'
