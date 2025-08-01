@@ -2263,21 +2263,12 @@ def generate_generic_worksheet(form):
         shutil.copy2(working_template_path, temp_file.name)
         temp_template_path = temp_file.name
     
-    saved_images = []  # Track saved images for cleanup
-    
     try:
         # Load the temporary template
         doc = DocxTemplate(temp_template_path)
         
         # Create a subdocument to hold all dynamic content
         subdoc = doc.new_subdoc()
-        
-        # Track processed image fields to avoid duplicates
-        processed_image_fields = set()
-        
-        # Debug: Print all image files available in request
-        image_files_in_request = [key for key in request.files.keys() if 'image_file' in key]
-        print(f"Available image files in request: {image_files_in_request}")
         
         question_counter = 1
         
@@ -2322,9 +2313,7 @@ def generate_generic_worksheet(form):
                         run.font.size = Pt(11)
                     p.paragraph_format.space_after = Pt(6)
             
-            elif field_type == 'image':
-                # Skip images in subdocument - handle them separately like RCA worksheets
-                print(f"Skipping image field {i} - will be processed separately")
+            # Note: Image field type removed from frontend
             
             elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
                 question_text = (field_data.get('question_text') or '').strip()
@@ -2423,58 +2412,6 @@ def generate_generic_worksheet(form):
                     subdoc.add_paragraph()
                     question_counter += 1
         
-        # Process images separately (like RCA worksheets)
-        images_context = {}
-        
-        # Go through the form data again to find images
-        for i, field_data in enumerate(form.dynamic_fields.data):
-            field_type = field_data.get('field_type')
-            
-            if field_type == 'image':
-                # Handle image upload - check if there's a file in the request
-                image_file = None
-                field_name = f'dynamic_fields-{i}-image_file'
-                
-                # First try the expected field name
-                if field_name in request.files:
-                    image_file = request.files[field_name]
-                else:
-                    # If not found, search through all files for this field pattern
-                    for file_key in request.files.keys():
-                        if file_key.startswith('dynamic_fields-') and file_key.endswith('-image_file'):
-                            # Extract the index from the field name
-                            try:
-                                parts = file_key.split('-')
-                                if len(parts) >= 3:
-                                    file_index = int(parts[2])
-                                    # Check if this file hasn't been processed yet
-                                    if file_key not in processed_image_fields:
-                                        image_file = request.files[file_key]
-                                        processed_image_fields.add(file_key)
-                                        print(f"Found image file with key: {file_key} for field at position {i}")
-                                        break
-                            except (ValueError, IndexError):
-                                continue
-                
-                if image_file and image_file.filename:
-                    # Save the uploaded file temporarily
-                    filename = secure_filename(image_file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    
-                    # Save the file
-                    image_file.save(filepath)
-                    saved_images.append(filepath)  # Track for cleanup
-                    
-                    # Create InlineImage for the template (like RCA worksheets)
-                    image_obj = InlineImage(doc, filepath, width=Inches(4))
-                    
-                    # Add to context with a unique key
-                    image_key = f'image_{i}'
-                    images_context[image_key] = image_obj
-                    print(f"Added image to context with key: {image_key}")
-        
         # Initialize context with subdoc as dynamic_content
         context = {
             'module_acronym': escape_xml(form.module_acronym.data),
@@ -2483,12 +2420,7 @@ def generate_generic_worksheet(form):
             'dynamic_content': subdoc
         }
         
-        # Add images to context
-        context.update(images_context)
-        
         print(f"Built dynamic content as subdocument")
-        print(f"Saved {len(saved_images)} images")
-        print(f"Processed image fields: {processed_image_fields}")
         
         # Render the document
         print("Rendering generic document...")
@@ -2514,14 +2446,6 @@ def generate_generic_worksheet(form):
         except:
             pass  # Ignore cleanup errors
         
-        # Clean up uploaded images
-        for image_path in saved_images:
-            try:
-                if os.path.exists(image_path):
-                    os.unlink(image_path)
-                    print(f"Cleaned up temporary image: {image_path}")
-            except Exception as e:
-                print(f"Warning: Could not clean up image {image_path}: {e}")
 
 def generate_family_briefing(form):
     """Generate a family briefing document using docxtpl"""
