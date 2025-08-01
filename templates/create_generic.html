@@ -43,6 +43,64 @@
         background: #2563eb;
     }
     
+    /* Equation Builder Toolbar Styles */
+    .equation-toolbar-toggle {
+        position: fixed;
+        bottom: 80px; /* Above the math symbols toggle */
+        right: 20px;
+        background: #7c3aed; /* Purple color to distinguish from math symbols */
+        color: white;
+        padding: 12px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 999;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .equation-toolbar-toggle:hover {
+        background: #6d28d9;
+    }
+    
+    .equation-builder {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .equation-builder.active {
+        transform: translateY(0);
+    }
+    
+    .equation-template-btn {
+        padding: 8px 12px;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: monospace;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+    
+    .equation-template-btn:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+    }
+    
     .symbol-category {
         border-right: 1px solid #e5e7eb;
         padding: 12px;
@@ -1347,6 +1405,94 @@
         }
     }
 
+    // Equation Builder functionality
+    function toggleEquationBuilder() {
+        const builder = document.getElementById('equation-builder');
+        const mathToolbar = document.getElementById('math-toolbar');
+        const toggleBtn = document.getElementById('equation-builder-toggle');
+        
+        // Close math toolbar if open
+        if (mathToolbar.classList.contains('active')) {
+            toggleMathToolbar();
+        }
+        
+        builder.classList.toggle('active');
+        if (builder.classList.contains('active')) {
+            toggleBtn.innerHTML = '∫ Close Equation Builder';
+            document.getElementById('equation-input').focus();
+        } else {
+            toggleBtn.innerHTML = '∫ Equation Builder';
+        }
+    }
+    
+    function insertTemplate(template) {
+        const input = document.getElementById('equation-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        
+        input.value = text.substring(0, start) + template + text.substring(end);
+        input.selectionStart = input.selectionEnd = start + template.length;
+        input.focus();
+        
+        updateEquationPreview();
+    }
+    
+    function updateEquationPreview() {
+        const input = document.getElementById('equation-input');
+        const preview = document.getElementById('equation-preview');
+        const insertBtn = document.getElementById('insert-equation-btn');
+        
+        const latex = input.value.trim();
+        
+        if (latex) {
+            insertBtn.disabled = false;
+            // For now, show the LaTeX source as preview
+            // Later we'll integrate MathJax or similar for proper rendering
+            preview.innerHTML = `<div class="font-mono text-sm text-gray-700">${latex}</div>`;
+        } else {
+            insertBtn.disabled = true;
+            preview.innerHTML = 'Enter an equation to see preview';
+            preview.className = preview.className.replace('text-gray-700', 'text-gray-500');
+        }
+    }
+    
+    function insertEquation() {
+        if (!activeInput) {
+            alert('Please click on a text field first');
+            return;
+        }
+        
+        const latex = document.getElementById('equation-input').value.trim();
+        if (!latex) return;
+        
+        // For now, insert as LaTeX text wrapped in special markers
+        // Later the backend will convert this to Word equation format
+        const equationMarker = `[EQUATION]${latex}[/EQUATION]`;
+        
+        const start = activeInput.selectionStart;
+        const end = activeInput.selectionEnd;
+        const text = activeInput.value;
+        
+        activeInput.value = text.substring(0, start) + equationMarker + text.substring(end);
+        activeInput.selectionStart = activeInput.selectionEnd = start + equationMarker.length;
+        activeInput.focus();
+        
+        // Trigger autosave if this field has autosave enabled
+        if (activeInput.dataset.autosave === 'true' && autosaveInstance) {
+            autosaveInstance.scheduleAutosave();
+        }
+        
+        // Close the equation builder
+        toggleEquationBuilder();
+    }
+    
+    function clearEquation() {
+        document.getElementById('equation-input').value = '';
+        updateEquationPreview();
+        document.getElementById('equation-input').focus();
+    }
+
     // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 DOM loaded, initializing Generic Worksheet');
@@ -1375,6 +1521,11 @@
 <!-- Math Symbols Toolbar Toggle -->
 <div id="math-toolbar-toggle" class="math-toolbar-toggle" onclick="toggleMathToolbar()">
     ∑ Math Symbols
+</div>
+
+<!-- Equation Builder Toggle -->
+<div id="equation-builder-toggle" class="equation-toolbar-toggle" onclick="toggleEquationBuilder()">
+    ∫ Equation Builder
 </div>
 
 <!-- Math Symbols Toolbar -->
@@ -1501,6 +1652,85 @@
                     <button class="symbol-btn">(</button>
                     <button class="symbol-btn">)</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equation Builder -->
+<div id="equation-builder" class="equation-builder">
+    <div class="p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Equation Builder</h3>
+            <button onclick="toggleEquationBuilder()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Linear Format Input</label>
+                    <textarea id="equation-input" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" 
+                              rows="3" 
+                              placeholder="e.g., \frac{a}{b}, x^2, \sqrt{x+1}, \int_0^1 x dx"
+                              oninput="updateEquationPreview()"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Enter equations using LaTeX-like syntax</p>
+                </div>
+                
+                <!-- Common Templates -->
+                <div class="mb-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Common Templates</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="equation-template-btn" onclick="insertTemplate('\\frac{a}{b}')">
+                            Fraction: \frac{a}{b}
+                        </button>
+                        <button class="equation-template-btn" onclick="insertTemplate('x^{2}')">
+                            Superscript: x^{2}
+                        </button>
+                        <button class="equation-template-btn" onclick="insertTemplate('x_{n}')">
+                            Subscript: x_{n}
+                        </button>
+                        <button class="equation-template-btn" onclick="insertTemplate('\\sqrt{x}')">
+                            Square Root: \sqrt{x}
+                        </button>
+                        <button class="equation-template-btn" onclick="insertTemplate('\\int_{a}^{b} f(x) dx')">
+                            Integral: \int_{a}^{b}
+                        </button>
+                        <button class="equation-template-btn" onclick="insertTemplate('\\sum_{i=1}^{n} x_i')">
+                            Sum: \sum_{i=1}^{n}
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button id="insert-equation-btn" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                            onclick="insertEquation()" 
+                            disabled>
+                        Insert Equation
+                    </button>
+                    <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" 
+                            onclick="clearEquation()">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
+                </div>
+                <div id="equation-preview" 
+                     class="w-full h-32 border border-gray-300 rounded-md p-4 bg-gray-50 flex items-center justify-center text-gray-500">
+                    Enter an equation to see preview
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Live preview of your equation</p>
             </div>
         </div>
     </div>

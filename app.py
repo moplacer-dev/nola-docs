@@ -2244,6 +2244,41 @@ def generate_generic_worksheet(form):
     """Generate a generic worksheet using docxtpl with dynamic content"""
     # Import request for accessing raw form data (needed for table and multi-column problems)
     from flask import request
+    import re
+    
+    def process_equations_in_text(text, paragraph):
+        """Process [EQUATION]...[/EQUATION] markers in text and add Word equations"""
+        if not text or '[EQUATION]' not in text:
+            return text
+        
+        # Find all equation markers
+        equation_pattern = r'\[EQUATION\](.*?)\[/EQUATION\]'
+        equations = re.findall(equation_pattern, text)
+        
+        if not equations:
+            return text
+        
+        # Split text by equation markers
+        parts = re.split(equation_pattern, text)
+        
+        # Clear the paragraph and rebuild with equations
+        paragraph.clear()
+        
+        for i, part in enumerate(parts):
+            if i % 2 == 0:  # Regular text
+                if part.strip():
+                    run = paragraph.add_run(part)
+                    run.font.name = 'Segoe UI'
+                    run.font.size = Pt(11)
+            else:  # Equation part
+                # For now, render as formatted text with LaTeX notation
+                # Later we can integrate proper Word equation objects
+                equation_run = paragraph.add_run(f" {part} ")
+                equation_run.font.name = 'Cambria Math'
+                equation_run.font.size = Pt(11)
+                equation_run.font.italic = True
+        
+        return "processed"  # Indicate text was processed
     
     # Use the generic master template (formerly homework template)
     master_template_path = 'templates/docx_templates/generic_worksheet_master.docx'
@@ -2284,7 +2319,12 @@ def generate_generic_worksheet(form):
                 title = (field_data.get('section_title') or '').strip()
                 if title:
                     # Add header paragraph with direct formatting
-                    p = subdoc.add_paragraph(title)
+                    p = subdoc.add_paragraph()
+                    result = process_equations_in_text(title, p)
+                    if result != "processed":
+                        # No equations, add text normally
+                        p.add_run(title)
+                    
                     # Apply header formatting: Segoe UI 14pt Bold
                     for run in p.runs:
                         run.font.name = 'Segoe UI'
@@ -2297,7 +2337,11 @@ def generate_generic_worksheet(form):
                 inst_text = (field_data.get('instructions_text') or '').strip()
                 if inst_text:
                     # Add instruction paragraph with direct formatting
-                    p = subdoc.add_paragraph(inst_text)
+                    p = subdoc.add_paragraph()
+                    result = process_equations_in_text(inst_text, p)
+                    if result != "processed":
+                        p.add_run(inst_text)
+                    
                     # Apply instructions formatting: Segoe UI 11pt Italic
                     for run in p.runs:
                         run.font.name = 'Segoe UI'
@@ -2309,7 +2353,11 @@ def generate_generic_worksheet(form):
                 para_text = (field_data.get('paragraph_text') or '').strip()
                 if para_text:
                     # Add body text paragraph with direct formatting
-                    p = subdoc.add_paragraph(para_text)
+                    p = subdoc.add_paragraph()
+                    result = process_equations_in_text(para_text, p)
+                    if result != "processed":
+                        p.add_run(para_text)
+                    
                     # Apply body text formatting: Segoe UI 11pt Regular
                     for run in p.runs:
                         run.font.name = 'Segoe UI'
@@ -2399,11 +2447,14 @@ def generate_generic_worksheet(form):
                         print(f"DEBUG: Problem {problem_number}: '{problem_text}', Answer: '{answer_text}'")
                         
                         if problem_text:
-                            # Add problem number and text
+                            # Add problem number and text with equation support
                             p = cell.add_paragraph()
-                            run = p.add_run(f"{problem_number}. {problem_text}")
-                            run.font.name = 'Segoe UI'
-                            run.font.size = Pt(11)
+                            full_text = f"{problem_number}. {problem_text}"
+                            result = process_equations_in_text(full_text, p)
+                            if result != "processed":
+                                run = p.add_run(full_text)
+                                run.font.name = 'Segoe UI'
+                                run.font.size = Pt(11)
                             
                             # Add answer space based on style
                             if answer_style == 'line' and not show_answers:
