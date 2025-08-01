@@ -2314,10 +2314,16 @@ def generate_generic_worksheet(form):
                     p.paragraph_format.space_after = Pt(6)
             
             elif field_type == 'table':
+                # Debug: Print all field data for table
+                print(f"DEBUG: Table field_data keys: {list(field_data.keys())}")
+                print(f"DEBUG: Full table field_data: {field_data}")
+                
                 # Extract table configuration
                 table_title = (field_data.get('table_title') or '').strip()
                 table_rows = int(field_data.get('table_rows', 3))
                 table_cols = int(field_data.get('table_cols', 3))
+                
+                print(f"DEBUG: table_title='{table_title}', rows={table_rows}, cols={table_cols}")
                 
                 # Add table title if provided
                 if table_title:
@@ -2337,6 +2343,8 @@ def generate_generic_worksheet(form):
                     for col_idx in range(table_cols):
                         cell_key = f'table_cell_{row_idx}_{col_idx}'
                         cell_value = (field_data.get(cell_key) or '').strip()
+                        
+                        print(f"DEBUG: Looking for key '{cell_key}', found value: '{cell_value}'")
                         
                         cell = table.cell(row_idx, col_idx)
                         cell.text = cell_value
