@@ -205,6 +205,10 @@
                         <button type="button" class="field-type-btn bg-teal-100 hover:bg-teal-200 text-teal-800 px-4 py-3 rounded-md transition-colors" data-type="table">
                             📊 Table
                         </button>
+                        <button type="button" class="field-type-btn bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-4 py-3 rounded-md transition-colors" data-type="multi_column_problems">
+                            🔢 Multi-Column Problems
+                            <div class="text-xs mt-1 opacity-75">Numbered problems in columns with answer lines</div>
+                        </button>
                     </div>
                     <button type="button" id="cancel-add-field" class="mt-3 text-gray-600 hover:text-gray-800">Cancel</button>
                 </div>
@@ -747,6 +751,103 @@
                         </div>`;
                         
                     return commonHTML + tableHTML;
+                    
+                case 'multi_column_problems':
+                    const problemRows = parseInt(fieldData.problem_rows || '3');
+                    const problemCols = parseInt(fieldData.problem_cols || '2');
+                    const startNumber = parseInt(fieldData.start_number || '1');
+                    const answerStyle = fieldData.answer_style || 'line';
+                    const showAnswers = fieldData.show_answers === 'true';
+                    
+                    let problemHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                                <select name="${baseFieldName}-problem_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                    <option value="2" ${problemRows === 2 ? 'selected' : ''}>2 rows</option>
+                                    <option value="3" ${problemRows === 3 ? 'selected' : ''}>3 rows</option>
+                                    <option value="4" ${problemRows === 4 ? 'selected' : ''}>4 rows</option>
+                                    <option value="5" ${problemRows === 5 ? 'selected' : ''}>5 rows</option>
+                                    <option value="6" ${problemRows === 6 ? 'selected' : ''}>6 rows</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                                <select name="${baseFieldName}-problem_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                    <option value="1" ${problemCols === 1 ? 'selected' : ''}>1 column</option>
+                                    <option value="2" ${problemCols === 2 ? 'selected' : ''}>2 columns</option>
+                                    <option value="3" ${problemCols === 3 ? 'selected' : ''}>3 columns</option>
+                                    <option value="4" ${problemCols === 4 ? 'selected' : ''}>4 columns</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Starting Number</label>
+                                <input type="number" name="${baseFieldName}-start_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})" value="${startNumber}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Answer Line Style</label>
+                                <select name="${baseFieldName}-answer_style" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true">
+                                    <option value="line" ${answerStyle === 'line' ? 'selected' : ''}>Answer line (_____)</option>
+                                    <option value="box" ${answerStyle === 'box' ? 'selected' : ''}>Answer box (□)</option>
+                                    <option value="equals" ${answerStyle === 'equals' ? 'selected' : ''}>Equals with line (= _____)</option>
+                                    <option value="none" ${answerStyle === 'none' ? 'selected' : ''}>No answer space</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Include Answers (for keys)</label>
+                                <select name="${baseFieldName}-show_answers" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                    <option value="false" ${!showAnswers ? 'selected' : ''}>Student version (no answers)</option>
+                                    <option value="true" ${showAnswers ? 'selected' : ''}>Answer key version</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Problems</label>
+                            <div id="problem-grid-${index}" class="problem-grid border border-gray-300 rounded-md p-3 bg-gray-50">
+                                <div class="grid gap-4" style="grid-template-columns: repeat(${problemCols}, 1fr);">`;
+                    
+                    // Generate problem cells with saved data
+                    let problemNumber = startNumber;
+                    for (let r = 0; r < problemRows; r++) {
+                        for (let c = 0; c < problemCols; c++) {
+                            const cellIndex = r * problemCols + c;
+                            const problemValue = fieldData[`problem_${cellIndex}`] || '';
+                            const answerValue = fieldData[`answer_${cellIndex}`] || '';
+                            
+                            problemHTML += `
+                                <div class="border border-gray-200 rounded p-3 bg-white">
+                                    <div class="mb-2">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Problem ${problemNumber}</label>
+                                        <textarea name="${baseFieldName}-problem_${cellIndex}" 
+                                               class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                               rows="2" 
+                                               placeholder="e.g., 3x + 7 = 22"
+                                               data-autosave="true">${problemValue}</textarea>
+                                    </div>
+                                    ${showAnswers ? `
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Answer</label>
+                                        <input type="text" name="${baseFieldName}-answer_${cellIndex}" 
+                                               class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                               placeholder="e.g., x = 5"
+                                               data-autosave="true"
+                                               value="${answerValue}">
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                            problemNumber++;
+                        }
+                    }
+                    
+                    problemHTML += `
+                                </div>
+                            </div>
+                        </div>`;
+                        
+                    return commonHTML + problemHTML;
                         
                 default:
                     return commonHTML + `
@@ -771,7 +872,8 @@
                 'fill_in_blank': 'Fill-in-the-Blank Question',
                 'math_problem': 'Math Problem',
                 'text_entry': 'Text Entry Question',
-                'table': 'Table'
+                'table': 'Table',
+                'multi_column_problems': 'Multi-Column Problems'
             };
             return typeNames[fieldType] || 'Unknown Field';
         }
@@ -849,6 +951,13 @@
         if (fieldType === 'table') {
             setTimeout(() => {
                 generateTableGrid(document.getElementById(`table-grid-${currentFieldIndex}`), 3, 3, currentFieldIndex);
+            }, 0);
+        }
+        
+        // Initialize problem grid if this is a multi-column problems field
+        if (fieldType === 'multi_column_problems') {
+            setTimeout(() => {
+                generateProblemGrid(document.getElementById(`problem-grid-${currentFieldIndex}`), 3, 2, currentFieldIndex, 1, false);
             }, 0);
         }
         
@@ -1009,6 +1118,60 @@
                 `;
                 break;
                 
+            case 'multi_column_problems':
+                specificFields = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                            <select name="dynamic_fields-${index}-problem_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                <option value="2">2 rows</option>
+                                <option value="3" selected>3 rows</option>
+                                <option value="4">4 rows</option>
+                                <option value="5">5 rows</option>
+                                <option value="6">6 rows</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                            <select name="dynamic_fields-${index}-problem_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                <option value="1">1 column</option>
+                                <option value="2" selected>2 columns</option>
+                                <option value="3">3 columns</option>
+                                <option value="4">4 columns</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Starting Number</label>
+                            <input type="number" name="dynamic_fields-${index}-start_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="1" value="1" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Answer Line Style</label>
+                            <select name="dynamic_fields-${index}-answer_style" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true">
+                                <option value="line" selected>Answer line (_____)</option>
+                                <option value="box">Answer box (□)</option>
+                                <option value="equals">Equals with line (= _____)</option>
+                                <option value="none">No answer space</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Include Answers (for keys)</label>
+                            <select name="dynamic_fields-${index}-show_answers" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateProblemGrid(this, ${index})">
+                                <option value="false" selected>Student version (no answers)</option>
+                                <option value="true">Answer key version</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Problems</label>
+                        <div id="problem-grid-${index}" class="problem-grid border border-gray-300 rounded-md p-3 bg-gray-50">
+                            <!-- Problem grid will be generated here -->
+                        </div>
+                    </div>
+                `;
+                break;
+                
         }
         
         return baseFields + specificFields;
@@ -1023,7 +1186,8 @@
             'fill_in_blank': '✏️ Fill-in-the-Blank Question',
             'math_problem': '🔢 Math Problem',
             'text_entry': '📄 Text Entry Question',
-            'table': '📊 Table'
+            'table': '📊 Table',
+            'multi_column_problems': '🔢 Multi-Column Problems'
         };
         return labels[fieldType] || fieldType;
     }
@@ -1109,6 +1273,68 @@
                            placeholder="${r === 0 ? 'Header' : 'Cell'} ${r + 1}-${c + 1}"
                            data-autosave="true">
                 `;
+            }
+        }
+        
+        gridHTML += '</div>';
+        container.innerHTML = gridHTML;
+        
+        // Trigger autosave setup for new inputs
+        if (typeof autosaveInstance !== 'undefined' && autosaveInstance) {
+            autosaveInstance.scheduleAutosave();
+        }
+    }
+    
+    // Problem grid functions for Multi-Column Problems
+    function updateProblemGrid(selectElement, fieldIndex) {
+        const rowsSelect = document.querySelector(`select[name="dynamic_fields-${fieldIndex}-problem_rows"]`);
+        const colsSelect = document.querySelector(`select[name="dynamic_fields-${fieldIndex}-problem_cols"]`);
+        const startNumberInput = document.querySelector(`input[name="dynamic_fields-${fieldIndex}-start_number"]`);
+        const showAnswersSelect = document.querySelector(`select[name="dynamic_fields-${fieldIndex}-show_answers"]`);
+        const gridContainer = document.getElementById(`problem-grid-${fieldIndex}`);
+        
+        if (!rowsSelect || !colsSelect || !gridContainer) return;
+        
+        const rows = parseInt(rowsSelect.value);
+        const cols = parseInt(colsSelect.value);
+        const startNumber = parseInt(startNumberInput?.value || 1);
+        const showAnswers = showAnswersSelect?.value === 'true';
+        
+        generateProblemGrid(gridContainer, rows, cols, fieldIndex, startNumber, showAnswers);
+    }
+    
+    function generateProblemGrid(container, rows, cols, fieldIndex, startNumber, showAnswers) {
+        let gridHTML = '<div class="grid gap-4" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
+        
+        let problemNumber = startNumber;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cellIndex = r * cols + c;
+                const problemName = `dynamic_fields-${fieldIndex}-problem_${cellIndex}`;
+                const answerName = `dynamic_fields-${fieldIndex}-answer_${cellIndex}`;
+                
+                gridHTML += `
+                    <div class="border border-gray-200 rounded p-3 bg-white">
+                        <div class="mb-2">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Problem ${problemNumber}</label>
+                            <textarea name="${problemName}" 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                   rows="2" 
+                                   placeholder="e.g., 3x + 7 = 22"
+                                   data-autosave="true"></textarea>
+                        </div>
+                        ${showAnswers ? `
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Answer</label>
+                            <input type="text" name="${answerName}" 
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                   placeholder="e.g., x = 5"
+                                   data-autosave="true">
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                problemNumber++;
             }
         }
         

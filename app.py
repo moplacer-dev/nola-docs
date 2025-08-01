@@ -2362,6 +2362,82 @@ def generate_generic_worksheet(form):
                 # Add spacing after table
                 subdoc.add_paragraph().paragraph_format.space_after = Pt(12)
             
+            elif field_type == 'multi_column_problems':
+                # For multi-column problems, access raw request data
+                field_prefix = f'dynamic_fields-{i}-'
+                problem_rows = int(request.form.get(f'{field_prefix}problem_rows', 3))
+                problem_cols = int(request.form.get(f'{field_prefix}problem_cols', 2))
+                start_number = int(request.form.get(f'{field_prefix}start_number', 1))
+                answer_style = request.form.get(f'{field_prefix}answer_style', 'line')
+                show_answers = request.form.get(f'{field_prefix}show_answers', 'false') == 'true'
+                
+                print(f"DEBUG: Multi-column problems - rows={problem_rows}, cols={problem_cols}, start={start_number}, style={answer_style}, answers={show_answers}")
+                
+                # Create borderless table for problems
+                table = subdoc.add_table(rows=problem_rows, cols=problem_cols)
+                table.style = None  # Remove table style for borderless appearance
+                
+                # Set column widths to be equal
+                for col in table.columns:
+                    col.width = Inches(6.5 / problem_cols)  # Distribute across page width
+                
+                problem_number = start_number
+                for row_idx in range(problem_rows):
+                    for col_idx in range(problem_cols):
+                        cell = table.cell(row_idx, col_idx)
+                        
+                        # Get problem and answer data from raw form
+                        cell_index = row_idx * problem_cols + col_idx
+                        problem_key = f'{field_prefix}problem_{cell_index}'
+                        answer_key = f'{field_prefix}answer_{cell_index}'
+                        
+                        problem_text = (request.form.get(problem_key) or '').strip()
+                        answer_text = (request.form.get(answer_key) or '').strip()
+                        
+                        print(f"DEBUG: Problem {problem_number}: '{problem_text}', Answer: '{answer_text}'")
+                        
+                        if problem_text:
+                            # Add problem number and text
+                            p = cell.add_paragraph()
+                            run = p.add_run(f"{problem_number}. {problem_text}")
+                            run.font.name = 'Segoe UI'
+                            run.font.size = Pt(11)
+                            
+                            # Add answer space based on style
+                            if answer_style == 'line' and not show_answers:
+                                answer_p = cell.add_paragraph()
+                                answer_run = answer_p.add_run("   _____________")
+                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.size = Pt(11)
+                            elif answer_style == 'box' and not show_answers:
+                                answer_p = cell.add_paragraph()
+                                answer_run = answer_p.add_run("   □")
+                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.size = Pt(14)
+                            elif answer_style == 'equals' and not show_answers:
+                                answer_p = cell.add_paragraph()
+                                answer_run = answer_p.add_run("   = _______")
+                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.size = Pt(11)
+                            elif show_answers and answer_text:
+                                # Show the actual answer for answer keys
+                                answer_p = cell.add_paragraph()
+                                if answer_style == 'equals':
+                                    answer_run = answer_p.add_run(f"   = {answer_text}")
+                                else:
+                                    answer_run = answer_p.add_run(f"   {answer_text}")
+                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.size = Pt(11)
+                                answer_run.font.bold = True  # Bold answers in answer keys
+                            
+                            # Add some spacing in the cell
+                            cell.add_paragraph().paragraph_format.space_after = Pt(6)
+                        
+                        problem_number += 1
+                
+                # Add spacing after the problem table
+                subdoc.add_paragraph().paragraph_format.space_after = Pt(12)
+            
             # Note: Image field type removed from frontend
             
             elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:
