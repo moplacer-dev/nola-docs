@@ -2242,6 +2242,9 @@ def generate_pretest_worksheet(form):
 
 def generate_generic_worksheet(form):
     """Generate a generic worksheet using docxtpl with dynamic content"""
+    # Import request for accessing raw form data (needed for table and multi-column problems)
+    from flask import request
+    
     # Use the generic master template (formerly homework template)
     master_template_path = 'templates/docx_templates/generic_worksheet_master.docx'
     working_template_path = 'templates/docx_templates/generic_worksheet.docx'
@@ -2316,7 +2319,6 @@ def generate_generic_worksheet(form):
             elif field_type == 'table':
                 # For table fields, we need to access raw request data since WTForms 
                 # doesn't know about our dynamic table structure
-                from flask import request
                 
                 # Extract table configuration from raw form data
                 field_prefix = f'dynamic_fields-{i}-'
