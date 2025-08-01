@@ -2246,6 +2246,66 @@ def generate_generic_worksheet(form):
     from flask import request
     import re
     
+    def format_latex_equation(latex_text):
+        """Convert common LaTeX patterns to more readable formatted text"""
+        if not latex_text.strip():
+            return latex_text
+        
+        # Handle fractions: \frac{a}{b} -> (a)/(b)
+        latex_text = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', latex_text)
+        
+        # Handle square roots: \sqrt{x} -> √(x)
+        latex_text = re.sub(r'\\sqrt\{([^}]+)\}', r'√(\1)', latex_text)
+        
+        # Handle superscripts: x^{2} -> x²
+        superscript_map = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', 
+                          '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', 'n': 'ⁿ', '+': '⁺', '-': '⁻'}
+        
+        def replace_superscript(match):
+            content = match.group(1)
+            result = ''
+            for char in content:
+                result += superscript_map.get(char, char)
+            return result
+        
+        latex_text = re.sub(r'\^{([^}]+)}', replace_superscript, latex_text)
+        latex_text = re.sub(r'\^([0-9])', lambda m: superscript_map.get(m.group(1), m.group(1)), latex_text)
+        
+        # Handle subscripts: x_{n} -> xₙ  
+        subscript_map = {'0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅',
+                        '6': '₆', '7': '₇', '8': '₈', '9': '₉', 'n': 'ₙ', 'i': 'ᵢ', 'j': 'ⱼ'}
+        
+        def replace_subscript(match):
+            content = match.group(1)
+            result = ''
+            for char in content:
+                result += subscript_map.get(char, char)
+            return result
+        
+        latex_text = re.sub(r'_{([^}]+)}', replace_subscript, latex_text)
+        latex_text = re.sub(r'_([0-9a-z])', lambda m: subscript_map.get(m.group(1), m.group(1)), latex_text)
+        
+        # Handle integrals: \int_{a}^{b} -> ∫[a to b]
+        latex_text = re.sub(r'\\int_{([^}]+)}\^{([^}]+)}', r'∫[\1 to \2]', latex_text)
+        latex_text = re.sub(r'\\int', '∫', latex_text)
+        
+        # Handle summations: \sum_{i=1}^{n} -> Σ[i=1 to n]
+        latex_text = re.sub(r'\\sum_{([^}]+)}\^{([^}]+)}', r'Σ[\1 to \2]', latex_text)
+        latex_text = re.sub(r'\\sum', 'Σ', latex_text)
+        
+        # Handle common Greek letters
+        greek_map = {
+            'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
+            'theta': 'θ', 'lambda': 'λ', 'mu': 'μ', 'pi': 'π', 'sigma': 'σ', 'phi': 'φ'
+        }
+        for latex, unicode in greek_map.items():
+            latex_text = re.sub(f'\\\\{latex}\\b', unicode, latex_text)
+        
+        # Clean up extra spaces
+        latex_text = re.sub(r'\s+', ' ', latex_text).strip()
+        
+        return latex_text
+
     def process_equations_in_text(text, paragraph):
         """Process [EQUATION]...[/EQUATION] markers in text and add Word equations"""
         if not text or '[EQUATION]' not in text:
@@ -2271,12 +2331,12 @@ def generate_generic_worksheet(form):
                     run.font.name = 'Segoe UI'
                     run.font.size = Pt(11)
             else:  # Equation part
-                # For now, render as formatted text with LaTeX notation
-                # Later we can integrate proper Word equation objects
-                equation_run = paragraph.add_run(f" {part} ")
+                # Convert LaTeX to formatted equation text
+                formatted_equation = format_latex_equation(part)
+                equation_run = paragraph.add_run(f" {formatted_equation} ")
                 equation_run.font.name = 'Cambria Math'
-                equation_run.font.size = Pt(11)
-                equation_run.font.italic = True
+                equation_run.font.size = Pt(12)  # Slightly larger for better readability
+                equation_run.font.bold = True    # Make equations stand out
         
         return "processed"  # Indicate text was processed
     

@@ -1447,13 +1447,28 @@
         
         if (latex) {
             insertBtn.disabled = false;
-            // For now, show the LaTeX source as preview
-            // Later we'll integrate MathJax or similar for proper rendering
-            preview.innerHTML = `<div class="font-mono text-sm text-gray-700">${latex}</div>`;
+            
+            // Render equation with MathJax
+            const mathContent = `$$${latex}$$`;
+            preview.innerHTML = mathContent;
+            preview.className = 'w-full h-32 border border-gray-300 rounded-md p-4 bg-white flex items-center justify-center';
+            
+            // Re-render MathJax
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([preview]).catch((err) => {
+                    console.log('MathJax rendering error:', err);
+                    // Fallback to showing LaTeX source
+                    preview.innerHTML = `<div class="font-mono text-sm text-gray-600">Preview: ${latex}</div>`;
+                });
+            } else {
+                // Fallback if MathJax isn't loaded yet
+                preview.innerHTML = `<div class="font-mono text-sm text-gray-600">Loading preview...</div>`;
+                setTimeout(() => updateEquationPreview(), 1000);
+            }
         } else {
             insertBtn.disabled = true;
-            preview.innerHTML = 'Enter an equation to see preview';
-            preview.className = preview.className.replace('text-gray-700', 'text-gray-500');
+            preview.innerHTML = '<div class="text-gray-500">Enter an equation to see preview</div>';
+            preview.className = 'w-full h-32 border border-gray-300 rounded-md p-4 bg-gray-50 flex items-center justify-center text-gray-500';
         }
     }
     
@@ -1686,23 +1701,29 @@
                 <div class="mb-4">
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Common Templates</h4>
                     <div class="grid grid-cols-2 gap-2">
-                        <button class="equation-template-btn" onclick="insertTemplate('\\frac{a}{b}')">
-                            Fraction: \frac{a}{b}
+                        <button class="equation-template-btn" onclick="insertTemplate('\\frac{a}{b}')" 
+                                title="Insert fraction template">
+                            📐 Fraction
                         </button>
-                        <button class="equation-template-btn" onclick="insertTemplate('x^{2}')">
-                            Superscript: x^{2}
+                        <button class="equation-template-btn" onclick="insertTemplate('x^{2}')" 
+                                title="Insert superscript template">
+                            ᵡ² Superscript
                         </button>
-                        <button class="equation-template-btn" onclick="insertTemplate('x_{n}')">
-                            Subscript: x_{n}
+                        <button class="equation-template-btn" onclick="insertTemplate('x_{n}')" 
+                                title="Insert subscript template">
+                            ₓₙ Subscript
                         </button>
-                        <button class="equation-template-btn" onclick="insertTemplate('\\sqrt{x}')">
-                            Square Root: \sqrt{x}
+                        <button class="equation-template-btn" onclick="insertTemplate('\\sqrt{x}')" 
+                                title="Insert square root template">
+                            √ Square Root
                         </button>
-                        <button class="equation-template-btn" onclick="insertTemplate('\\int_{a}^{b} f(x) dx')">
-                            Integral: \int_{a}^{b}
+                        <button class="equation-template-btn" onclick="insertTemplate('\\int_{a}^{b} f(x) dx')" 
+                                title="Insert integral template">
+                            ∫ Integral
                         </button>
-                        <button class="equation-template-btn" onclick="insertTemplate('\\sum_{i=1}^{n} x_i')">
-                            Sum: \sum_{i=1}^{n}
+                        <button class="equation-template-btn" onclick="insertTemplate('\\sum_{i=1}^{n} x_i')" 
+                                title="Insert summation template">
+                            Σ Summation
                         </button>
                     </div>
                 </div>
