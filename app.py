@@ -2314,16 +2314,17 @@ def generate_generic_worksheet(form):
                     p.paragraph_format.space_after = Pt(6)
             
             elif field_type == 'table':
-                # Debug: Print all field data for table
-                print(f"DEBUG: Table field_data keys: {list(field_data.keys())}")
-                print(f"DEBUG: Full table field_data: {field_data}")
+                # For table fields, we need to access raw request data since WTForms 
+                # doesn't know about our dynamic table structure
+                from flask import request
                 
-                # Extract table configuration
-                table_title = (field_data.get('table_title') or '').strip()
-                table_rows = int(field_data.get('table_rows', 3))
-                table_cols = int(field_data.get('table_cols', 3))
+                # Extract table configuration from raw form data
+                field_prefix = f'dynamic_fields-{i}-'
+                table_title = (request.form.get(f'{field_prefix}table_title') or '').strip()
+                table_rows = int(request.form.get(f'{field_prefix}table_rows', 3))
+                table_cols = int(request.form.get(f'{field_prefix}table_cols', 3))
                 
-                print(f"DEBUG: table_title='{table_title}', rows={table_rows}, cols={table_cols}")
+                print(f"DEBUG: Extracted from raw form - title='{table_title}', rows={table_rows}, cols={table_cols}")
                 
                 # Add table title if provided
                 if table_title:
@@ -2341,10 +2342,10 @@ def generate_generic_worksheet(form):
                 # Populate table cells with data
                 for row_idx in range(table_rows):
                     for col_idx in range(table_cols):
-                        cell_key = f'table_cell_{row_idx}_{col_idx}'
-                        cell_value = (field_data.get(cell_key) or '').strip()
+                        cell_key = f'{field_prefix}table_cell_{row_idx}_{col_idx}'
+                        cell_value = (request.form.get(cell_key) or '').strip()
                         
-                        print(f"DEBUG: Looking for key '{cell_key}', found value: '{cell_value}'")
+                        print(f"DEBUG: Looking for raw form key '{cell_key}', found value: '{cell_value}'")
                         
                         cell = table.cell(row_idx, col_idx)
                         cell.text = cell_value
