@@ -2313,6 +2313,46 @@ def generate_generic_worksheet(form):
                         run.font.size = Pt(11)
                     p.paragraph_format.space_after = Pt(6)
             
+            elif field_type == 'table':
+                # Extract table configuration
+                table_title = (field_data.get('table_title') or '').strip()
+                table_rows = int(field_data.get('table_rows', 3))
+                table_cols = int(field_data.get('table_cols', 3))
+                
+                # Add table title if provided
+                if table_title:
+                    p = subdoc.add_paragraph(table_title)
+                    for run in p.runs:
+                        run.font.name = 'Segoe UI'
+                        run.font.size = Pt(12)
+                        run.font.bold = True
+                    p.paragraph_format.space_after = Pt(6)
+                
+                # Create the table
+                table = subdoc.add_table(rows=table_rows, cols=table_cols)
+                table.style = 'Table Grid'  # Use built-in table style with borders
+                
+                # Populate table cells with data
+                for row_idx in range(table_rows):
+                    for col_idx in range(table_cols):
+                        cell_key = f'table_cell_{row_idx}_{col_idx}'
+                        cell_value = (field_data.get(cell_key) or '').strip()
+                        
+                        cell = table.cell(row_idx, col_idx)
+                        cell.text = cell_value
+                        
+                        # Format cell content
+                        for paragraph in cell.paragraphs:
+                            for run in paragraph.runs:
+                                run.font.name = 'Segoe UI'
+                                run.font.size = Pt(11)
+                                # Make header row bold
+                                if row_idx == 0:
+                                    run.font.bold = True
+                
+                # Add spacing after table
+                subdoc.add_paragraph().paragraph_format.space_after = Pt(12)
+            
             # Note: Image field type removed from frontend
             
             elif field_type in ['multiple_choice', 'fill_in_blank', 'text_entry', 'math_problem']:

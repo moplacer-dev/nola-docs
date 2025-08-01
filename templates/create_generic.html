@@ -202,6 +202,9 @@
                         <button type="button" class="field-type-btn bg-red-100 hover:bg-red-200 text-red-800 px-4 py-3 rounded-md transition-colors" data-type="text_entry">
                             📄 Text Entry
                         </button>
+                        <button type="button" class="field-type-btn bg-teal-100 hover:bg-teal-200 text-teal-800 px-4 py-3 rounded-md transition-colors" data-type="table">
+                            📊 Table
+                        </button>
                     </div>
                     <button type="button" id="cancel-add-field" class="mt-3 text-gray-600 hover:text-gray-800">Cancel</button>
                 </div>
@@ -688,6 +691,62 @@
                             <p class="text-xs text-gray-500 mt-1">Enter the mathematical expression.</p>
                         </div>`;
                         
+                case 'table':
+                    const rows = parseInt(fieldData.table_rows || '3');
+                    const cols = parseInt(fieldData.table_cols || '3');
+                    
+                    let tableHTML = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                                <select name="${baseFieldName}-table_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateTableGrid(this, ${index})">
+                                    <option value="2" ${rows === 2 ? 'selected' : ''}>2 rows</option>
+                                    <option value="3" ${rows === 3 ? 'selected' : ''}>3 rows</option>
+                                    <option value="4" ${rows === 4 ? 'selected' : ''}>4 rows</option>
+                                    <option value="5" ${rows === 5 ? 'selected' : ''}>5 rows</option>
+                                    <option value="6" ${rows === 6 ? 'selected' : ''}>6 rows</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                                <select name="${baseFieldName}-table_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateTableGrid(this, ${index})">
+                                    <option value="2" ${cols === 2 ? 'selected' : ''}>2 columns</option>
+                                    <option value="3" ${cols === 3 ? 'selected' : ''}>3 columns</option>
+                                    <option value="4" ${cols === 4 ? 'selected' : ''}>4 columns</option>
+                                    <option value="5" ${cols === 5 ? 'selected' : ''}>5 columns</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Table Title (optional)</label>
+                            <input type="text" name="${baseFieldName}-table_title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Data Collection Table" data-autosave="true" value="${fieldData.table_title || ''}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Table Content</label>
+                            <div id="table-grid-${index}" class="table-grid border border-gray-300 rounded-md overflow-hidden">
+                                <div class="grid gap-0" style="grid-template-columns: repeat(${cols}, 1fr);">`;
+                    
+                    // Generate table cells with saved data
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            const cellValue = fieldData[`table_cell_${r}_${c}`] || '';
+                            tableHTML += `
+                                <input type="text" 
+                                       name="${baseFieldName}-table_cell_${r}_${c}" 
+                                       class="px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
+                                       placeholder="${r === 0 ? 'Header' : 'Cell'} ${r + 1}-${c + 1}"
+                                       data-autosave="true"
+                                       value="${cellValue}">
+                            `;
+                        }
+                    }
+                    
+                    tableHTML += `
+                                </div>
+                            </div>
+                        </div>`;
+                        
+                    return commonHTML + tableHTML;
                         
                 default:
                     return commonHTML + `
@@ -711,7 +770,8 @@
                 'multiple_choice': 'Multiple Choice Question',
                 'fill_in_blank': 'Fill-in-the-Blank Question',
                 'math_problem': 'Math Problem',
-                'text_entry': 'Text Entry Question'
+                'text_entry': 'Text Entry Question',
+                'table': 'Table'
             };
             return typeNames[fieldType] || 'Unknown Field';
         }
@@ -782,7 +842,15 @@
             }
         });
         
+        const currentFieldIndex = fieldIndex;
         fieldIndex++;
+        
+        // Initialize table grid if this is a table field
+        if (fieldType === 'table') {
+            setTimeout(() => {
+                generateTableGrid(document.getElementById(`table-grid-${currentFieldIndex}`), 3, 3, currentFieldIndex);
+            }, 0);
+        }
         
         // Setup autosave for new fields
         if (autosaveInstance) {
@@ -905,6 +973,42 @@
                 `;
                 break;
                 
+            case 'table':
+                specificFields = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                            <select name="dynamic_fields-${index}-table_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateTableGrid(this, ${index})">
+                                <option value="2">2 rows</option>
+                                <option value="3" selected>3 rows</option>
+                                <option value="4">4 rows</option>
+                                <option value="5">5 rows</option>
+                                <option value="6">6 rows</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                            <select name="dynamic_fields-${index}-table_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateTableGrid(this, ${index})">
+                                <option value="2">2 columns</option>
+                                <option value="3" selected>3 columns</option>
+                                <option value="4">4 columns</option>
+                                <option value="5">5 columns</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Table Title (optional)</label>
+                        <input type="text" name="dynamic_fields-${index}-table_title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Data Collection Table" data-autosave="true">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Table Content</label>
+                        <div id="table-grid-${index}" class="table-grid border border-gray-300 rounded-md overflow-hidden">
+                            <!-- Table grid will be generated here -->
+                        </div>
+                    </div>
+                `;
+                break;
+                
         }
         
         return baseFields + specificFields;
@@ -918,7 +1022,8 @@
             'multiple_choice': '☑️ Multiple Choice Question',
             'fill_in_blank': '✏️ Fill-in-the-Blank Question',
             'math_problem': '🔢 Math Problem',
-            'text_entry': '📄 Text Entry Question'
+            'text_entry': '📄 Text Entry Question',
+            'table': '📊 Table'
         };
         return labels[fieldType] || fieldType;
     }
@@ -977,6 +1082,45 @@
         }
     }
     
+    // Table grid functions
+    function updateTableGrid(selectElement, fieldIndex) {
+        const rowsSelect = document.querySelector(`select[name="dynamic_fields-${fieldIndex}-table_rows"]`);
+        const colsSelect = document.querySelector(`select[name="dynamic_fields-${fieldIndex}-table_cols"]`);
+        const gridContainer = document.getElementById(`table-grid-${fieldIndex}`);
+        
+        if (!rowsSelect || !colsSelect || !gridContainer) return;
+        
+        const rows = parseInt(rowsSelect.value);
+        const cols = parseInt(colsSelect.value);
+        
+        generateTableGrid(gridContainer, rows, cols, fieldIndex);
+    }
+    
+    function generateTableGrid(container, rows, cols, fieldIndex) {
+        let gridHTML = '<div class="grid gap-0" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
+        
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cellName = `dynamic_fields-${fieldIndex}-table_cell_${r}_${c}`;
+                gridHTML += `
+                    <input type="text" 
+                           name="${cellName}" 
+                           class="px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
+                           placeholder="${r === 0 ? 'Header' : 'Cell'} ${r + 1}-${c + 1}"
+                           data-autosave="true">
+                `;
+            }
+        }
+        
+        gridHTML += '</div>';
+        container.innerHTML = gridHTML;
+        
+        // Trigger autosave setup for new inputs
+        if (typeof autosaveInstance !== 'undefined' && autosaveInstance) {
+            autosaveInstance.scheduleAutosave();
+        }
+    }
+
     // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 DOM loaded, initializing Generic Worksheet');
