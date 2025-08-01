@@ -2246,70 +2246,202 @@ def generate_generic_worksheet(form):
     from flask import request
     import re
     
-    def format_latex_equation(latex_text):
-        """Convert common LaTeX patterns to more readable formatted text"""
+    def latex_to_omml(latex_text):
+        """Convert LaTeX expressions to OMML (Office Math Markup Language) XML"""
         if not latex_text.strip():
-            return latex_text
+            return None
         
-        # Handle fractions: \frac{a}{b} -> (a)/(b)
-        latex_text = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1)/(\2)', latex_text)
+        namespace = "http://schemas.openxmlformats.org/officeDocument/2006/math"
         
-        # Handle square roots: \sqrt{x} -> √(x)
-        latex_text = re.sub(r'\\sqrt\{([^}]+)\}', r'√(\1)', latex_text)
+        def create_text_run(text):
+            """Create a text run element"""
+            # Escape XML special characters
+            text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            return f'<m:r><m:t>{text}</m:t></m:r>'
         
-        # Handle superscripts: x^{2} -> x²
-        superscript_map = {'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', 
-                          '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', 'n': 'ⁿ', '+': '⁺', '-': '⁻'}
+        def create_fraction(numerator, denominator):
+            """Create OMML for fraction"""
+            return f'''<m:f>
+                <m:num>{latex_to_omml_content(numerator)}</m:num>
+                <m:den>{latex_to_omml_content(denominator)}</m:den>
+            </m:f>'''
         
-        def replace_superscript(match):
-            content = match.group(1)
-            result = ''
-            for char in content:
-                result += superscript_map.get(char, char)
-            return result
+        def create_superscript(base, exponent):
+            """Create OMML for superscript"""
+            return f'''<m:sSup>
+                <m:e>{latex_to_omml_content(base)}</m:e>
+                <m:sup>{latex_to_omml_content(exponent)}</m:sup>
+            </m:sSup>'''
         
-        latex_text = re.sub(r'\^{([^}]+)}', replace_superscript, latex_text)
-        latex_text = re.sub(r'\^([0-9])', lambda m: superscript_map.get(m.group(1), m.group(1)), latex_text)
+        def create_subscript(base, subscript):
+            """Create OMML for subscript"""
+            return f'''<m:sSub>
+                <m:e>{latex_to_omml_content(base)}</m:e>
+                <m:sub>{latex_to_omml_content(subscript)}</m:sub>
+            </m:sSub>'''
         
-        # Handle subscripts: x_{n} -> xₙ  
-        subscript_map = {'0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅',
-                        '6': '₆', '7': '₇', '8': '₈', '9': '₉', 'n': 'ₙ', 'i': 'ᵢ', 'j': 'ⱼ'}
+        def create_square_root(radicand):
+            """Create OMML for square root"""
+            return f'''<m:rad>
+                <m:radPr><m:degHide m:val="1"/></m:radPr>
+                <m:deg/>
+                <m:e>{latex_to_omml_content(radicand)}</m:e>
+            </m:rad>'''
         
-        def replace_subscript(match):
-            content = match.group(1)
-            result = ''
-            for char in content:
-                result += subscript_map.get(char, char)
-            return result
+        def create_nary(symbol, sub_content, sup_content, body_content):
+            """Create OMML for n-ary operations (integrals, sums)"""
+            sub_part = f'<m:sub>{latex_to_omml_content(sub_content)}</m:sub>' if sub_content else '<m:sub/>'
+            sup_part = f'<m:sup>{latex_to_omml_content(sup_content)}</m:sup>' if sup_content else '<m:sup/>'
+            
+            return f'''<m:nary>
+                <m:naryPr><m:chr m:val="{symbol}"/></m:naryPr>
+                {sub_part}
+                {sup_part}
+                <m:e>{latex_to_omml_content(body_content)}</m:e>
+            </m:nary>'''
         
-        latex_text = re.sub(r'_{([^}]+)}', replace_subscript, latex_text)
-        latex_text = re.sub(r'_([0-9a-z])', lambda m: subscript_map.get(m.group(1), m.group(1)), latex_text)
+        def latex_to_omml_content(text):
+            """Convert LaTeX content to OMML, handling nested expressions"""
+            if not text.strip():
+                return create_text_run('')
+            
+            # Handle fractions first (highest precedence)
+            frac_match = re.search(r'\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', text)
+            if frac_match:
+                before = text[:frac_match.start()]
+                after = text[frac_match.end():]
+                frac_omml = create_fraction(frac_match.group(1), frac_match.group(2))
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += frac_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle square roots
+            sqrt_match = re.search(r'\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', text)
+            if sqrt_match:
+                before = text[:sqrt_match.start()]
+                after = text[sqrt_match.end():]
+                sqrt_omml = create_square_root(sqrt_match.group(1))
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += sqrt_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle integrals with bounds
+            int_match = re.search(r'\\int_{([^{}]*(?:\{[^{}]*\}[^{}]*)*)}(?:\^{([^{}]*(?:\{[^{}]*\}[^{}]*)*)})?(?:\s+([^\\]*))?', text)
+            if int_match:
+                before = text[:int_match.start()]
+                after = text[int_match.end():]
+                sub_content = int_match.group(1)
+                sup_content = int_match.group(2) if int_match.group(2) else ''
+                body_content = int_match.group(3).strip() if int_match.group(3) else 'f(x)dx'
+                
+                int_omml = create_nary('∫', sub_content, sup_content, body_content)
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += int_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle simple integrals
+            if '\\int' in text:
+                text = text.replace('\\int', '∫')
+            
+            # Handle summations with bounds
+            sum_match = re.search(r'\\sum_{([^{}]*(?:\{[^{}]*\}[^{}]*)*)}(?:\^{([^{}]*(?:\{[^{}]*\}[^{}]*)*)})?(?:\s+([^\\]*))?', text)
+            if sum_match:
+                before = text[:sum_match.start()]
+                after = text[sum_match.end():]
+                sub_content = sum_match.group(1)
+                sup_content = sum_match.group(2) if sum_match.group(2) else ''
+                body_content = sum_match.group(3).strip() if sum_match.group(3) else 'x_i'
+                
+                sum_omml = create_nary('∑', sub_content, sup_content, body_content)
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += sum_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle simple summations
+            if '\\sum' in text:
+                text = text.replace('\\sum', '∑')
+            
+            # Handle superscripts
+            sup_match = re.search(r'([a-zA-Z0-9]+)\^{([^{}]+)}', text)
+            if not sup_match:
+                sup_match = re.search(r'([a-zA-Z0-9]+)\^([0-9a-zA-Z])', text)
+            
+            if sup_match:
+                before = text[:sup_match.start()]
+                after = text[sup_match.end():]
+                sup_omml = create_superscript(sup_match.group(1), sup_match.group(2))
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += sup_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle subscripts
+            sub_match = re.search(r'([a-zA-Z0-9]+)_{([^{}]+)}', text)
+            if not sub_match:
+                sub_match = re.search(r'([a-zA-Z0-9]+)_([0-9a-zA-Z])', text)
+            
+            if sub_match:
+                before = text[:sub_match.start()]
+                after = text[sub_match.end():]
+                sub_omml = create_subscript(sub_match.group(1), sub_match.group(2))
+                
+                result = ''
+                if before.strip():
+                    result += latex_to_omml_content(before)
+                result += sub_omml
+                if after.strip():
+                    result += latex_to_omml_content(after)
+                return result
+            
+            # Handle common Greek letters
+            greek_map = {
+                'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
+                'theta': 'θ', 'lambda': 'λ', 'mu': 'μ', 'pi': 'π', 'sigma': 'σ', 'phi': 'φ'
+            }
+            for latex_name, unicode_char in greek_map.items():
+                text = re.sub(f'\\\\{latex_name}\\b', unicode_char, text)
+            
+            # Return as text run if no special formatting found
+            return create_text_run(text)
         
-        # Handle integrals: \int_{a}^{b} -> ∫[a to b]
-        latex_text = re.sub(r'\\int_{([^}]+)}\^{([^}]+)}', r'∫[\1 to \2]', latex_text)
-        latex_text = re.sub(r'\\int', '∫', latex_text)
+        # Process the main LaTeX expression
+        content = latex_to_omml_content(latex_text.strip())
         
-        # Handle summations: \sum_{i=1}^{n} -> Σ[i=1 to n]
-        latex_text = re.sub(r'\\sum_{([^}]+)}\^{([^}]+)}', r'Σ[\1 to \2]', latex_text)
-        latex_text = re.sub(r'\\sum', 'Σ', latex_text)
-        
-        # Handle common Greek letters
-        greek_map = {
-            'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
-            'theta': 'θ', 'lambda': 'λ', 'mu': 'μ', 'pi': 'π', 'sigma': 'σ', 'phi': 'φ'
-        }
-        for latex, unicode in greek_map.items():
-            latex_text = re.sub(f'\\\\{latex}\\b', unicode, latex_text)
-        
-        # Clean up extra spaces
-        latex_text = re.sub(r'\s+', ' ', latex_text).strip()
-        
-        return latex_text
+        # Wrap in oMath element
+        return f'''<m:oMath xmlns:m="{namespace}">
+            {content}
+        </m:oMath>'''
 
     def process_equations_in_text(text, paragraph):
-        """Process [EQUATION]...[/EQUATION] markers in text and add Word equations"""
+        """Process [EQUATION]...[/EQUATION] markers in text and add Word equations as OMML objects"""
         if not text or '[EQUATION]' not in text:
             return text
+        
+        from lxml import etree
         
         # Find all equation markers
         equation_pattern = r'\[EQUATION\](.*?)\[/EQUATION\]'
@@ -2331,12 +2463,26 @@ def generate_generic_worksheet(form):
                     run.font.name = 'Segoe UI'
                     run.font.size = Pt(11)
             else:  # Equation part
-                # Convert LaTeX to formatted equation text
-                formatted_equation = format_latex_equation(part)
-                equation_run = paragraph.add_run(f" {formatted_equation} ")
-                equation_run.font.name = 'Cambria Math'
-                equation_run.font.size = Pt(12)  # Slightly larger for better readability
-                equation_run.font.bold = True    # Make equations stand out
+                try:
+                    # Convert LaTeX to OMML
+                    omml_xml = latex_to_omml(part.strip())
+                    
+                    if omml_xml:
+                        # Parse and insert OMML element
+                        omml_element = etree.fromstring(omml_xml)
+                        paragraph._element.append(omml_element)
+                    else:
+                        # Fallback to text if conversion fails
+                        fallback_run = paragraph.add_run(f" {part} ")
+                        fallback_run.font.name = 'Cambria Math'
+                        fallback_run.font.size = Pt(11)
+                        
+                except Exception as e:
+                    print(f"Warning: Error processing equation '{part}': {e}")
+                    # Fallback to text if OMML processing fails
+                    fallback_run = paragraph.add_run(f" {part} ")
+                    fallback_run.font.name = 'Cambria Math'
+                    fallback_run.font.size = Pt(11)
         
         return "processed"  # Indicate text was processed
     
