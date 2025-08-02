@@ -43,74 +43,6 @@
         background: #2563eb;
     }
     
-    /* Shapes Toolbar Styles */
-    .shapes-toolbar-toggle {
-        position: fixed;
-        bottom: 140px; /* Above the equation builder toggle */
-        right: 20px;
-        background: #10b981; /* Green color for shapes */
-        color: white;
-        padding: 12px 20px;
-        border-radius: 50px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-        z-index: 999;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .shapes-toolbar-toggle:hover {
-        background: #059669;
-    }
-    
-    .shapes-toolbar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        border-top: 2px solid #e5e7eb;
-        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-        transform: translateY(100%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 1000;
-    }
-    
-    .shapes-toolbar.active {
-        transform: translateY(0);
-    }
-    
-    .shapes-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-        gap: 8px;
-        padding: 20px;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-    
-    .shape-btn {
-        background: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 12px;
-        cursor: pointer;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        min-height: 50px;
-    }
-    
-    .shape-btn:hover {
-        background: #10b981;
-        color: white;
-        transform: scale(1.05);
-    }
-
     /* Equation Builder Toolbar Styles */
     .equation-toolbar-toggle {
         position: fixed;
@@ -1576,50 +1508,6 @@
         document.getElementById('equation-input').focus();
     }
 
-    // Shapes Toolbar functionality
-    function toggleShapesToolbar() {
-        const shapesToolbar = document.getElementById('shapes-toolbar');
-        const mathToolbar = document.getElementById('math-toolbar');
-        const equationBuilder = document.getElementById('equation-builder');
-        const toggleBtn = document.getElementById('shapes-toolbar-toggle');
-        
-        // Close other toolbars if open
-        if (mathToolbar.classList.contains('active')) {
-            toggleMathToolbar();
-        }
-        if (equationBuilder.classList.contains('active')) {
-            toggleEquationBuilder();
-        }
-        
-        shapesToolbar.classList.toggle('active');
-        
-        if (shapesToolbar.classList.contains('active')) {
-            toggleBtn.innerHTML = '◊ Close Shapes';
-        } else {
-            toggleBtn.innerHTML = '◊ Shapes';
-        }
-    }
-    
-    function insertShape(shape) {
-        if (!activeInput) {
-            alert('Please click on a text field first');
-            return;
-        }
-        
-        const cursorPosition = activeInput.selectionStart;
-        const textBefore = activeInput.value.substring(0, cursorPosition);
-        const textAfter = activeInput.value.substring(activeInput.selectionEnd);
-        
-        activeInput.value = textBefore + shape + textAfter;
-        activeInput.setSelectionRange(cursorPosition + shape.length, cursorPosition + shape.length);
-        activeInput.focus();
-        
-        // Trigger autosave
-        if (autosaveInstance && typeof autosaveInstance.scheduleAutosave === 'function') {
-            autosaveInstance.scheduleAutosave();
-        }
-    }
-
     // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 DOM loaded, initializing Generic Worksheet');
@@ -1653,11 +1541,6 @@
 <!-- Equation Builder Toggle -->
 <div id="equation-builder-toggle" class="equation-toolbar-toggle" onclick="toggleEquationBuilder()">
     ∫ Equation Builder
-</div>
-
-<!-- Shapes Toolbar Toggle -->
-<div id="shapes-toolbar-toggle" class="shapes-toolbar-toggle" onclick="toggleShapesToolbar()">
-    ◊ Shapes
 </div>
 
 <!-- Math Symbols Toolbar -->
@@ -1870,69 +1753,6 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Live preview of your equation</p>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Shapes Toolbar -->
-<div id="shapes-toolbar" class="shapes-toolbar">
-    <div class="p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold text-gray-800">Geometric Shapes</h3>
-            <button onclick="toggleShapesToolbar()" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        
-        <!-- Shapes Grid -->
-        <div class="shapes-grid">
-            <!-- Basic Shapes -->
-            <button class="shape-btn" onclick="insertShape('○')" title="Circle (hollow)">○</button>
-            <button class="shape-btn" onclick="insertShape('●')" title="Circle (filled)">●</button>
-            <button class="shape-btn" onclick="insertShape('□')" title="Square (hollow)">□</button>
-            <button class="shape-btn" onclick="insertShape('■')" title="Square (filled)">■</button>
-            <button class="shape-btn" onclick="insertShape('△')" title="Triangle (hollow)">△</button>
-            <button class="shape-btn" onclick="insertShape('▲')" title="Triangle (filled)">▲</button>
-            <button class="shape-btn" onclick="insertShape('▽')" title="Triangle down (hollow)">▽</button>
-            <button class="shape-btn" onclick="insertShape('▼')" title="Triangle down (filled)">▼</button>
-            
-            <!-- Diamonds and Rhombi -->
-            <button class="shape-btn" onclick="insertShape('◇')" title="Diamond (hollow)">◇</button>
-            <button class="shape-btn" onclick="insertShape('◆')" title="Diamond (filled)">◆</button>
-            <button class="shape-btn" onclick="insertShape('◊')" title="Diamond (small)">◊</button>
-            <button class="shape-btn" onclick="insertShape('♦')" title="Diamond (suit)">♦</button>
-            
-            <!-- Stars -->
-            <button class="shape-btn" onclick="insertShape('☆')" title="Star (hollow)">☆</button>
-            <button class="shape-btn" onclick="insertShape('★')" title="Star (filled)">★</button>
-            <button class="shape-btn" onclick="insertShape('✦')" title="Star (4-point)">✦</button>
-            <button class="shape-btn" onclick="insertShape('✧')" title="Star (outlined)">✧</button>
-            
-            <!-- Arrows -->
-            <button class="shape-btn" onclick="insertShape('↑')" title="Arrow up">↑</button>
-            <button class="shape-btn" onclick="insertShape('↓')" title="Arrow down">↓</button>
-            <button class="shape-btn" onclick="insertShape('←')" title="Arrow left">←</button>
-            <button class="shape-btn" onclick="insertShape('→')" title="Arrow right">→</button>
-            <button class="shape-btn" onclick="insertShape('↗')" title="Arrow up-right">↗</button>
-            <button class="shape-btn" onclick="insertShape('↙')" title="Arrow down-left">↙</button>
-            
-            <!-- Geometric Symbols -->
-            <button class="shape-btn" onclick="insertShape('∠')" title="Angle">∠</button>
-            <button class="shape-btn" onclick="insertShape('∥')" title="Parallel">∥</button>
-            <button class="shape-btn" onclick="insertShape('⊥')" title="Perpendicular">⊥</button>
-            <button class="shape-btn" onclick="insertShape('≅')" title="Congruent">≅</button>
-            <button class="shape-btn" onclick="insertShape('∼')" title="Similar">∼</button>
-            <button class="shape-btn" onclick="insertShape('⊙')" title="Circle with dot">⊙</button>
-            
-            <!-- Additional Shapes -->
-            <button class="shape-btn" onclick="insertShape('◯')" title="Large circle">◯</button>
-            <button class="shape-btn" onclick="insertShape('▫')" title="Small square">▫</button>
-            <button class="shape-btn" onclick="insertShape('▪')" title="Small filled square">▪</button>
-            <button class="shape-btn" onclick="insertShape('▷')" title="Triangle right">▷</button>
-            <button class="shape-btn" onclick="insertShape('◁')" title="Triangle left">◁</button>
-            <button class="shape-btn" onclick="insertShape('◈')" title="Diamond with cross">◈</button>
         </div>
     </div>
 </div>
