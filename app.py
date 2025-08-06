@@ -6695,50 +6695,50 @@ def generate_curriculum_design_build_document(form):
         
         doc = DocxTemplate(temp_file.name)
         
-        # Prepare context data using flat structure to match placeholders exactly
-        context = {
-            # Star Academy Details
-            'star': {'academy': {'model': escape_xml(form.star_academy_model.data)}},
-            'grade': {'level': escape_xml(form.grade_level.data)},
-            'soft': {'start': form.soft_start.data},
-            'site': {'name': escape_xml(form.site_name.data)},
-            'school': {'district': escape_xml(form.school_district.data)},
-            
-            # Essential Program Elements - separate nested structure
-            'grade_level_courses': {
-                'science': escape_xml(form.science_course_grades.data),
-                'math': escape_xml(form.math_course_grades.data),
-                'ss': escape_xml(form.ss_course_grades.data),
-                'ela': escape_xml(form.ela_course_grades.data)
-            },
-            
-            # Curriculum Elements
-            'science': {
-                'rotations': escape_xml(form.science_rotations.data),
-                'design': {'domain': escape_xml(form.science_design_domain.data)}
-            },
-            'math': {'rotations': escape_xml(form.math_rotations.data)},
-            'tier': {'one': {'component': escape_xml(form.tier_one_component.data)}},
-            
-            # Math specific
-            'state': {'math': {'domains': escape_xml(form.state_math_domains.data)}},
-            'ipls': {
-                'additional': {'coverage': escape_xml(form.ipls_additional_coverage.data or '')},
-                'critical': {'standards': escape_xml(form.ipls_critical_standards.data or '')}
-            },
-            
-            # Social Studies
-            'tci': {'program': {'title': escape_xml(form.tci_program_title.data)}},
-            'ss': {'course': {'title': escape_xml(form.ss_course_title.data)}}
+        # Prepare context data - build step by step to avoid conflicts
+        context = {}
+        
+        # Star Academy Details
+        context['star'] = {'academy': {'model': escape_xml(form.star_academy_model.data)}}
+        context['grade'] = {'level': escape_xml(form.grade_level.data)}
+        context['soft'] = {'start': form.soft_start.data}
+        context['site'] = {'name': escape_xml(form.site_name.data)}
+        context['school'] = {'district': escape_xml(form.school_district.data)}
+        
+        # Essential Program Elements - separate nested structure
+        context['grade_level_courses'] = {
+            'science': escape_xml(form.science_course_grades.data),
+            'math': escape_xml(form.math_course_grades.data),
+            'ss': escape_xml(form.ss_course_grades.data),
+            'ela': escape_xml(form.ela_course_grades.data)
         }
         
-        # Generate dynamic table content using subdocuments with period notation
-        context['science'] = context.get('science', {})
-        context['science']['table'] = {'content': generate_science_table_subdocument(doc, form)}
+        # Curriculum Elements - build science dict carefully
+        context['science'] = {
+            'rotations': escape_xml(form.science_rotations.data),
+            'design': {'domain': escape_xml(form.science_design_domain.data)},
+            'table': {'content': generate_science_table_subdocument(doc, form)}
+        }
         
-        context['math'] = context.get('math', {})
-        context['math']['table'] = {'content': generate_math_table_subdocument(doc, form)}
+        # Math elements - build math dict carefully  
+        context['math'] = {
+            'rotations': escape_xml(form.math_rotations.data),
+            'table': {'content': generate_math_table_subdocument(doc, form)}
+        }
         
+        # Other elements
+        context['tier'] = {'one': {'component': escape_xml(form.tier_one_component.data)}}
+        context['state'] = {'math': {'domains': escape_xml(form.state_math_domains.data)}}
+        context['ipls'] = {
+            'additional': {'coverage': escape_xml(form.ipls_additional_coverage.data or '')},
+            'critical': {'standards': escape_xml(form.ipls_critical_standards.data or '')}
+        }
+        
+        # Social Studies
+        context['tci'] = {'program': {'title': escape_xml(form.tci_program_title.data)}}
+        context['ss'] = {'course': {'title': escape_xml(form.ss_course_title.data)}}
+        
+        # Social studies table content
         context['social'] = {'studies': {'table': {'content': generate_social_studies_table_subdocument(doc, form)}}}
         
         doc.render(context)
