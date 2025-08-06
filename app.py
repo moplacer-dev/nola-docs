@@ -6713,17 +6713,24 @@ def generate_curriculum_design_build_document(form):
             'ela': escape_xml(form.ela_course_grades.data)
         }
         
+        # Generate subdocuments first
+        print("Generating subdocuments...")
+        science_table_subdoc = generate_science_table_subdocument(doc, form)
+        math_table_subdoc = generate_math_table_subdocument(doc, form)
+        social_studies_table_subdoc = generate_social_studies_table_subdocument(doc, form)
+        print(f"Subdocs created - Science: {type(science_table_subdoc)}, Math: {type(math_table_subdoc)}, SS: {type(social_studies_table_subdoc)}")
+        
         # Curriculum Elements - build science dict carefully
         context['science'] = {
             'rotations': escape_xml(form.science_rotations.data),
             'design': {'domain': escape_xml(form.science_design_domain.data)},
-            'table': {'content': generate_science_table_subdocument(doc, form)}
+            'table': {'content': science_table_subdoc}
         }
         
         # Math elements - build math dict carefully  
         context['math'] = {
             'rotations': escape_xml(form.math_rotations.data),
-            'table': {'content': generate_math_table_subdocument(doc, form)}
+            'table': {'content': math_table_subdoc}
         }
         
         # Other elements
@@ -6739,7 +6746,11 @@ def generate_curriculum_design_build_document(form):
         context['ss'] = {'course': {'title': escape_xml(form.ss_course_title.data)}}
         
         # Social studies table content
-        context['social'] = {'studies': {'table': {'content': generate_social_studies_table_subdocument(doc, form)}}}
+        context['social'] = {'studies': {'table': {'content': social_studies_table_subdoc}}}
+        
+        print(f"Final context keys: {list(context.keys())}")
+        print(f"Science context: {type(context['science'])}, Math context: {type(context['math'])}")
+        print(f"Context structure check - Science keys: {list(context['science'].keys()) if isinstance(context['science'], dict) else 'Not a dict'}")
         
         doc.render(context)
         
