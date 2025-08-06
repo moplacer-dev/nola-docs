@@ -6695,38 +6695,51 @@ def generate_curriculum_design_build_document(form):
         
         doc = DocxTemplate(temp_file.name)
         
-        # Prepare context data using period notation to match placeholders
+        # Prepare context data using flat structure to match placeholders exactly
         context = {
+            # Star Academy Details
             'star': {'academy': {'model': escape_xml(form.star_academy_model.data)}},
             'grade': {'level': escape_xml(form.grade_level.data)},
             'soft': {'start': form.soft_start.data},
             'site': {'name': escape_xml(form.site_name.data)},
             'school': {'district': escape_xml(form.school_district.data)},
-            'grade': {
-                'level': {
-                    'science': {'courses': escape_xml(form.science_course_grades.data)},
-                    'math': {'courses': escape_xml(form.math_course_grades.data)},
-                    'ss': {'courses': escape_xml(form.ss_course_grades.data)},
-                    'ela': {'courses': escape_xml(form.ela_course_grades.data)}
-                }
+            
+            # Essential Program Elements - separate nested structure
+            'grade_level_courses': {
+                'science': escape_xml(form.science_course_grades.data),
+                'math': escape_xml(form.math_course_grades.data),
+                'ss': escape_xml(form.ss_course_grades.data),
+                'ela': escape_xml(form.ela_course_grades.data)
             },
-            'science': {'rotations': escape_xml(form.science_rotations.data)},
+            
+            # Curriculum Elements
+            'science': {
+                'rotations': escape_xml(form.science_rotations.data),
+                'design': {'domain': escape_xml(form.science_design_domain.data)}
+            },
             'math': {'rotations': escape_xml(form.math_rotations.data)},
             'tier': {'one': {'component': escape_xml(form.tier_one_component.data)}},
-            'science': {'design': {'domain': escape_xml(form.science_design_domain.data)}},
+            
+            # Math specific
             'state': {'math': {'domains': escape_xml(form.state_math_domains.data)}},
             'ipls': {
-                'additional': {'coverage': escape_xml(form.ipls_additional_coverage.data)},
-                'critical': {'standards': escape_xml(form.ipls_critical_standards.data)}
+                'additional': {'coverage': escape_xml(form.ipls_additional_coverage.data or '')},
+                'critical': {'standards': escape_xml(form.ipls_critical_standards.data or '')}
             },
+            
+            # Social Studies
             'tci': {'program': {'title': escape_xml(form.tci_program_title.data)}},
             'ss': {'course': {'title': escape_xml(form.ss_course_title.data)}}
         }
         
-        # Generate dynamic table content using subdocuments
-        context['science_table_content'] = generate_science_table_subdocument(doc, form)
-        context['math_table_content'] = generate_math_table_subdocument(doc, form)  
-        context['social_studies_table_content'] = generate_social_studies_table_subdocument(doc, form)
+        # Generate dynamic table content using subdocuments with period notation
+        context['science'] = context.get('science', {})
+        context['science']['table'] = {'content': generate_science_table_subdocument(doc, form)}
+        
+        context['math'] = context.get('math', {})
+        context['math']['table'] = {'content': generate_math_table_subdocument(doc, form)}
+        
+        context['social'] = {'studies': {'table': {'content': generate_social_studies_table_subdocument(doc, form)}}}
         
         doc.render(context)
         
