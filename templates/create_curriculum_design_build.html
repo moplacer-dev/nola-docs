@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+
+{% block title %}Create Curriculum Design Build - NOLA.docs{% endblock %}
+
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    /* Accordion Styles */
+    .accordion-header {
+        width: 100%;
+        padding: 16px;
+        background: #f9fafb;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
+    
+    .accordion-header:hover {
+        background: #f3f4f6;
+    }
+    
+    .accordion-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #374151;
+        flex-grow: 1;
+    }
+    
+    .accordion-icon {
+        width: 20px;
+        height: 20px;
+        transform: rotate(0deg);
+        transition: transform 0.3s ease;
+    }
+    
+    .accordion-header.active .accordion-icon {
+        transform: rotate(180deg);
+    }
+    
+    .accordion-content {
+        padding: 0 16px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    
+    .accordion-content.active {
+        max-height: 2000px;
+        padding: 16px;
+    }
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Draft saved</span>
+</div>
+
+<div class="max-w-4xl mx-auto py-8 px-4 pb-24">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Curriculum Design Build</h1>
+        <p class="text-gray-600 mt-2">Enter the curriculum design details to generate a comprehensive design build document. <strong>Your progress is automatically saved as you type.</strong></p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST" action="{{ url_for('create_curriculum_design_build') }}" id="curriculum-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Star Academy Design Details Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="star-academy-details">
+                    <h2>⭐ Star Academy Design Details</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content active" id="star-academy-details-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            {{ form.star_academy_model.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.star_academy_model(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.star_academy_model.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.star_academy_model.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.grade_level.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.grade_level(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.grade_level.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.grade_level.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label class="flex items-center">
+                                {{ form.soft_start(class="mr-2") }}
+                                <span class="text-sm font-medium text-gray-700">{{ form.soft_start.label.text }}</span>
+                            </label>
+                        </div>
+                        
+                        <div></div> <!-- Empty div for grid alignment -->
+                        
+                        <div>
+                            {{ form.site_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.site_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.site_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.site_name.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.school_district.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.school_district(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.school_district.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.school_district.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Essential Star Academy Program Elements Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="program-elements">
+                    <h2>📚 Essential Star Academy Program Elements</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content" id="program-elements-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            {{ form.science_course_grades.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.science_course_grades(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.science_course_grades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.science_course_grades.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.math_course_grades.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.math_course_grades(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.math_course_grades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.math_course_grades.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.ss_course_grades.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.ss_course_grades(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.ss_course_grades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.ss_course_grades.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.ela_course_grades.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.ela_course_grades(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.ela_course_grades.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.ela_course_grades.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curriculum Elements Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="curriculum-elements">
+                    <h2>🎯 Curriculum Elements</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content" id="curriculum-elements-content">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            {{ form.science_rotations.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.science_rotations(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.science_rotations.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.science_rotations.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.math_rotations.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.math_rotations(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.math_rotations.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.math_rotations.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {{ form.tier_one_component.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.tier_one_component(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.tier_one_component.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.tier_one_component.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curriculum Design: Science Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="science-design">
+                    <h2>🔬 Curriculum Design: Science</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content" id="science-design-content">
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.science_design_domain.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.science_design_domain(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.science_design_domain.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.science_design_domain.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.science_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.science_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.science_grade_levels.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.science_grade_levels.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Science Modules -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Modules</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for module_field in form.science_modules %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
+                                        {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Science Standard Coverage -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Standard Coverage (%)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    {{ form.science_standard_coverage.physical_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.science_standard_coverage.physical_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.science_standard_coverage.life_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.science_standard_coverage.life_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.science_standard_coverage.earth_space_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.science_standard_coverage.earth_space_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.science_standard_coverage.etas.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.science_standard_coverage.etas(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Science District Standards -->
+                        <div>
+                            {{ form.science_district_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.science_district_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.science_district_standards.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.science_district_standards.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curriculum Design: Math Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="math-design">
+                    <h2>🧮 Curriculum Design: Math</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content" id="math-design-content">
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.state_math_domains.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.state_math_domains(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.state_math_domains.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.state_math_domains.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.math_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.math_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.math_grade_levels.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.math_grade_levels.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.ipls_additional_coverage.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.ipls_additional_coverage(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.ipls_additional_coverage.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.ipls_additional_coverage.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.ipls_critical_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.ipls_critical_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.ipls_critical_standards.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.ipls_critical_standards.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Math Modules -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Modules</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for module_field in form.math_modules %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
+                                        {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Math Standard Coverage -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Standard Coverage (%)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div>
+                                    {{ form.math_standard_coverage.rp.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.rp(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.math_standard_coverage.ns.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.ns(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.math_standard_coverage.ee.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.ee(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.math_standard_coverage.f.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.f(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.math_standard_coverage.g.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.g(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                                <div>
+                                    {{ form.math_standard_coverage.sp.label(class="block text-sm font-medium text-gray-700 mb-1") }}
+                                    {{ form.math_standard_coverage.sp(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Math IPL Standards -->
+                        <div>
+                            {{ form.math_ipl_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.math_ipl_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.math_ipl_standards.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.math_ipl_standards.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Math District Standards -->
+                        <div>
+                            {{ form.math_district_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ form.math_district_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            {% if form.math_district_standards.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.math_district_standards.errors[0] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curriculum Design: Social Studies Section -->
+            <div class="mb-8 border border-gray-200 rounded-lg overflow-hidden">
+                <button type="button" class="accordion-header" data-section="social-studies-design">
+                    <h2>🏛️ Curriculum Design: Social Studies</h2>
+                    <svg class="accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="accordion-content" id="social-studies-design-content">
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form.tci_program_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.tci_program_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.tci_program_title.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.tci_program_title.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.ss_course_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.ss_course_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.ss_course_title.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.ss_course_title.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                {{ form.ss_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.ss_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                {% if form.ss_grade_levels.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ form.ss_grade_levels.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Social Studies Standard Coverage -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Social Studies Standard Coverage (%)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for coverage_field in form.ss_standard_coverage %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level {{ loop.index }} Coverage (%)</label>
+                                        {{ coverage_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Social Studies District Standards -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Standards to be Covered using District Resources</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for standards_field in form.ss_district_standards %}
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level {{ loop.index }} District Standards</label>
+                                        {{ standards_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button type="submit" name="action" value="generate" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                    Generate Curriculum Design Build
+                </button>
+            </div>
+            
+            <!-- Hidden field to track if we're editing an existing draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+    // Accordion functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const accordionHeaders = document.querySelectorAll('.accordion-header');
+        
+        accordionHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const section = this.dataset.section;
+                const content = document.getElementById(section + '-content');
+                
+                // Toggle active class for header
+                this.classList.toggle('active');
+                
+                // Toggle active class for content
+                content.classList.toggle('active');
+            });
+        });
+    });
+    
+    // Autosave functionality
+    class CurriculumDesignBuildAutosave {
+        constructor() {
+            this.autosaveTimeout = null;
+            this.autosaveDelay = 3000; // 3 seconds for complex form
+            this.currentDraftId = document.getElementById('current_draft_id').value || null;
+            this.isAutosaving = false;
+            this.lastSaveData = null;
+            
+            this.initializeEventListeners();
+            this.showAutosaveStatus('Ready to autosave', 'saved');
+        }
+        
+        initializeEventListeners() {
+            // Listen for changes on autosave-enabled fields
+            const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
+            
+            autosaveFields.forEach(field => {
+                field.addEventListener('input', () => {
+                    this.scheduleAutosave();
+                });
+                
+                field.addEventListener('blur', () => {
+                    // Save immediately when user leaves a field
+                    this.performAutosave();
+                });
+            });
+        }
+        
+        scheduleAutosave() {
+            // Clear existing timeout
+            if (this.autosaveTimeout) {
+                clearTimeout(this.autosaveTimeout);
+            }
+            
+            // Schedule new autosave
+            this.autosaveTimeout = setTimeout(() => {
+                this.performAutosave();
+            }, this.autosaveDelay);
+        }
+        
+        async performAutosave() {
+            if (this.isAutosaving) {
+                return; // Already autosaving
+            }
+            
+            // Collect form data
+            const formData = this.collectFormData();
+            
+            // Check if data has changed
+            if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
+                return; // No changes to save
+            }
+            
+            this.isAutosaving = true;
+            this.showAutosaveStatus('Saving...', 'saving');
+            
+            try {
+                // Add draft_id to the data
+                formData.draft_id = this.currentDraftId;
+                
+                const response = await fetch('/autosave-curriculum-design-build-draft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update current draft ID if this was a new draft
+                    if (result.draft_id && !this.currentDraftId) {
+                        this.currentDraftId = result.draft_id;
+                        document.getElementById('current_draft_id').value = result.draft_id;
+                    }
+                    
+                    this.lastSaveData = formData;
+                    this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+                } else {
+                    this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Autosave error:', error);
+                this.showAutosaveStatus('Save failed - check connection', 'error');
+            } finally {
+                this.isAutosaving = false;
+            }
+        }
+        
+        collectFormData() {
+            // Collect all form data
+            const formData = {
+                star_academy_model: document.querySelector('[name="star_academy_model"]').value,
+                grade_level: document.querySelector('[name="grade_level"]').value,
+                soft_start: document.querySelector('[name="soft_start"]').checked,
+                site_name: document.querySelector('[name="site_name"]').value,
+                school_district: document.querySelector('[name="school_district"]').value,
+                science_course_grades: document.querySelector('[name="science_course_grades"]').value,
+                math_course_grades: document.querySelector('[name="math_course_grades"]').value,
+                ss_course_grades: document.querySelector('[name="ss_course_grades"]').value,
+                ela_course_grades: document.querySelector('[name="ela_course_grades"]').value,
+                science_rotations: document.querySelector('[name="science_rotations"]').value,
+                math_rotations: document.querySelector('[name="math_rotations"]').value,
+                tier_one_component: document.querySelector('[name="tier_one_component"]').value,
+                science_design_domain: document.querySelector('[name="science_design_domain"]').value,
+                science_grade_levels: document.querySelector('[name="science_grade_levels"]').value,
+                science_modules: [],
+                science_standard_coverage: {},
+                science_district_standards: document.querySelector('[name="science_district_standards"]').value,
+                state_math_domains: document.querySelector('[name="state_math_domains"]').value,
+                ipls_additional_coverage: document.querySelector('[name="ipls_additional_coverage"]').value,
+                ipls_critical_standards: document.querySelector('[name="ipls_critical_standards"]').value,
+                math_grade_levels: document.querySelector('[name="math_grade_levels"]').value,
+                math_modules: [],
+                math_standard_coverage: {},
+                math_ipl_standards: document.querySelector('[name="math_ipl_standards"]').value,
+                math_district_standards: document.querySelector('[name="math_district_standards"]').value,
+                tci_program_title: document.querySelector('[name="tci_program_title"]').value,
+                ss_course_title: document.querySelector('[name="ss_course_title"]').value,
+                ss_grade_levels: document.querySelector('[name="ss_grade_levels"]').value,
+                ss_standard_coverage: [],
+                ss_district_standards: []
+            };
+            
+            // Collect science modules
+            document.querySelectorAll('[name^="science_modules-"]').forEach((field, index) => {
+                formData.science_modules[index] = field.value.trim();
+            });
+            
+            // Collect science standard coverage
+            formData.science_standard_coverage = {
+                physical_sciences: document.querySelector('[name="science_standard_coverage-physical_sciences"]').value,
+                life_sciences: document.querySelector('[name="science_standard_coverage-life_sciences"]').value,
+                earth_space_sciences: document.querySelector('[name="science_standard_coverage-earth_space_sciences"]').value,
+                etas: document.querySelector('[name="science_standard_coverage-etas"]').value
+            };
+            
+            // Collect math modules
+            document.querySelectorAll('[name^="math_modules-"]').forEach((field, index) => {
+                formData.math_modules[index] = field.value.trim();
+            });
+            
+            // Collect math standard coverage
+            formData.math_standard_coverage = {
+                rp: document.querySelector('[name="math_standard_coverage-rp"]').value,
+                ns: document.querySelector('[name="math_standard_coverage-ns"]').value,
+                ee: document.querySelector('[name="math_standard_coverage-ee"]').value,
+                f: document.querySelector('[name="math_standard_coverage-f"]').value,
+                g: document.querySelector('[name="math_standard_coverage-g"]').value,
+                sp: document.querySelector('[name="math_standard_coverage-sp"]').value
+            };
+            
+            // Collect SS standard coverage and district standards
+            document.querySelectorAll('[name^="ss_standard_coverage-"]').forEach((field, index) => {
+                formData.ss_standard_coverage[index] = field.value.trim();
+            });
+            
+            document.querySelectorAll('[name^="ss_district_standards-"]').forEach((field, index) => {
+                formData.ss_district_standards[index] = field.value.trim();
+            });
+            
+            return formData;
+        }
+        
+        showAutosaveStatus(message, type) {
+            const statusElement = document.getElementById('autosave-status');
+            const textElement = document.getElementById('autosave-text');
+            
+            // Update text and styling
+            textElement.textContent = message;
+            statusElement.className = `autosave-status ${type}`;
+            
+            // Show the status
+            setTimeout(() => {
+                statusElement.classList.remove('hidden');
+            }, 10);
+            
+            // Auto-hide after 3 seconds (except for errors)
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusElement.classList.add('hidden');
+                }, 3000);
+            }
+        }
+    }
+    
+    // Initialize everything when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize autosave
+        window.autosaveInstance = new CurriculumDesignBuildAutosave();
+    });
+</script>
+
+{% endblock %}

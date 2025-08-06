@@ -94,7 +94,8 @@ class FormDraft(db.Model):
             'moduleguide': 'Module Guide',
             'moduleAnswerKey': 'Module Answer Key',
             'module_answer_key2': 'Module Answer Key 2.0',
-            'horizontal_lesson_plan': 'Horizontal Lesson Plan'
+            'horizontal_lesson_plan': 'Horizontal Lesson Plan',
+            'curriculum_design_build': 'Curriculum Design Build'
         }
         return type_map.get(self.form_type, self.form_type.title())
     
@@ -150,7 +151,8 @@ class GeneratedDocument(db.Model):
             'moduleAnswerKey': 'Module Answer Key',
             'module_answer_key2': 'Module Answer Key 2.0',
             'moduleActivitySheet': 'Module Activity Sheet',
-            'horizontal_lesson_plan': 'Horizontal Lesson Plan'
+            'horizontal_lesson_plan': 'Horizontal Lesson Plan',
+            'curriculum_design_build': 'Curriculum Design Build'
         }
         return type_map.get(self.document_type, self.document_type.title())
     

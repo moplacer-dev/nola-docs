@@ -1046,6 +1046,172 @@ class HorizontalLessonPlanForm(FlaskForm):
             
         return True
 
+# Form classes for Curriculum Design Build Template
+class ScienceStandardCoverageForm(FlaskForm):
+    """Form for Science standard coverage percentages"""
+    class Meta:
+        csrf = False
+    
+    physical_sciences = StringField('Physical Sciences (%)', validators=[Optional()], 
+                                   render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    life_sciences = StringField('Life Sciences (%)', validators=[Optional()], 
+                               render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    earth_space_sciences = StringField('Earth & Space Sciences (%)', validators=[Optional()], 
+                                     render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    etas = StringField('ETAS (%)', validators=[Optional()], 
+                      render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+
+class MathStandardCoverageForm(FlaskForm):
+    """Form for Math standard coverage percentages"""
+    class Meta:
+        csrf = False
+    
+    rp = StringField('RP (%)', validators=[Optional()], 
+                    render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    ns = StringField('NS (%)', validators=[Optional()], 
+                    render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    ee = StringField('EE (%)', validators=[Optional()], 
+                    render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    f = StringField('F (%)', validators=[Optional()], 
+                   render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    g = StringField('G (%)', validators=[Optional()], 
+                   render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+    sp = StringField('SP (%)', validators=[Optional()], 
+                    render_kw={"placeholder": "e.g., 100", "data-autosave": "true"})
+
+class CurriculumDesignBuildForm(FlaskForm):
+    # Star Academy Design Details
+    star_academy_model = StringField('Star Academy Model', 
+                                   validators=[DataRequired(), Length(min=1, max=200)],
+                                   render_kw={"placeholder": "e.g., Non-Accelerated Full Year, Accelerated Fall/Spring, etc.", "data-autosave": "true"})
+    
+    grade_level = StringField('Grade Level(s)', 
+                            validators=[DataRequired(), Length(min=1, max=100)],
+                            render_kw={"placeholder": "e.g., 7th Grade, 8th Grade, etc.", "data-autosave": "true"})
+    
+    soft_start = BooleanField('Soft/Mid-year Start?', 
+                            render_kw={"data-autosave": "true"})
+    
+    site_name = StringField('Site Name', 
+                          validators=[DataRequired(), Length(min=1, max=200)],
+                          render_kw={"placeholder": "e.g., Union High School, TH Harris Middle School, etc.", "data-autosave": "true"})
+    
+    school_district = StringField('School District', 
+                                validators=[DataRequired(), Length(min=1, max=200)],
+                                render_kw={"placeholder": "e.g., Union Parish School District", "data-autosave": "true"})
+    
+    # Essential Star Academy Program Elements
+    science_course_grades = StringField('Science Course Grade Level(s)', 
+                                      validators=[DataRequired(), Length(min=1, max=100)],
+                                      render_kw={"placeholder": "e.g., 7th/8th", "data-autosave": "true"})
+    
+    math_course_grades = StringField('Math Course Grade Level(s)', 
+                                   validators=[DataRequired(), Length(min=1, max=100)],
+                                   render_kw={"placeholder": "e.g., 7th/8th", "data-autosave": "true"})
+    
+    ss_course_grades = StringField('Social Studies Course Grade Level(s)', 
+                                 validators=[DataRequired(), Length(min=1, max=100)],
+                                 render_kw={"placeholder": "e.g., 7th/8th", "data-autosave": "true"})
+    
+    ela_course_grades = StringField('ELA Course Grade Level(s)', 
+                                  validators=[DataRequired(), Length(min=1, max=100)],
+                                  render_kw={"placeholder": "e.g., 7th/8th", "data-autosave": "true"})
+    
+    # Curriculum Elements
+    science_rotations = SelectField('Science Rotations', 
+                                  choices=[('Five', 'Five'), ('Ten', 'Ten')],
+                                  validators=[DataRequired()],
+                                  render_kw={"data-autosave": "true"})
+    
+    math_rotations = SelectField('Math Rotations', 
+                               choices=[('Five', 'Five'), ('Ten', 'Ten')],
+                               validators=[DataRequired()],
+                               render_kw={"data-autosave": "true"})
+    
+    tier_one_component = StringField('Tier I Component (ELA)', 
+                                   validators=[DataRequired(), Length(min=1, max=200)],
+                                   render_kw={"placeholder": "e.g., Guidebooks", "data-autosave": "true"})
+    
+    # Curriculum Design: Science
+    science_design_domain = StringField('Science Domain', 
+                                      validators=[DataRequired(), Length(min=1, max=100)],
+                                      render_kw={"placeholder": "e.g., Physical, Life, Earth & Space, etc.", "data-autosave": "true"})
+    
+    science_grade_levels = StringField('Science Grade Level(s) for Table', 
+                                     validators=[DataRequired(), Length(min=1, max=100)],
+                                     render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
+    
+    # Science modules - up to 10 for flexibility
+    science_modules = FieldList(StringField('Module Title', validators=[Optional()], 
+                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                               min_entries=10, max_entries=10)
+    
+    # Science standard coverage
+    science_standard_coverage = FormField(ScienceStandardCoverageForm)
+    
+    science_district_standards = TextAreaField('Standards to be Covered using District Resources', 
+                                             validators=[Optional()],
+                                             render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
+    
+    # Curriculum Design: Math
+    state_math_domains = StringField('State Math Domains', 
+                                   validators=[DataRequired(), Length(min=1, max=100)],
+                                   render_kw={"placeholder": "e.g., five Louisiana", "data-autosave": "true"})
+    
+    ipls_additional_coverage = StringField('IPLs Additional Coverage Grade Level(s)', 
+                                         validators=[Optional(), Length(max=100)],
+                                         render_kw={"placeholder": "e.g., 5th, 6th, etc.", "data-autosave": "true"})
+    
+    ipls_critical_standards = StringField('IPLs Critical Standards Grade Level(s)', 
+                                        validators=[Optional(), Length(max=100)],
+                                        render_kw={"placeholder": "e.g., 5th, 6th, etc.", "data-autosave": "true"})
+    
+    math_grade_levels = StringField('Math Grade Level(s) for Table', 
+                                  validators=[DataRequired(), Length(min=1, max=100)],
+                                  render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
+    
+    # Math modules - up to 10 for flexibility
+    math_modules = FieldList(StringField('Module Title', validators=[Optional()], 
+                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                            min_entries=10, max_entries=10)
+    
+    # Math standard coverage
+    math_standard_coverage = FormField(MathStandardCoverageForm)
+    
+    math_ipl_standards = TextAreaField('Standards to be Covered by IPL Units', 
+                                     validators=[Optional()],
+                                     render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
+    
+    math_district_standards = TextAreaField('Standards to be Covered using District Resources', 
+                                          validators=[Optional()],
+                                          render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
+    
+    # Curriculum Design: Social Studies
+    tci_program_title = StringField('TCI Program Title', 
+                                  validators=[DataRequired(), Length(min=1, max=200)],
+                                  render_kw={"placeholder": "e.g., History Alive! US Through Modern Times", "data-autosave": "true"})
+    
+    ss_course_title = StringField('Social Studies Course Title', 
+                                validators=[DataRequired(), Length(min=1, max=200)],
+                                render_kw={"placeholder": "e.g., US History: Industrial Age through the Modern Era", "data-autosave": "true"})
+    
+    ss_grade_levels = StringField('Social Studies Grade Level(s) for Table', 
+                                validators=[DataRequired(), Length(min=1, max=100)],
+                                render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
+    
+    # Social Studies standard coverage percentages (up to 2 grade levels)
+    ss_standard_coverage = FieldList(StringField('Grade Level Coverage (%)', validators=[Optional()], 
+                                                render_kw={"placeholder": "e.g., 92", "data-autosave": "true"}), 
+                                   min_entries=2, max_entries=2)
+    
+    # Social Studies district standards (up to 2 grade levels)
+    ss_district_standards = FieldList(TextAreaField('Standards to be Covered using District Resources', 
+                                                   validators=[Optional()],
+                                                   render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"}), 
+                                    min_entries=2, max_entries=2)
+    
+    submit = SubmitField('Generate Curriculum Design Build')
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -6361,6 +6527,352 @@ def delete_horizontal_lesson_plan_draft(draft_id):
         flash('Draft deleted successfully!', 'success')
     
     return redirect(url_for('drafts'))
+
+@app.route('/create-curriculum-design-build', methods=['GET', 'POST'])
+@login_required
+def create_curriculum_design_build():
+    form = CurriculumDesignBuildForm()
+    
+    if request.method == 'POST' and form.validate_on_submit():
+        try:
+            # Generate the document
+            doc_path = generate_curriculum_design_build_document(form)
+            
+            # Store in database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='curriculum_design_build',
+                filename=os.path.basename(doc_path),
+                file_path=doc_path,
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
+            flash('Curriculum Design Build document generated successfully!', 'success')
+            return send_file(doc_path, as_attachment=True, download_name=os.path.basename(doc_path))
+            
+        except Exception as e:
+            print(f"Error generating Curriculum Design Build document: {e}")
+            import traceback
+            traceback.print_exc()
+            flash(f'Error generating document: {str(e)}', 'error')
+    
+    # Load existing draft if editing
+    draft_id = request.args.get('draft_id')
+    if draft_id:
+        try:
+            draft = FormDraft.query.get(draft_id)
+            if draft and draft.user_id == current_user.id:
+                load_curriculum_design_build_draft_into_form(form, draft)
+        except Exception as e:
+            print(f"Error loading draft: {e}")
+    
+    return render_template('create_curriculum_design_build.html', form=form, draft_id=draft_id)
+
+@app.route('/autosave-curriculum-design-build-draft', methods=['POST'])
+@login_required
+def autosave_curriculum_design_build_draft():
+    try:
+        data = request.get_json()
+        draft_id = data.get('draft_id')
+        
+        if draft_id:
+            # Update existing draft
+            draft = FormDraft.query.get(draft_id)
+            if draft and draft.user_id == current_user.id:
+                draft.form_data = data
+                draft.updated_at = datetime.utcnow()
+        else:
+            # Create new draft
+            title = f"{data.get('site_name', 'Untitled')} - Curriculum Design Build"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='curriculum_design_build',
+                title=title,
+                form_data=data
+            )
+            db.session.add(draft)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'timestamp': datetime.now().strftime('%I:%M %p')
+        })
+    
+    except Exception as e:
+        print(f"Error in autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+def load_curriculum_design_build_draft_into_form(form, draft):
+    """Load draft data into the curriculum design build form"""
+    try:
+        form_data = draft.form_data
+        
+        # Basic fields
+        form.star_academy_model.data = form_data.get('star_academy_model', '')
+        form.grade_level.data = form_data.get('grade_level', '')
+        form.soft_start.data = form_data.get('soft_start', False)
+        form.site_name.data = form_data.get('site_name', '')
+        form.school_district.data = form_data.get('school_district', '')
+        form.science_course_grades.data = form_data.get('science_course_grades', '')
+        form.math_course_grades.data = form_data.get('math_course_grades', '')
+        form.ss_course_grades.data = form_data.get('ss_course_grades', '')
+        form.ela_course_grades.data = form_data.get('ela_course_grades', '')
+        form.science_rotations.data = form_data.get('science_rotations', '')
+        form.math_rotations.data = form_data.get('math_rotations', '')
+        form.tier_one_component.data = form_data.get('tier_one_component', '')
+        form.science_design_domain.data = form_data.get('science_design_domain', '')
+        form.science_grade_levels.data = form_data.get('science_grade_levels', '')
+        form.science_district_standards.data = form_data.get('science_district_standards', '')
+        form.state_math_domains.data = form_data.get('state_math_domains', '')
+        form.ipls_additional_coverage.data = form_data.get('ipls_additional_coverage', '')
+        form.ipls_critical_standards.data = form_data.get('ipls_critical_standards', '')
+        form.math_grade_levels.data = form_data.get('math_grade_levels', '')
+        form.math_ipl_standards.data = form_data.get('math_ipl_standards', '')
+        form.math_district_standards.data = form_data.get('math_district_standards', '')
+        form.tci_program_title.data = form_data.get('tci_program_title', '')
+        form.ss_course_title.data = form_data.get('ss_course_title', '')
+        form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
+        
+        # Load science modules
+        science_modules = form_data.get('science_modules', [])
+        for i, module in enumerate(science_modules):
+            if i < len(form.science_modules):
+                form.science_modules[i].data = module
+        
+        # Load science standard coverage
+        science_coverage = form_data.get('science_standard_coverage', {})
+        form.science_standard_coverage.physical_sciences.data = science_coverage.get('physical_sciences', '')
+        form.science_standard_coverage.life_sciences.data = science_coverage.get('life_sciences', '')
+        form.science_standard_coverage.earth_space_sciences.data = science_coverage.get('earth_space_sciences', '')
+        form.science_standard_coverage.etas.data = science_coverage.get('etas', '')
+        
+        # Load math modules
+        math_modules = form_data.get('math_modules', [])
+        for i, module in enumerate(math_modules):
+            if i < len(form.math_modules):
+                form.math_modules[i].data = module
+        
+        # Load math standard coverage
+        math_coverage = form_data.get('math_standard_coverage', {})
+        form.math_standard_coverage.rp.data = math_coverage.get('rp', '')
+        form.math_standard_coverage.ns.data = math_coverage.get('ns', '')
+        form.math_standard_coverage.ee.data = math_coverage.get('ee', '')
+        form.math_standard_coverage.f.data = math_coverage.get('f', '')
+        form.math_standard_coverage.g.data = math_coverage.get('g', '')
+        form.math_standard_coverage.sp.data = math_coverage.get('sp', '')
+        
+        # Load SS coverage and district standards
+        ss_coverage = form_data.get('ss_standard_coverage', [])
+        for i, coverage in enumerate(ss_coverage):
+            if i < len(form.ss_standard_coverage):
+                form.ss_standard_coverage[i].data = coverage
+        
+        ss_district = form_data.get('ss_district_standards', [])
+        for i, district in enumerate(ss_district):
+            if i < len(form.ss_district_standards):
+                form.ss_district_standards[i].data = district
+        
+        print(f"Successfully loaded curriculum design build draft data")
+        
+    except Exception as e:
+        print(f"Error loading draft data: {e}")
+
+def generate_curriculum_design_build_document(form):
+    """Generate curriculum design build document with dynamic tables"""
+    master_template_path = 'templates/docx_templates/curriculum_design_build_master.docx'
+    working_template_path = 'templates/docx_templates/curriculum_design_build.docx'
+    
+    # Copy master to working template
+    shutil.copy2(master_template_path, working_template_path)
+    
+    # Create temporary file for processing
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(working_template_path, temp_file.name)
+        
+        doc = DocxTemplate(temp_file.name)
+        
+        # Prepare context data using period notation to match placeholders
+        context = {
+            'star': {'academy': {'model': escape_xml(form.star_academy_model.data)}},
+            'grade': {'level': escape_xml(form.grade_level.data)},
+            'soft': {'start': form.soft_start.data},
+            'site': {'name': escape_xml(form.site_name.data)},
+            'school': {'district': escape_xml(form.school_district.data)},
+            'grade': {
+                'level': {
+                    'science': {'courses': escape_xml(form.science_course_grades.data)},
+                    'math': {'courses': escape_xml(form.math_course_grades.data)},
+                    'ss': {'courses': escape_xml(form.ss_course_grades.data)},
+                    'ela': {'courses': escape_xml(form.ela_course_grades.data)}
+                }
+            },
+            'science': {'rotations': escape_xml(form.science_rotations.data)},
+            'math': {'rotations': escape_xml(form.math_rotations.data)},
+            'tier': {'one': {'component': escape_xml(form.tier_one_component.data)}},
+            'science': {'design': {'domain': escape_xml(form.science_design_domain.data)}},
+            'state': {'math': {'domains': escape_xml(form.state_math_domains.data)}},
+            'ipls': {
+                'additional': {'coverage': escape_xml(form.ipls_additional_coverage.data)},
+                'critical': {'standards': escape_xml(form.ipls_critical_standards.data)}
+            },
+            'tci': {'program': {'title': escape_xml(form.tci_program_title.data)}},
+            'ss': {'course': {'title': escape_xml(form.ss_course_title.data)}}
+        }
+        
+        # Generate dynamic table content using subdocuments
+        context['science_table_content'] = generate_science_table_subdocument(doc, form)
+        context['math_table_content'] = generate_math_table_subdocument(doc, form)  
+        context['social_studies_table_content'] = generate_social_studies_table_subdocument(doc, form)
+        
+        doc.render(context)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        site_name_clean = re.sub(r'[^a-zA-Z0-9\s]', '', form.site_name.data)[:30]
+        filename = f"Curriculum_Design_Build_{site_name_clean}_{timestamp}.docx"
+        
+        # Save to generated_docs directory
+        output_path = os.path.join('generated_docs', filename)
+        doc.save(output_path)
+        
+        return output_path
+
+def generate_science_table_subdocument(doc, form):
+    """Generate science curriculum table as subdocument"""
+    subdoc = doc.new_subdoc()
+    
+    # Add introductory paragraph
+    intro_text = f"Science modules are based upon the disciplinary core ideas in Physical Science, Life Science and Earth and Space Science. Blended {form.science_design_domain.data} Science will aid the students in learning the scientific method focusing on {form.science_design_domain.data} Science standards in {form.science_grade_levels.data}."
+    p = subdoc.add_paragraph(intro_text)
+    
+    # Add table (simplified - Word tables are complex in subdocuments)
+    subdoc.add_paragraph(f"\nGrade Level: {form.science_grade_levels.data}")
+    subdoc.add_paragraph("Modules:")
+    
+    # Add modules
+    for module in form.science_modules:
+        if module.data and module.data.strip():
+            subdoc.add_paragraph(f"• {module.data}")
+    
+    subdoc.add_paragraph(f"\nBlended {form.science_design_domain.data} Science")
+    
+    # Add standard coverage
+    coverage_parts = []
+    if form.science_standard_coverage.physical_sciences.data:
+        coverage_parts.append(f"Physical Sciences – {form.science_standard_coverage.physical_sciences.data}%")
+    if form.science_standard_coverage.life_sciences.data:
+        coverage_parts.append(f"Life Sciences – {form.science_standard_coverage.life_sciences.data}%")
+    if form.science_standard_coverage.earth_space_sciences.data:
+        coverage_parts.append(f"Earth & Space Sciences – {form.science_standard_coverage.earth_space_sciences.data}%")
+    if form.science_standard_coverage.etas.data:
+        coverage_parts.append(f"ETAS – {form.science_standard_coverage.etas.data}%")
+    
+    if coverage_parts:
+        subdoc.add_paragraph("\nStandard Coverage:")
+        for part in coverage_parts:
+            subdoc.add_paragraph(f"• {part}")
+    
+    # Add district standards if provided
+    if form.science_district_standards.data:
+        subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
+        for line in form.science_district_standards.data.split('\n'):
+            if line.strip():
+                subdoc.add_paragraph(f"• {line.strip()}")
+    
+    return subdoc
+
+def generate_math_table_subdocument(doc, form):
+    """Generate math curriculum table as subdocument"""
+    subdoc = doc.new_subdoc()
+    
+    # Add introductory paragraph
+    intro_text = f"Math modules are based upon the {form.state_math_domains.data} Math Domains for {form.math_grade_levels.data}."
+    if form.ipls_additional_coverage.data:
+        intro_text += f" {form.site_name.data} Star Academy will receive all IPL Units to allow for additional {form.ipls_additional_coverage.data} standard coverage"
+    if form.ipls_critical_standards.data:
+        intro_text += f", as well as to review {form.ipls_critical_standards.data} critical standards"
+    intro_text += ". STEPS provides a skills based tiered solution that evaluates student readiness, setting them on a path to success. Steps addresses gaps below grade level using a customized approach to fit each student's needs."
+    
+    p = subdoc.add_paragraph(intro_text)
+    
+    subdoc.add_paragraph(f"\nGrade Level: {form.math_grade_levels.data}")
+    subdoc.add_paragraph("Modules:")
+    
+    # Add modules
+    for module in form.math_modules:
+        if module.data and module.data.strip():
+            subdoc.add_paragraph(f"• {module.data}")
+    
+    subdoc.add_paragraph("\nIPL Unit Package")
+    subdoc.add_paragraph("STEPS")
+    
+    # Add standard coverage
+    coverage_parts = []
+    if form.math_standard_coverage.rp.data:
+        coverage_parts.append(f"RP – {form.math_standard_coverage.rp.data}%")
+    if form.math_standard_coverage.ns.data:
+        coverage_parts.append(f"NS – {form.math_standard_coverage.ns.data}%")
+    if form.math_standard_coverage.ee.data:
+        coverage_parts.append(f"EE – {form.math_standard_coverage.ee.data}%")
+    if form.math_standard_coverage.f.data:
+        coverage_parts.append(f"F – {form.math_standard_coverage.f.data}%")
+    if form.math_standard_coverage.g.data:
+        coverage_parts.append(f"G – {form.math_standard_coverage.g.data}%")
+    if form.math_standard_coverage.sp.data:
+        coverage_parts.append(f"SP – {form.math_standard_coverage.sp.data}%")
+    
+    if coverage_parts:
+        subdoc.add_paragraph("\nStandard Coverage:")
+        for part in coverage_parts:
+            subdoc.add_paragraph(f"• {part}")
+    
+    # Add IPL standards if provided
+    if form.math_ipl_standards.data:
+        subdoc.add_paragraph("\nStandards to be Covered by IPL Units:")
+        for line in form.math_ipl_standards.data.split('\n'):
+            if line.strip():
+                subdoc.add_paragraph(f"• {line.strip()}")
+    
+    # Add district standards if provided
+    if form.math_district_standards.data:
+        subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
+        for line in form.math_district_standards.data.split('\n'):
+            if line.strip():
+                subdoc.add_paragraph(f"• {line.strip()}")
+    
+    return subdoc
+
+def generate_social_studies_table_subdocument(doc, form):
+    """Generate social studies curriculum table as subdocument"""
+    subdoc = doc.new_subdoc()
+    
+    # Add introductory paragraph
+    intro_text = f"{form.tci_program_title.data} will teach {form.ss_course_title.data}."
+    p = subdoc.add_paragraph(intro_text)
+    
+    subdoc.add_paragraph(f"\nGrade Level: {form.ss_grade_levels.data}")
+    subdoc.add_paragraph(f"Course Title: {form.ss_course_title.data}")
+    subdoc.add_paragraph(f"TCI Program Title: {form.tci_program_title.data}")
+    
+    # Add standard coverage
+    for i, coverage in enumerate(form.ss_standard_coverage):
+        if coverage.data:
+            grade_num = i + 1
+            subdoc.add_paragraph(f"Grade Level {grade_num} coverage – {coverage.data}%")
+    
+    # Add district standards if provided
+    for i, district_standards in enumerate(form.ss_district_standards):
+        if district_standards.data:
+            subdoc.add_paragraph(f"\nStandards to be Covered using District Resources (Grade Level {i+1}):")
+            for line in district_standards.data.split('\n'):
+                if line.strip():
+                    subdoc.add_paragraph(f"• {line.strip()}")
+    
+    return subdoc
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
