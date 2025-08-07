@@ -1181,9 +1181,6 @@ class CurriculumDesignBuildForm(FlaskForm):
                                 validators=[DataRequired(), Length(min=1, max=200)],
                                 render_kw={"placeholder": "e.g., US History: Industrial Age through the Modern Era", "data-autosave": "true"})
     
-    ss_grade_levels = StringField('Social Studies Grade Level(s) for Table', 
-                                validators=[DataRequired(), Length(min=1, max=100)],
-                                render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
     # Dynamic Social Studies Table - replaces hardcoded structure
     social_studies_table_title = StringField('Social Studies Table Title (optional)', 
@@ -1193,15 +1190,6 @@ class CurriculumDesignBuildForm(FlaskForm):
     # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
     # Social Studies standard coverage percentages (up to 2 grade levels)
-    ss_standard_coverage = FieldList(StringField('Grade Level Coverage (%)', validators=[Optional()], 
-                                                render_kw={"placeholder": "e.g., 92", "data-autosave": "true"}), 
-                                   min_entries=2, max_entries=2)
-    
-    # Social Studies district standards (up to 2 grade levels)
-    ss_district_standards = FieldList(TextAreaField('Standards to be Covered using District Resources', 
-                                                   validators=[Optional()],
-                                                   render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"}), 
-                                    min_entries=2, max_entries=2)
     
     submit = SubmitField('Generate Curriculum Design Build')
 
@@ -6623,20 +6611,9 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.ipls_critical_standards.data = form_data.get('ipls_critical_standards', '')
         form.tci_program_title.data = form_data.get('tci_program_title', '')
         form.ss_course_title.data = form_data.get('ss_course_title', '')
-        form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
         
         
         
-        # Load SS coverage and district standards
-        ss_coverage = form_data.get('ss_standard_coverage', [])
-        for i, coverage in enumerate(ss_coverage):
-            if i < len(form.ss_standard_coverage):
-                form.ss_standard_coverage[i].data = coverage
-        
-        ss_district = form_data.get('ss_district_standards', [])
-        for i, district in enumerate(ss_district):
-            if i < len(form.ss_district_standards):
-                form.ss_district_standards[i].data = district
         
         print(f"Successfully loaded curriculum design build draft data")
         

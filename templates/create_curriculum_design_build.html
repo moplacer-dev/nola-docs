@@ -468,19 +468,13 @@
                                 {% endif %}
                             </div>
                             
-                            <div class="md:col-span-2">
-                                {{ form.ss_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.ss_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                {% if form.ss_grade_levels.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.ss_grade_levels.errors[0] }}</p>
-                                {% endif %}
-                            </div>
                         </div>
                         
                         <!-- Social Studies Table -->
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Social Studies Curriculum Table</h3>
-                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your social studies curriculum content. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your social studies curriculum content based on the build. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">Some fields have already been filled for you. Make sure to also include: the Course Title, TCi Program Title, Standard Coverage (%), and Standards to be Covered using District Resources (with full standard code).</p>
                             
                             
                             <!-- Table Configuration -->
@@ -515,31 +509,7 @@
                             </div>
                         </div>
                         
-                        <!-- Social Studies Standard Coverage -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Social Studies Standard Coverage (%)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for coverage_field in form.ss_standard_coverage %}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level {{ loop.index }} Coverage (%)</label>
-                                        {{ coverage_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
                         
-                        <!-- Social Studies District Standards -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Standards to be Covered using District Resources</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for standards_field in form.ss_district_standards %}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level {{ loop.index }} District Standards</label>
-                                        {{ standards_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -694,10 +664,7 @@
                 ipls_additional_coverage: document.querySelector('[name="ipls_additional_coverage"]').value,
                 ipls_critical_standards: document.querySelector('[name="ipls_critical_standards"]').value,
                 tci_program_title: document.querySelector('[name="tci_program_title"]').value,
-                ss_course_title: document.querySelector('[name="ss_course_title"]').value,
-                ss_grade_levels: document.querySelector('[name="ss_grade_levels"]').value,
-                ss_standard_coverage: [],
-                ss_district_standards: []
+                ss_course_title: document.querySelector('[name="ss_course_title"]').value
             };
             
             // Collect science table data
@@ -729,14 +696,6 @@
             });
             
             
-            // Collect SS standard coverage and district standards
-            document.querySelectorAll('[name^="ss_standard_coverage-"]').forEach((field, index) => {
-                formData.ss_standard_coverage[index] = field.value.trim();
-            });
-            
-            document.querySelectorAll('[name^="ss_district_standards-"]').forEach((field, index) => {
-                formData.ss_district_standards[index] = field.value.trim();
-            });
             
             return formData;
         }
@@ -794,8 +753,17 @@
                 const cellName = `${subject}_table_cell_${r}_${c}`;
                 const isHeader = r === 0;
                 
-                // Get existing value for this cell, if any
-                const existingValue = existingData[cellName] || '';
+                // Get existing value for this cell, if any, or set pre-filled values for social studies
+                let existingValue = existingData[cellName] || '';
+                
+                // Pre-fill specific cells for social studies table
+                if (subject === 'social_studies' && !existingValue) {
+                    if (r === 1 && c === 0) {
+                        existingValue = "Course Title";
+                    } else if (r === 2 && c === 0) {
+                        existingValue = "TCi Program Title";
+                    }
+                }
                 
                 let placeholder;
                 if (isHeader) {
