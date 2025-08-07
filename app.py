@@ -1147,12 +1147,9 @@ class CurriculumDesignBuildForm(FlaskForm):
     # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
     
-    science_district_standards = TextAreaField('Standards to be Covered using District Resources', 
-                                             validators=[Optional()],
-                                             render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
     
     # Curriculum Design: Math
-    state_math_domains = StringField('State Math Domains', 
+    state_math_domains = StringField('# of state-specific math domains + State', 
                                    validators=[DataRequired(), Length(min=1, max=100)],
                                    render_kw={"placeholder": "e.g., five Louisiana", "data-autosave": "true"})
     
@@ -1164,9 +1161,6 @@ class CurriculumDesignBuildForm(FlaskForm):
                                         validators=[Optional(), Length(max=100)],
                                         render_kw={"placeholder": "e.g., 5th, 6th, etc.", "data-autosave": "true"})
     
-    math_grade_levels = StringField('Math Grade Level(s) for Table', 
-                                  validators=[DataRequired(), Length(min=1, max=100)],
-                                  render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
     # Dynamic Math Table - replaces hardcoded module structure
     math_table_title = StringField('Math Table Title (optional)', 
@@ -1175,16 +1169,8 @@ class CurriculumDesignBuildForm(FlaskForm):
     
     # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
-    # Math standard coverage
-    math_standard_coverage = FormField(MathStandardCoverageForm)
     
-    math_ipl_standards = TextAreaField('Standards to be Covered by IPL Units', 
-                                     validators=[Optional()],
-                                     render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
     
-    math_district_standards = TextAreaField('Standards to be Covered using District Resources', 
-                                          validators=[Optional()],
-                                          render_kw={"placeholder": "Enter standard codes, one per line", "rows": "4", "data-autosave": "true"})
     
     # Curriculum Design: Social Studies
     tci_program_title = StringField('TCI Program Title', 
@@ -6632,26 +6618,14 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.math_rotations.data = form_data.get('math_rotations', '')
         form.tier_one_component.data = form_data.get('tier_one_component', '')
         form.science_design_domain.data = form_data.get('science_design_domain', '')
-        form.science_district_standards.data = form_data.get('science_district_standards', '')
         form.state_math_domains.data = form_data.get('state_math_domains', '')
         form.ipls_additional_coverage.data = form_data.get('ipls_additional_coverage', '')
         form.ipls_critical_standards.data = form_data.get('ipls_critical_standards', '')
-        form.math_grade_levels.data = form_data.get('math_grade_levels', '')
-        form.math_ipl_standards.data = form_data.get('math_ipl_standards', '')
-        form.math_district_standards.data = form_data.get('math_district_standards', '')
         form.tci_program_title.data = form_data.get('tci_program_title', '')
         form.ss_course_title.data = form_data.get('ss_course_title', '')
         form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
         
         
-        # Load math standard coverage
-        math_coverage = form_data.get('math_standard_coverage', {})
-        form.math_standard_coverage.rp.data = math_coverage.get('rp', '')
-        form.math_standard_coverage.ns.data = math_coverage.get('ns', '')
-        form.math_standard_coverage.ee.data = math_coverage.get('ee', '')
-        form.math_standard_coverage.f.data = math_coverage.get('f', '')
-        form.math_standard_coverage.g.data = math_coverage.get('g', '')
-        form.math_standard_coverage.sp.data = math_coverage.get('sp', '')
         
         # Load SS coverage and district standards
         ss_coverage = form_data.get('ss_standard_coverage', [])

@@ -355,14 +355,6 @@
                         </div>
                         
                         
-                        <!-- Science District Standards -->
-                        <div>
-                            {{ form.science_district_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.science_district_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            {% if form.science_district_standards.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.science_district_standards.errors[0] }}</p>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -386,13 +378,6 @@
                                 {% endif %}
                             </div>
                             
-                            <div>
-                                {{ form.math_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.math_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                {% if form.math_grade_levels.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.math_grade_levels.errors[0] }}</p>
-                                {% endif %}
-                            </div>
                             
                             <div>
                                 {{ form.ipls_additional_coverage.label(class="block text-sm font-medium text-gray-700 mb-2") }}
@@ -414,7 +399,8 @@
                         <!-- Math Table -->
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Curriculum Table</h3>
-                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your math curriculum content. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your math curriculum content based on the build. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">For non-accelerated, full year builds, include: the Module Titles (IPL Unit Package & STEPS are already included - if these aren't needed, make sure to remove them from the generated document), Standard Coverage for all six domains (RP, NS, EE, F, G, and SP), Standards to be Covered by IPL Units (with the full standard code), and Standards to be Covered using District Resources (with the full standard code).</p>
                             
                             
                             <!-- Table Configuration -->
@@ -449,54 +435,8 @@
                             </div>
                         </div>
                         
-                        <!-- Math Standard Coverage -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Standard Coverage (%)</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div>
-                                    {{ form.math_standard_coverage.rp.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.rp(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.math_standard_coverage.ns.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.ns(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.math_standard_coverage.ee.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.ee(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.math_standard_coverage.f.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.f(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.math_standard_coverage.g.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.g(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.math_standard_coverage.sp.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.math_standard_coverage.sp(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                            </div>
-                        </div>
                         
-                        <!-- Math IPL Standards -->
-                        <div>
-                            {{ form.math_ipl_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.math_ipl_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            {% if form.math_ipl_standards.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.math_ipl_standards.errors[0] }}</p>
-                            {% endif %}
-                        </div>
                         
-                        <!-- Math District Standards -->
-                        <div>
-                            {{ form.math_district_standards.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ form.math_district_standards(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            {% if form.math_district_standards.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.math_district_standards.errors[0] }}</p>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -750,14 +690,9 @@
                 math_rotations: document.querySelector('[name="math_rotations"]').value,
                 tier_one_component: document.querySelector('[name="tier_one_component"]').value,
                 science_design_domain: document.querySelector('[name="science_design_domain"]').value,
-                science_district_standards: document.querySelector('[name="science_district_standards"]').value,
                 state_math_domains: document.querySelector('[name="state_math_domains"]').value,
                 ipls_additional_coverage: document.querySelector('[name="ipls_additional_coverage"]').value,
                 ipls_critical_standards: document.querySelector('[name="ipls_critical_standards"]').value,
-                math_grade_levels: document.querySelector('[name="math_grade_levels"]').value,
-                math_standard_coverage: {},
-                math_ipl_standards: document.querySelector('[name="math_ipl_standards"]').value,
-                math_district_standards: document.querySelector('[name="math_district_standards"]').value,
                 tci_program_title: document.querySelector('[name="tci_program_title"]').value,
                 ss_course_title: document.querySelector('[name="ss_course_title"]').value,
                 ss_grade_levels: document.querySelector('[name="ss_grade_levels"]').value,
@@ -793,15 +728,6 @@
                 formData[field.name] = field.value.trim();
             });
             
-            // Collect math standard coverage
-            formData.math_standard_coverage = {
-                rp: document.querySelector('[name="math_standard_coverage-rp"]').value,
-                ns: document.querySelector('[name="math_standard_coverage-ns"]').value,
-                ee: document.querySelector('[name="math_standard_coverage-ee"]').value,
-                f: document.querySelector('[name="math_standard_coverage-f"]').value,
-                g: document.querySelector('[name="math_standard_coverage-g"]').value,
-                sp: document.querySelector('[name="math_standard_coverage-sp"]').value
-            };
             
             // Collect SS standard coverage and district standards
             document.querySelectorAll('[name^="ss_standard_coverage-"]').forEach((field, index) => {
