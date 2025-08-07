@@ -913,9 +913,43 @@
             for (let c = 0; c < cols; c++) {
                 const cellName = `${subject}_table_cell_${r}_${c}`;
                 const isHeader = r === 0;
-                const placeholder = isHeader 
-                    ? `Header ${c + 1}\ne.g., Grade Level, Modules, etc.`
-                    : `Enter up to 10 items (one per line):\n• Item 1\n• Item 2\n• Item 3\n...`;
+                
+                let placeholder;
+                if (isHeader) {
+                    if (c === 0) {
+                        placeholder = "LEAVE BLANK\nUsers should NOT enter data here!";
+                    } else if (c === 1) {
+                        if (subject === 'science') {
+                            placeholder = "Grade Level 1\n(e.g., 7th Grade)";
+                        } else if (subject === 'math') {
+                            placeholder = "Grade Level 1\n(e.g., 7th Grade)";
+                        } else if (subject === 'social_studies') {
+                            placeholder = "Grade Level 1\n(e.g., 7th Grade)";
+                        }
+                    } else if (c === 2) {
+                        if (subject === 'science') {
+                            placeholder = "Grade Level 2\n(e.g., 8th Grade)";
+                        } else if (subject === 'math') {
+                            placeholder = "Grade Level 2\n(e.g., 8th Grade)";
+                        } else if (subject === 'social_studies') {
+                            placeholder = "Grade Level 2\n(e.g., 8th Grade)";
+                        }
+                    } else {
+                        placeholder = `Header ${c + 1}\ne.g., Grade Level, Modules, etc.`;
+                    }
+                } else {
+                    if (c === 0) {
+                        if (r === 1) {
+                            placeholder = "Row label\n(e.g., Modules)";
+                        } else if (r === 2) {
+                            placeholder = "Row label\n(e.g., Standard Coverage)";
+                        } else {
+                            placeholder = `Row label\n(e.g., Item ${r})`;
+                        }
+                    } else {
+                        placeholder = `Enter up to 10 items (one per line):\n• Item 1\n• Item 2\n• Item 3\n...`;
+                    }
+                }
                 
                 gridHTML += `
                     <textarea name="${cellName}" 
