@@ -6766,10 +6766,9 @@ def generate_curriculum_design_build_document(form):
         
         doc.render(context)
         
-        # Generate unique filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        site_name_clean = re.sub(r'[^a-zA-Z0-9\s]', '', form.site_name.data)[:30]
-        filename = f"Curriculum_Design_Build_{site_name_clean}_{timestamp}.docx"
+        # Generate filename with site name
+        site_name_clean = re.sub(r'[^a-zA-Z0-9\s]', '', form.site_name.data).strip()[:30]
+        filename = f"Curriculum_Design_Build_{site_name_clean}.docx"
         
         # Save to generated_docs directory
         output_dir = 'generated_docs'
@@ -6821,25 +6820,28 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
                     
                     # Add each line as a separate paragraph in the cell
                     for i, line in enumerate(lines):
-                        p = cell.add_paragraph(line)
-                        
                         # Format first row as headers (bold and italicized for grade levels)
                         if row_idx == 0:
-                            for run in p.runs:
-                                run.bold = True
-                                # Italicize grade level headers (columns 1 and beyond)
-                                if col_idx >= 1:
-                                    run.italic = True
+                            p = cell.add_paragraph()
+                            run = p.add_run(line)
+                            run.bold = True
+                            # Italicize grade level headers (columns 1 and beyond)
+                            if col_idx >= 1:
+                                run.italic = True
                         
                         # Format first column as row labels (bold, colon, right-aligned)
                         elif col_idx == 0:
                             # Add colon if not already present
-                            if not line.endswith(':'):
-                                p.text = f"{line}:"
-                            for run in p.runs:
-                                run.bold = True
+                            text_with_colon = f"{line}:" if not line.endswith(':') else line
+                            p = cell.add_paragraph()
+                            run = p.add_run(text_with_colon)
+                            run.bold = True
                             # Right-align the paragraph
                             p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+                        
+                        # Regular content cells
+                        else:
+                            p = cell.add_paragraph(line)
                         
                         # Adjust spacing between lines
                         if i < len(lines) - 1:  # Not the last line
