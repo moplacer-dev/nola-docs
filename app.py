@@ -1141,7 +1141,19 @@ class CurriculumDesignBuildForm(FlaskForm):
                                      validators=[DataRequired(), Length(min=1, max=100)],
                                      render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
-    # Science modules - up to 10 for flexibility
+    # Science modules - grade-level specific (up to 10 per grade)
+    # These fields will be dynamically populated based on grade levels entered
+    science_modules_grade1 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                       min_entries=10, max_entries=10, label="Grade 1 Modules")
+    science_modules_grade2 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                       min_entries=10, max_entries=10, label="Grade 2 Modules")
+    science_modules_grade3 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                       min_entries=10, max_entries=10, label="Grade 3 Modules")
+    
+    # Fallback for single grade or simple mode
     science_modules = FieldList(StringField('Module Title', validators=[Optional()], 
                                           render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
                                min_entries=10, max_entries=10)
@@ -1170,7 +1182,19 @@ class CurriculumDesignBuildForm(FlaskForm):
                                   validators=[DataRequired(), Length(min=1, max=100)],
                                   render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
-    # Math modules - up to 10 for flexibility
+    # Math modules - grade-level specific (up to 10 per grade)
+    # These fields will be dynamically populated based on grade levels entered
+    math_modules_grade1 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                   min_entries=10, max_entries=10, label="Grade 1 Modules")
+    math_modules_grade2 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                   min_entries=10, max_entries=10, label="Grade 2 Modules")
+    math_modules_grade3 = FieldList(StringField('Module Title', validators=[Optional()], 
+                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
+                                   min_entries=10, max_entries=10, label="Grade 3 Modules")
+    
+    # Fallback for single grade or simple mode
     math_modules = FieldList(StringField('Module Title', validators=[Optional()], 
                                        render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
                             min_entries=10, max_entries=10)
@@ -6637,11 +6661,27 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.ss_course_title.data = form_data.get('ss_course_title', '')
         form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
         
-        # Load science modules
+        # Load science modules (both general and grade-specific)
         science_modules = form_data.get('science_modules', [])
         for i, module in enumerate(science_modules):
             if i < len(form.science_modules):
                 form.science_modules[i].data = module
+        
+        # Load grade-specific science modules
+        science_modules_grade1 = form_data.get('science_modules_grade1', [])
+        for i, module in enumerate(science_modules_grade1):
+            if i < len(form.science_modules_grade1):
+                form.science_modules_grade1[i].data = module
+                
+        science_modules_grade2 = form_data.get('science_modules_grade2', [])
+        for i, module in enumerate(science_modules_grade2):
+            if i < len(form.science_modules_grade2):
+                form.science_modules_grade2[i].data = module
+                
+        science_modules_grade3 = form_data.get('science_modules_grade3', [])
+        for i, module in enumerate(science_modules_grade3):
+            if i < len(form.science_modules_grade3):
+                form.science_modules_grade3[i].data = module
         
         # Load science standard coverage
         science_coverage = form_data.get('science_standard_coverage', {})
@@ -6650,11 +6690,27 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.science_standard_coverage.earth_space_sciences.data = science_coverage.get('earth_space_sciences', '')
         form.science_standard_coverage.etas.data = science_coverage.get('etas', '')
         
-        # Load math modules
+        # Load math modules (both general and grade-specific)
         math_modules = form_data.get('math_modules', [])
         for i, module in enumerate(math_modules):
             if i < len(form.math_modules):
                 form.math_modules[i].data = module
+        
+        # Load grade-specific math modules
+        math_modules_grade1 = form_data.get('math_modules_grade1', [])
+        for i, module in enumerate(math_modules_grade1):
+            if i < len(form.math_modules_grade1):
+                form.math_modules_grade1[i].data = module
+                
+        math_modules_grade2 = form_data.get('math_modules_grade2', [])
+        for i, module in enumerate(math_modules_grade2):
+            if i < len(form.math_modules_grade2):
+                form.math_modules_grade2[i].data = module
+                
+        math_modules_grade3 = form_data.get('math_modules_grade3', [])
+        for i, module in enumerate(math_modules_grade3):
+            if i < len(form.math_modules_grade3):
+                form.math_modules_grade3[i].data = module
         
         # Load math standard coverage
         math_coverage = form_data.get('math_standard_coverage', {})
@@ -6780,8 +6836,8 @@ def generate_science_table_subdocument(doc, form):
     if not grade_levels:
         grade_levels = [form.science_grade_levels.data]  # fallback to single grade
     
-    # Get modules data
-    modules = [module.data.strip() for module in form.science_modules if module.data and module.data.strip()]
+    # Get grade-specific modules data
+    grade_module_fields = [form.science_modules_grade1, form.science_modules_grade2, form.science_modules_grade3]
     
     # Create main curriculum table with grade levels as columns
     # Structure: Row labels | Grade 1 | Grade 2 | ...
@@ -6799,21 +6855,21 @@ def generate_science_table_subdocument(doc, form):
     modules_row = main_table.rows[1].cells
     modules_row[0].text = "Modules"
     
-    # Split modules roughly evenly across grade levels
-    modules_per_grade = len(modules) // len(grade_levels) if grade_levels else 0
-    remainder = len(modules) % len(grade_levels) if grade_levels else 0
-    
-    start_idx = 0
+    # Get modules for each grade level from grade-specific fields
     for i, grade in enumerate(grade_levels):
-        # Calculate how many modules for this grade (distribute remainder across first few grades)
-        num_modules = modules_per_grade + (1 if i < remainder else 0)
-        grade_modules = modules[start_idx:start_idx + num_modules]
+        grade_modules = []
         
-        # Join modules with line breaks (using \n)
+        # Use grade-specific module field if available, otherwise fall back to general modules
+        if i < len(grade_module_fields):
+            grade_modules = [module.data.strip() for module in grade_module_fields[i] if module.data and module.data.strip()]
+        
+        # If no grade-specific modules and only one grade, use general modules field
+        if not grade_modules and len(grade_levels) == 1:
+            grade_modules = [module.data.strip() for module in form.science_modules if module.data and module.data.strip()]
+        
+        # Join modules with line breaks
         modules_text = "\n".join(grade_modules) if grade_modules else ""
         modules_row[i + 1].text = modules_text
-        
-        start_idx += num_modules
     
     # Focus Area row
     focus_row = main_table.rows[2].cells
@@ -6869,8 +6925,8 @@ def generate_math_table_subdocument(doc, form):
     if not grade_levels:
         grade_levels = [form.math_grade_levels.data]  # fallback to single grade
     
-    # Get modules data
-    modules = [module.data.strip() for module in form.math_modules if module.data and module.data.strip()]
+    # Get grade-specific modules data
+    grade_module_fields = [form.math_modules_grade1, form.math_modules_grade2, form.math_modules_grade3]
     
     # Create main curriculum table with grade levels as columns
     # Structure: Row labels | Grade 1 | Grade 2 | ...
@@ -6889,22 +6945,21 @@ def generate_math_table_subdocument(doc, form):
     modules_row = main_table.rows[1].cells
     modules_row[0].text = "Modules"
     
-    # Split modules roughly evenly across grade levels
-    if modules:
-        modules_per_grade = len(modules) // len(grade_levels) if grade_levels else 0
-        remainder = len(modules) % len(grade_levels) if grade_levels else 0
+    # Get modules for each grade level from grade-specific fields
+    for i, grade in enumerate(grade_levels):
+        grade_modules = []
         
-        start_idx = 0
-        for i, grade in enumerate(grade_levels):
-            # Calculate how many modules for this grade (distribute remainder across first few grades)
-            num_modules = modules_per_grade + (1 if i < remainder else 0)
-            grade_modules = modules[start_idx:start_idx + num_modules]
-            
-            # Join modules with line breaks
-            modules_text = "\n".join(grade_modules) if grade_modules else ""
-            modules_row[i + 1].text = modules_text
-            
-            start_idx += num_modules
+        # Use grade-specific module field if available, otherwise fall back to general modules
+        if i < len(grade_module_fields):
+            grade_modules = [module.data.strip() for module in grade_module_fields[i] if module.data and module.data.strip()]
+        
+        # If no grade-specific modules and only one grade, use general modules field
+        if not grade_modules and len(grade_levels) == 1:
+            grade_modules = [module.data.strip() for module in form.math_modules if module.data and module.data.strip()]
+        
+        # Join modules with line breaks
+        modules_text = "\n".join(grade_modules) if grade_modules else ""
+        modules_row[i + 1].text = modules_text
     
     # IPL Unit Package row
     ipl_row = main_table.rows[2].cells
