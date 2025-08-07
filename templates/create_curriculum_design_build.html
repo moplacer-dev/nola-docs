@@ -86,6 +86,48 @@
         max-height: 2000px;
         padding: 16px;
     }
+
+    /* Curriculum Table Styling */
+    .curriculum-table-cell {
+        font-family: inherit;
+        line-height: 1.4;
+        vertical-align: top;
+    }
+    
+    .curriculum-table-cell:focus {
+        background-color: #fef9e7;
+        border-color: #f59e0b;
+    }
+    
+    .curriculum-table-cell::placeholder {
+        color: #9ca3af;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    
+    /* Table grid container */
+    .table-grid {
+        background: white;
+    }
+    
+    .table-grid .grid {
+        border: 1px solid #d1d5db;
+    }
+    
+    .table-grid textarea {
+        border-right: 1px solid #d1d5db;
+        border-bottom: 1px solid #d1d5db;
+        border-left: none;
+        border-top: none;
+    }
+    
+    .table-grid textarea:first-child {
+        border-left: 1px solid #d1d5db;
+    }
+    
+    .table-grid textarea:last-child {
+        border-right: 1px solid #d1d5db;
+    }
 </style>
 
 <!-- Autosave Status Indicator -->
@@ -865,17 +907,22 @@
     }
     
     function generateCurriculumTableGrid(container, rows, cols, subject) {
-        let gridHTML = '<div class="grid gap-0" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
+        let gridHTML = '<div class="grid gap-1" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
         
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const cellName = `${subject}_table_cell_${r}_${c}`;
+                const isHeader = r === 0;
+                const placeholder = isHeader 
+                    ? `Header ${c + 1}\ne.g., Grade Level, Modules, etc.`
+                    : `Enter up to 10 items (one per line):\n• Item 1\n• Item 2\n• Item 3\n...`;
+                
                 gridHTML += `
-                    <input type="text" 
-                           name="${cellName}" 
-                           class="px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
-                           placeholder="${r === 0 ? 'Header' : 'Cell'} ${r + 1}-${c + 1}"
-                           data-autosave="true">
+                    <textarea name="${cellName}" 
+                              class="px-2 py-2 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm resize-none min-h-[120px] curriculum-table-cell" 
+                              placeholder="${placeholder}"
+                              rows="6"
+                              data-autosave="true"></textarea>
                 `;
             }
         }
@@ -883,13 +930,13 @@
         gridHTML += '</div>';
         container.innerHTML = gridHTML;
         
-        // Re-attach autosave listeners to new inputs
+        // Re-attach autosave listeners to new textareas
         if (window.autosaveInstance) {
-            container.querySelectorAll('input[data-autosave="true"]').forEach(input => {
-                input.addEventListener('input', () => {
+            container.querySelectorAll('textarea[data-autosave="true"]').forEach(textarea => {
+                textarea.addEventListener('input', () => {
                     window.autosaveInstance.scheduleAutosave();
                 });
-                input.addEventListener('blur', () => {
+                textarea.addEventListener('blur', () => {
                     window.autosaveInstance.performAutosave();
                 });
             });

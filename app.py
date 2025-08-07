@@ -6811,13 +6811,30 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
             
             if cell_value:
                 cell = table.rows[row_idx].cells[col_idx]
-                cell.text = cell_value
                 
-                # Format first row as headers (bold)
-                if row_idx == 0:
-                    for paragraph in cell.paragraphs:
-                        for run in paragraph.runs:
-                            run.bold = True
+                # Handle multi-line content - split by lines and create paragraphs for each
+                lines = [line.strip() for line in cell_value.split('\n') if line.strip()]
+                
+                if lines:
+                    # Clear the default paragraph
+                    cell._element.clear_content()
+                    
+                    # Add each line as a separate paragraph in the cell
+                    for i, line in enumerate(lines):
+                        p = cell.add_paragraph(line)
+                        
+                        # Format first row as headers (bold)
+                        if row_idx == 0:
+                            for run in p.runs:
+                                run.bold = True
+                        
+                        # Add bullet point formatting for non-header rows with multiple lines
+                        elif len(lines) > 1 and not line.startswith('•'):
+                            p.text = f'• {line}'
+                        
+                        # Adjust spacing between lines
+                        if i < len(lines) - 1:  # Not the last line
+                            p.paragraph_format.space_after = Pt(2)
     
     return subdoc
 
