@@ -6550,7 +6550,7 @@ def create_curriculum_design_build():
             db.session.commit()
             
             flash('Curriculum Design Build document generated successfully!', 'success')
-            return send_file(doc_path, as_attachment=True, download_name=os.path.basename(doc_path))
+            return redirect(url_for('my_documents'))
             
         except Exception as e:
             print(f"Error generating Curriculum Design Build document: {e}")
