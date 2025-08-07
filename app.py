@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from docxtpl import DocxTemplate, RichText, InlineImage
 from docx import Document
 from docx.shared import Inches, Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from werkzeug.utils import secure_filename
 from flask_wtf.file import FileField, FileAllowed
 import os
@@ -6843,17 +6844,31 @@ def generate_science_table_subdocument(doc, form):
     # Structure: Row labels | Grade 1 | Grade 2 | ...
     num_cols = len(grade_levels) + 1  # +1 for the row label column
     main_table = subdoc.add_table(rows=4, cols=num_cols)  # 4 rows: header, modules, focus area, standard coverage
-    main_table.style = 'Table Grid'
+    # Remove table borders/outline
+    main_table.style = None
     
     # Set headers - first column is empty, then grade levels
     header_cells = main_table.rows[0].cells
-    header_cells[0].text = "Grade Level"
+    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
     for i, grade in enumerate(grade_levels):
-        header_cells[i + 1].text = grade
+        cell = header_cells[i + 1]
+        cell.text = grade
+        # Format grade level headers: bold, italic, underline
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.bold = True
+                run.italic = True
+                run.underline = True
     
     # Modules row
     modules_row = main_table.rows[1].cells
-    modules_row[0].text = "Modules"
+    modules_cell = modules_row[0]
+    modules_cell.text = "Modules:"
+    # Format row label: bold and right-aligned
+    for paragraph in modules_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
     
     # Get modules for each grade level from grade-specific fields
     for i, grade in enumerate(grade_levels):
@@ -6873,14 +6888,27 @@ def generate_science_table_subdocument(doc, form):
     
     # Focus Area row
     focus_row = main_table.rows[2].cells
-    focus_row[0].text = "Focus Area"
+    focus_cell = focus_row[0]
+    focus_cell.text = "Focus Area:"
+    # Format row label: bold and right-aligned
+    for paragraph in focus_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
+    
     focus_area_text = f"Blended {form.science_design_domain.data} Science"
     for i in range(len(grade_levels)):
         focus_row[i + 1].text = focus_area_text
     
     # Standard Coverage row
     coverage_row = main_table.rows[3].cells
-    coverage_row[0].text = "Standard Coverage"
+    coverage_cell = coverage_row[0]
+    coverage_cell.text = "Standard Coverage:"
+    # Format row label: bold and right-aligned
+    for paragraph in coverage_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
     
     # Build coverage text
     coverage_parts = []
@@ -6933,17 +6961,31 @@ def generate_math_table_subdocument(doc, form):
     # Rows: header, modules, IPL Unit Package, STEPS, standard coverage
     num_cols = len(grade_levels) + 1  # +1 for the row label column
     main_table = subdoc.add_table(rows=5, cols=num_cols)  # 5 rows: header, modules, IPL, STEPS, coverage
-    main_table.style = 'Table Grid'
+    # Remove table borders/outline
+    main_table.style = None
     
     # Set headers - first column is empty, then grade levels
     header_cells = main_table.rows[0].cells
-    header_cells[0].text = "Grade Level"
+    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
     for i, grade in enumerate(grade_levels):
-        header_cells[i + 1].text = grade
+        cell = header_cells[i + 1]
+        cell.text = grade
+        # Format grade level headers: bold, italic, underline
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.bold = True
+                run.italic = True
+                run.underline = True
     
     # Modules row
     modules_row = main_table.rows[1].cells
-    modules_row[0].text = "Modules"
+    modules_cell = modules_row[0]
+    modules_cell.text = "Modules:"
+    # Format row label: bold and right-aligned
+    for paragraph in modules_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
     
     # Get modules for each grade level from grade-specific fields
     for i, grade in enumerate(grade_levels):
@@ -6963,19 +7005,39 @@ def generate_math_table_subdocument(doc, form):
     
     # IPL Unit Package row
     ipl_row = main_table.rows[2].cells
-    ipl_row[0].text = "IPL Unit Package"
+    ipl_cell = ipl_row[0]
+    ipl_cell.text = "IPL Unit Package:"
+    # Format row label: bold and right-aligned
+    for paragraph in ipl_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
+    
     for i in range(len(grade_levels)):
         ipl_row[i + 1].text = "Supplemental Resources"
     
     # STEPS row
     steps_row = main_table.rows[3].cells
-    steps_row[0].text = "STEPS"
+    steps_cell = steps_row[0]
+    steps_cell.text = "STEPS:"
+    # Format row label: bold and right-aligned
+    for paragraph in steps_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
+    
     for i in range(len(grade_levels)):
         steps_row[i + 1].text = "Intervention Support"
     
     # Standard Coverage row
     coverage_row = main_table.rows[4].cells
-    coverage_row[0].text = "Standard Coverage"
+    coverage_cell = coverage_row[0]
+    coverage_cell.text = "Standard Coverage:"
+    # Format row label: bold and right-aligned
+    for paragraph in coverage_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
     
     # Build coverage text
     coverage_parts = []
@@ -7030,29 +7092,57 @@ def generate_social_studies_table_subdocument(doc, form):
     # Rows: header, course title, TCI program, standard coverage
     num_cols = len(grade_levels) + 1  # +1 for the row label column
     main_table = subdoc.add_table(rows=4, cols=num_cols)  # 4 rows: header, course title, TCI program, coverage
-    main_table.style = 'Table Grid'
+    # Remove table borders/outline
+    main_table.style = None
     
     # Set headers - first column is empty, then grade levels
     header_cells = main_table.rows[0].cells
-    header_cells[0].text = "Grade Level"
+    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
     for i, grade in enumerate(grade_levels):
-        header_cells[i + 1].text = grade
+        cell = header_cells[i + 1]
+        cell.text = grade
+        # Format grade level headers: bold, italic, underline
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.bold = True
+                run.italic = True
+                run.underline = True
     
     # Course Title row
     course_row = main_table.rows[1].cells
-    course_row[0].text = "Course Title"
+    course_cell = course_row[0]
+    course_cell.text = "Course Title:"
+    # Format row label: bold and right-aligned
+    for paragraph in course_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
+    
     for i in range(len(grade_levels)):
         course_row[i + 1].text = form.ss_course_title.data or ""
     
     # TCI Program Title row
     tci_row = main_table.rows[2].cells
-    tci_row[0].text = "TCI Program Title"
+    tci_cell = tci_row[0]
+    tci_cell.text = "TCI Program Title:"
+    # Format row label: bold and right-aligned
+    for paragraph in tci_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
+    
     for i in range(len(grade_levels)):
         tci_row[i + 1].text = form.tci_program_title.data or ""
     
     # Standard Coverage row
     coverage_row = main_table.rows[3].cells
-    coverage_row[0].text = "Standard Coverage"
+    coverage_cell = coverage_row[0]
+    coverage_cell.text = "Standard Coverage:"
+    # Format row label: bold and right-aligned
+    for paragraph in coverage_cell.paragraphs:
+        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+        for run in paragraph.runs:
+            run.bold = True
     
     # Build coverage text for each grade level
     for i, grade in enumerate(grade_levels):
