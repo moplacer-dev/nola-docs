@@ -1134,13 +1134,10 @@ class CurriculumDesignBuildForm(FlaskForm):
                                    render_kw={"placeholder": "e.g., Guidebooks", "data-autosave": "true"})
     
     # Curriculum Design: Science
-    science_design_domain = StringField('Science Domain', 
+    science_design_domain = StringField('Blended Science Domain', 
                                       validators=[DataRequired(), Length(min=1, max=100)],
                                       render_kw={"placeholder": "e.g., Physical, Life, Earth & Space, etc.", "data-autosave": "true"})
     
-    science_grade_levels = StringField('Science Grade Level(s) for Table', 
-                                     validators=[DataRequired(), Length(min=1, max=100)],
-                                     render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
     # Dynamic Science Table - replaces hardcoded module structure
     science_table_title = StringField('Science Table Title (optional)', 
@@ -1149,8 +1146,6 @@ class CurriculumDesignBuildForm(FlaskForm):
     
     # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
-    # Science standard coverage
-    science_standard_coverage = FormField(ScienceStandardCoverageForm)
     
     science_district_standards = TextAreaField('Standards to be Covered using District Resources', 
                                              validators=[Optional()],
@@ -6637,7 +6632,6 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.math_rotations.data = form_data.get('math_rotations', '')
         form.tier_one_component.data = form_data.get('tier_one_component', '')
         form.science_design_domain.data = form_data.get('science_design_domain', '')
-        form.science_grade_levels.data = form_data.get('science_grade_levels', '')
         form.science_district_standards.data = form_data.get('science_district_standards', '')
         form.state_math_domains.data = form_data.get('state_math_domains', '')
         form.ipls_additional_coverage.data = form_data.get('ipls_additional_coverage', '')
@@ -6649,24 +6643,6 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.ss_course_title.data = form_data.get('ss_course_title', '')
         form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
         
-        # Load science table data
-        form.science_table_title.data = form_data.get('science_table_title', '')
-        # Note: Table cell data will be handled via JavaScript/form submission
-        
-        # Load science standard coverage
-        science_coverage = form_data.get('science_standard_coverage', {})
-        form.science_standard_coverage.physical_sciences.data = science_coverage.get('physical_sciences', '')
-        form.science_standard_coverage.life_sciences.data = science_coverage.get('life_sciences', '')
-        form.science_standard_coverage.earth_space_sciences.data = science_coverage.get('earth_space_sciences', '')
-        form.science_standard_coverage.etas.data = science_coverage.get('etas', '')
-        
-        # Load math table data
-        form.math_table_title.data = form_data.get('math_table_title', '')
-        # Note: Table cell data will be handled via JavaScript/form submission
-        
-        # Load social studies table data
-        form.social_studies_table_title.data = form_data.get('social_studies_table_title', '')
-        # Note: Table cell data will be handled via JavaScript/form submission
         
         # Load math standard coverage
         math_coverage = form_data.get('math_standard_coverage', {})
@@ -6783,20 +6759,10 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
     subdoc = doc.new_subdoc()
     
     # Get table configuration from form data
-    table_title = form_data.get(f'{subject_type}_table_title', '').strip()
     table_rows = int(form_data.get(f'{subject_type}_table_rows', 3))
     table_cols = int(form_data.get(f'{subject_type}_table_cols', 3))
     
-    print(f"DEBUG: {subject_type} table - title='{table_title}', rows={table_rows}, cols={table_cols}")
-    
-    # Add table title if provided
-    if table_title:
-        p = subdoc.add_paragraph(table_title)
-        for run in p.runs:
-            run.font.name = 'Segoe UI'
-            run.font.size = Pt(12)
-            run.font.bold = True
-        p.paragraph_format.space_after = Pt(6)
+    print(f"DEBUG: {subject_type} table - rows={table_rows}, cols={table_cols}")
     
     # Create the dynamic table
     table = subdoc.add_table(rows=table_rows, cols=table_cols)

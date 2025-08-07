@@ -313,25 +313,14 @@
                                 {% endif %}
                             </div>
                             
-                            <div>
-                                {{ form.science_grade_levels.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.science_grade_levels(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                {% if form.science_grade_levels.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.science_grade_levels.errors[0] }}</p>
-                                {% endif %}
-                            </div>
                         </div>
                         
                         <!-- Science Table -->
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Curriculum Table</h3>
-                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your science curriculum content. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your science curriculum content based on the build. You have full control over the rows, columns, and content.</p>
+                            <p class="text-sm text-gray-600 mb-4">For non-accelerated, full year builds, include: the Module Titles, Blended Science Domain, Standard Coverage for all four domains (Physical Sciences, Life Sciences, Earth & Space Sciences, & ETAS), and Standards to be Covered using District Resources along with the full standard code (if needed).</p>
                             
-                            <!-- Table Title -->
-                            <div class="mb-4">
-                                {{ form.science_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.science_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
                             
                             <!-- Table Configuration -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -365,28 +354,6 @@
                             </div>
                         </div>
                         
-                        <!-- Science Standard Coverage -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Standard Coverage (%)</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    {{ form.science_standard_coverage.physical_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.science_standard_coverage.physical_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.science_standard_coverage.life_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.science_standard_coverage.life_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.science_standard_coverage.earth_space_sciences.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.science_standard_coverage.earth_space_sciences(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                                <div>
-                                    {{ form.science_standard_coverage.etas.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-                                    {{ form.science_standard_coverage.etas(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                </div>
-                            </div>
-                        </div>
                         
                         <!-- Science District Standards -->
                         <div>
@@ -449,11 +416,6 @@
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Curriculum Table</h3>
                             <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your math curriculum content. You have full control over the rows, columns, and content.</p>
                             
-                            <!-- Table Title -->
-                            <div class="mb-4">
-                                {{ form.math_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.math_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
                             
                             <!-- Table Configuration -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -580,11 +542,6 @@
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Social Studies Curriculum Table</h3>
                             <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your social studies curriculum content. You have full control over the rows, columns, and content.</p>
                             
-                            <!-- Table Title -->
-                            <div class="mb-4">
-                                {{ form.social_studies_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ form.social_studies_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                            </div>
                             
                             <!-- Table Configuration -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -793,8 +750,6 @@
                 math_rotations: document.querySelector('[name="math_rotations"]').value,
                 tier_one_component: document.querySelector('[name="tier_one_component"]').value,
                 science_design_domain: document.querySelector('[name="science_design_domain"]').value,
-                science_grade_levels: document.querySelector('[name="science_grade_levels"]').value,
-                science_standard_coverage: {},
                 science_district_standards: document.querySelector('[name="science_district_standards"]').value,
                 state_math_domains: document.querySelector('[name="state_math_domains"]').value,
                 ipls_additional_coverage: document.querySelector('[name="ipls_additional_coverage"]').value,
@@ -811,7 +766,6 @@
             };
             
             // Collect science table data
-            formData.science_table_title = document.querySelector('[name="science_table_title"]').value.trim();
             formData.science_table_rows = document.querySelector('[name="science_table_rows"]').value;
             formData.science_table_cols = document.querySelector('[name="science_table_cols"]').value;
             
@@ -820,16 +774,8 @@
                 formData[field.name] = field.value.trim();
             });
             
-            // Collect science standard coverage
-            formData.science_standard_coverage = {
-                physical_sciences: document.querySelector('[name="science_standard_coverage-physical_sciences"]').value,
-                life_sciences: document.querySelector('[name="science_standard_coverage-life_sciences"]').value,
-                earth_space_sciences: document.querySelector('[name="science_standard_coverage-earth_space_sciences"]').value,
-                etas: document.querySelector('[name="science_standard_coverage-etas"]').value
-            };
             
             // Collect math table data
-            formData.math_table_title = document.querySelector('[name="math_table_title"]').value.trim();
             formData.math_table_rows = document.querySelector('[name="math_table_rows"]').value;
             formData.math_table_cols = document.querySelector('[name="math_table_cols"]').value;
             
@@ -839,7 +785,6 @@
             });
             
             // Collect social studies table data
-            formData.social_studies_table_title = document.querySelector('[name="social_studies_table_title"]').value.trim();
             formData.social_studies_table_rows = document.querySelector('[name="social_studies_table_rows"]').value;
             formData.social_studies_table_cols = document.querySelector('[name="social_studies_table_cols"]').value;
             
@@ -959,7 +904,7 @@
                             placeholder = `Row label\n(e.g., Item ${r})`;
                         }
                     } else {
-                        placeholder = `Enter up to 10 items (one per line):\n• Item 1\n• Item 2\n• Item 3\n...`;
+                        placeholder = `Enter up to 10 items (one per line):\nItem 1\nItem 2\nItem 3\n...`;
                     }
                 }
                 
