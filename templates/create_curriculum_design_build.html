@@ -917,7 +917,7 @@
                 let placeholder;
                 if (isHeader) {
                     if (c === 0) {
-                        placeholder = "LEAVE BLANK\nUsers should NOT enter data here!";
+                        placeholder = "Leave Blank";
                     } else if (c === 1) {
                         if (subject === 'science') {
                             placeholder = "Grade Level 1\n(e.g., 7th Grade)";
@@ -934,13 +934,13 @@
                         } else if (subject === 'social_studies') {
                             placeholder = "Grade Level 2\n(e.g., 8th Grade)";
                         }
-                    } else {
-                        placeholder = `Header ${c + 1}\ne.g., Grade Level, Modules, etc.`;
+                    } else if (c >= 3) {
+                        placeholder = "Additional Grade Levels";
                     }
                 } else {
                     if (c === 0) {
                         if (r === 1) {
-                            placeholder = "Row label\n(e.g., Modules)";
+                            placeholder = "Row label\n(e.g., Module Titles)";
                         } else if (r === 2) {
                             placeholder = "Row label\n(e.g., Standard Coverage)";
                         } else {
