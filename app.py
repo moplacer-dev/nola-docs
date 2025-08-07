@@ -6823,14 +6823,23 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
                     for i, line in enumerate(lines):
                         p = cell.add_paragraph(line)
                         
-                        # Format first row as headers (bold)
+                        # Format first row as headers (bold and italicized for grade levels)
                         if row_idx == 0:
                             for run in p.runs:
                                 run.bold = True
+                                # Italicize grade level headers (columns 1 and beyond)
+                                if col_idx >= 1:
+                                    run.italic = True
                         
-                        # Add bullet point formatting for non-header rows with multiple lines
-                        elif len(lines) > 1 and not line.startswith('•'):
-                            p.text = f'• {line}'
+                        # Format first column as row labels (bold, colon, right-aligned)
+                        elif col_idx == 0:
+                            # Add colon if not already present
+                            if not line.endswith(':'):
+                                p.text = f"{line}:"
+                            for run in p.runs:
+                                run.bold = True
+                            # Right-align the paragraph
+                            p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
                         
                         # Adjust spacing between lines
                         if i < len(lines) - 1:  # Not the last line
