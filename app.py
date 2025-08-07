@@ -6773,41 +6773,64 @@ def generate_science_table_subdocument(doc, form):
     
     # Add introductory paragraph
     intro_text = f"Science modules are based upon the disciplinary core ideas in Physical Science, Life Science and Earth and Space Science. Blended {form.science_design_domain.data} Science will aid the students in learning the scientific method focusing on {form.science_design_domain.data} Science standards in {form.science_grade_levels.data}."
-    p = subdoc.add_paragraph(intro_text)
+    subdoc.add_paragraph(intro_text)
     
-    # Add table (simplified - Word tables are complex in subdocuments)
-    subdoc.add_paragraph(f"\nGrade Level: {form.science_grade_levels.data}")
-    subdoc.add_paragraph("Modules:")
+    # Get modules data
+    modules = [module.data.strip() for module in form.science_modules if module.data and module.data.strip()]
     
-    # Add modules
-    for module in form.science_modules:
-        if module.data and module.data.strip():
-            subdoc.add_paragraph(f"• {module.data}")
+    # Create main curriculum table
+    if modules:
+        # Table with: Grade Level, Modules, Focus Area
+        main_table = subdoc.add_table(rows=len(modules) + 1, cols=3)
+        main_table.style = 'Table Grid'
+        
+        # Set headers
+        header_cells = main_table.rows[0].cells
+        header_cells[0].text = "Grade Level"
+        header_cells[1].text = "Module"
+        header_cells[2].text = "Focus Area"
+        
+        # Populate data rows
+        for i, module in enumerate(modules):
+            row_cells = main_table.rows[i + 1].cells
+            row_cells[0].text = form.science_grade_levels.data or ""
+            row_cells[1].text = module
+            row_cells[2].text = f"Blended {form.science_design_domain.data} Science"
     
-    subdoc.add_paragraph(f"\nBlended {form.science_design_domain.data} Science")
-    
-    # Add standard coverage
-    coverage_parts = []
+    # Add standard coverage table if data exists
+    coverage_data = []
     if form.science_standard_coverage.physical_sciences.data:
-        coverage_parts.append(f"Physical Sciences – {form.science_standard_coverage.physical_sciences.data}%")
+        coverage_data.append(("Physical Sciences", f"{form.science_standard_coverage.physical_sciences.data}%"))
     if form.science_standard_coverage.life_sciences.data:
-        coverage_parts.append(f"Life Sciences – {form.science_standard_coverage.life_sciences.data}%")
+        coverage_data.append(("Life Sciences", f"{form.science_standard_coverage.life_sciences.data}%"))
     if form.science_standard_coverage.earth_space_sciences.data:
-        coverage_parts.append(f"Earth & Space Sciences – {form.science_standard_coverage.earth_space_sciences.data}%")
+        coverage_data.append(("Earth & Space Sciences", f"{form.science_standard_coverage.earth_space_sciences.data}%"))
     if form.science_standard_coverage.etas.data:
-        coverage_parts.append(f"ETAS – {form.science_standard_coverage.etas.data}%")
+        coverage_data.append(("ETAS", f"{form.science_standard_coverage.etas.data}%"))
     
-    if coverage_parts:
+    if coverage_data:
         subdoc.add_paragraph("\nStandard Coverage:")
-        for part in coverage_parts:
-            subdoc.add_paragraph(f"• {part}")
+        coverage_table = subdoc.add_table(rows=len(coverage_data) + 1, cols=2)
+        coverage_table.style = 'Table Grid'
+        
+        # Set headers
+        header_cells = coverage_table.rows[0].cells
+        header_cells[0].text = "Science Domain"
+        header_cells[1].text = "Coverage Percentage"
+        
+        # Populate data
+        for i, (domain, percentage) in enumerate(coverage_data):
+            row_cells = coverage_table.rows[i + 1].cells
+            row_cells[0].text = domain
+            row_cells[1].text = percentage
     
     # Add district standards if provided
     if form.science_district_standards.data:
         subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
-        for line in form.science_district_standards.data.split('\n'):
-            if line.strip():
-                subdoc.add_paragraph(f"• {line.strip()}")
+        standards_lines = [line.strip() for line in form.science_district_standards.data.split('\n') if line.strip()]
+        if standards_lines:
+            for line in standards_lines:
+                subdoc.add_paragraph(f"• {line}")
     
     return subdoc
 
@@ -6823,52 +6846,87 @@ def generate_math_table_subdocument(doc, form):
         intro_text += f", as well as to review {form.ipls_critical_standards.data} critical standards"
     intro_text += ". STEPS provides a skills based tiered solution that evaluates student readiness, setting them on a path to success. Steps addresses gaps below grade level using a customized approach to fit each student's needs."
     
-    p = subdoc.add_paragraph(intro_text)
+    subdoc.add_paragraph(intro_text)
     
-    subdoc.add_paragraph(f"\nGrade Level: {form.math_grade_levels.data}")
-    subdoc.add_paragraph("Modules:")
+    # Get modules data
+    modules = [module.data.strip() for module in form.math_modules if module.data and module.data.strip()]
     
-    # Add modules
-    for module in form.math_modules:
-        if module.data and module.data.strip():
-            subdoc.add_paragraph(f"• {module.data}")
+    # Create main curriculum table
+    if modules:
+        # Add additional rows for IPL Unit Package and STEPS
+        total_rows = len(modules) + 3  # modules + header + IPL Unit Package + STEPS
+        main_table = subdoc.add_table(rows=total_rows, cols=3)
+        main_table.style = 'Table Grid'
+        
+        # Set headers
+        header_cells = main_table.rows[0].cells
+        header_cells[0].text = "Grade Level"
+        header_cells[1].text = "Module/Resource"
+        header_cells[2].text = "Type"
+        
+        # Populate module rows
+        for i, module in enumerate(modules):
+            row_cells = main_table.rows[i + 1].cells
+            row_cells[0].text = form.math_grade_levels.data or ""
+            row_cells[1].text = module
+            row_cells[2].text = "Core Module"
+        
+        # Add IPL Unit Package row
+        ipl_row = main_table.rows[len(modules) + 1].cells
+        ipl_row[0].text = form.math_grade_levels.data or ""
+        ipl_row[1].text = "IPL Unit Package"
+        ipl_row[2].text = "Supplemental"
+        
+        # Add STEPS row
+        steps_row = main_table.rows[len(modules) + 2].cells
+        steps_row[0].text = form.math_grade_levels.data or ""
+        steps_row[1].text = "STEPS"
+        steps_row[2].text = "Intervention"
     
-    subdoc.add_paragraph("\nIPL Unit Package")
-    subdoc.add_paragraph("STEPS")
-    
-    # Add standard coverage
-    coverage_parts = []
+    # Add standard coverage table if data exists
+    coverage_data = []
     if form.math_standard_coverage.rp.data:
-        coverage_parts.append(f"RP – {form.math_standard_coverage.rp.data}%")
+        coverage_data.append(("RP (Ratios & Proportional Relationships)", f"{form.math_standard_coverage.rp.data}%"))
     if form.math_standard_coverage.ns.data:
-        coverage_parts.append(f"NS – {form.math_standard_coverage.ns.data}%")
+        coverage_data.append(("NS (Number System)", f"{form.math_standard_coverage.ns.data}%"))
     if form.math_standard_coverage.ee.data:
-        coverage_parts.append(f"EE – {form.math_standard_coverage.ee.data}%")
+        coverage_data.append(("EE (Expressions & Equations)", f"{form.math_standard_coverage.ee.data}%"))
     if form.math_standard_coverage.f.data:
-        coverage_parts.append(f"F – {form.math_standard_coverage.f.data}%")
+        coverage_data.append(("F (Functions)", f"{form.math_standard_coverage.f.data}%"))
     if form.math_standard_coverage.g.data:
-        coverage_parts.append(f"G – {form.math_standard_coverage.g.data}%")
+        coverage_data.append(("G (Geometry)", f"{form.math_standard_coverage.g.data}%"))
     if form.math_standard_coverage.sp.data:
-        coverage_parts.append(f"SP – {form.math_standard_coverage.sp.data}%")
+        coverage_data.append(("SP (Statistics & Probability)", f"{form.math_standard_coverage.sp.data}%"))
     
-    if coverage_parts:
+    if coverage_data:
         subdoc.add_paragraph("\nStandard Coverage:")
-        for part in coverage_parts:
-            subdoc.add_paragraph(f"• {part}")
+        coverage_table = subdoc.add_table(rows=len(coverage_data) + 1, cols=2)
+        coverage_table.style = 'Table Grid'
+        
+        # Set headers
+        header_cells = coverage_table.rows[0].cells
+        header_cells[0].text = "Math Domain"
+        header_cells[1].text = "Coverage Percentage"
+        
+        # Populate data
+        for i, (domain, percentage) in enumerate(coverage_data):
+            row_cells = coverage_table.rows[i + 1].cells
+            row_cells[0].text = domain
+            row_cells[1].text = percentage
     
     # Add IPL standards if provided
     if form.math_ipl_standards.data:
         subdoc.add_paragraph("\nStandards to be Covered by IPL Units:")
-        for line in form.math_ipl_standards.data.split('\n'):
-            if line.strip():
-                subdoc.add_paragraph(f"• {line.strip()}")
+        ipl_lines = [line.strip() for line in form.math_ipl_standards.data.split('\n') if line.strip()]
+        for line in ipl_lines:
+            subdoc.add_paragraph(f"• {line}")
     
     # Add district standards if provided
     if form.math_district_standards.data:
         subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
-        for line in form.math_district_standards.data.split('\n'):
-            if line.strip():
-                subdoc.add_paragraph(f"• {line.strip()}")
+        district_lines = [line.strip() for line in form.math_district_standards.data.split('\n') if line.strip()]
+        for line in district_lines:
+            subdoc.add_paragraph(f"• {line}")
     
     return subdoc
 
@@ -6878,25 +6936,52 @@ def generate_social_studies_table_subdocument(doc, form):
     
     # Add introductory paragraph
     intro_text = f"{form.tci_program_title.data} will teach {form.ss_course_title.data}."
-    p = subdoc.add_paragraph(intro_text)
+    subdoc.add_paragraph(intro_text)
     
-    subdoc.add_paragraph(f"\nGrade Level: {form.ss_grade_levels.data}")
-    subdoc.add_paragraph(f"Course Title: {form.ss_course_title.data}")
-    subdoc.add_paragraph(f"TCI Program Title: {form.tci_program_title.data}")
+    # Create main course information table
+    course_table = subdoc.add_table(rows=3, cols=2)
+    course_table.style = 'Table Grid'
     
-    # Add standard coverage
+    # Populate course information
+    course_table.rows[0].cells[0].text = "Grade Level"
+    course_table.rows[0].cells[1].text = form.ss_grade_levels.data or ""
+    
+    course_table.rows[1].cells[0].text = "Course Title"
+    course_table.rows[1].cells[1].text = form.ss_course_title.data or ""
+    
+    course_table.rows[2].cells[0].text = "TCI Program Title"
+    course_table.rows[2].cells[1].text = form.tci_program_title.data or ""
+    
+    # Add standard coverage table if data exists
+    coverage_data = []
     for i, coverage in enumerate(form.ss_standard_coverage):
         if coverage.data:
             grade_num = i + 1
-            subdoc.add_paragraph(f"Grade Level {grade_num} coverage – {coverage.data}%")
+            coverage_data.append((f"Grade Level {grade_num}", f"{coverage.data}%"))
+    
+    if coverage_data:
+        subdoc.add_paragraph("\nStandard Coverage:")
+        coverage_table = subdoc.add_table(rows=len(coverage_data) + 1, cols=2)
+        coverage_table.style = 'Table Grid'
+        
+        # Set headers
+        header_cells = coverage_table.rows[0].cells
+        header_cells[0].text = "Grade Level"
+        header_cells[1].text = "Coverage Percentage"
+        
+        # Populate data
+        for i, (grade, percentage) in enumerate(coverage_data):
+            row_cells = coverage_table.rows[i + 1].cells
+            row_cells[0].text = grade
+            row_cells[1].text = percentage
     
     # Add district standards if provided
     for i, district_standards in enumerate(form.ss_district_standards):
         if district_standards.data:
             subdoc.add_paragraph(f"\nStandards to be Covered using District Resources (Grade Level {i+1}):")
-            for line in district_standards.data.split('\n'):
-                if line.strip():
-                    subdoc.add_paragraph(f"• {line.strip()}")
+            district_lines = [line.strip() for line in district_standards.data.split('\n') if line.strip()]
+            for line in district_lines:
+                subdoc.add_paragraph(f"• {line}")
     
     return subdoc
 
