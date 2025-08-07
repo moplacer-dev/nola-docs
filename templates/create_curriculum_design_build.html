@@ -828,15 +828,64 @@
         }
     }
     
+    // Load draft data into table cells if available
+    function loadDraftDataIntoTables() {
+        {% if draft_data %}
+        const draftData = {{ draft_data|tojson }};
+        
+        // First, set table dimensions from saved data
+        ['science', 'math', 'social_studies'].forEach(subject => {
+            const rowsKey = `${subject}_table_rows`;
+            const colsKey = `${subject}_table_cols`;
+            
+            if (draftData[rowsKey]) {
+                const rowsSelect = document.querySelector(`[name="${rowsKey}"]`);
+                if (rowsSelect) {
+                    rowsSelect.value = draftData[rowsKey];
+                }
+            }
+            
+            if (draftData[colsKey]) {
+                const colsSelect = document.querySelector(`[name="${colsKey}"]`);
+                if (colsSelect) {
+                    colsSelect.value = draftData[colsKey];
+                }
+            }
+        });
+        
+        // Regenerate tables with correct dimensions, then populate cell data
+        setTimeout(() => {
+            updateCurriculumTableGrid('science');
+            updateCurriculumTableGrid('math');
+            updateCurriculumTableGrid('social_studies');
+            
+            // Now populate the cells with saved data
+            setTimeout(() => {
+                Object.keys(draftData).forEach(key => {
+                    if (key.includes('_table_cell_')) {
+                        const element = document.querySelector(`[name="${key}"]`);
+                        if (element && draftData[key]) {
+                            element.value = draftData[key];
+                        }
+                    }
+                });
+            }, 50);
+        }, 50);
+        {% else %}
+        // No draft data, just ensure tables are initialized
+        updateCurriculumTableGrid('science');
+        updateCurriculumTableGrid('math');
+        updateCurriculumTableGrid('social_studies');
+        {% endif %}
+    }
+    
     // Initialize everything when the DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize autosave
         window.autosaveInstance = new CurriculumDesignBuildAutosave();
         
-        // Initialize curriculum table grids
-        updateCurriculumTableGrid('science');
-        updateCurriculumTableGrid('math');
-        updateCurriculumTableGrid('social_studies');
+        // Load draft data into tables (this will also initialize the grids)
+        loadDraftDataIntoTables();
     });
 </script>
 

@@ -6549,7 +6549,12 @@ def create_curriculum_design_build():
         except Exception as e:
             print(f"Error loading draft: {e}")
     
-    return render_template('create_curriculum_design_build.html', form=form, draft_id=draft_id)
+    # Pass draft data to template if loading a draft
+    draft_data = None
+    if draft:
+        draft_data = draft.form_data
+    
+    return render_template('create_curriculum_design_build.html', form=form, draft_id=draft_id, draft_data=draft_data)
 
 @app.route('/autosave-curriculum-design-build-draft', methods=['POST'])
 @login_required
