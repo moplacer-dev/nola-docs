@@ -6760,7 +6760,9 @@ def generate_curriculum_design_build_document(form):
         filename = f"Curriculum_Design_Build_{site_name_clean}_{timestamp}.docx"
         
         # Save to generated_docs directory
-        output_path = os.path.join('generated_docs', filename)
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, filename)
         doc.save(output_path)
         
         return output_path
