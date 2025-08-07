@@ -280,61 +280,46 @@
                             </div>
                         </div>
                         
-                        <!-- Science Modules -->
+                        <!-- Science Table -->
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Modules</h3>
-                            <p class="text-sm text-gray-600 mb-4">Enter modules for each grade level. If you have multiple grade levels (e.g., "7th Grade, 8th Grade"), you can assign specific modules to each grade.</p>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Science Curriculum Table</h3>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your science curriculum content. You have full control over the rows, columns, and content.</p>
                             
-                            <!-- Grade-specific module fields (hidden by default) -->
-                            <div id="science-grade-specific-modules" class="space-y-6" style="display: none;">
-                                <!-- Grade 1 Modules -->
-                                <div id="science-grade1-container">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="science-grade1-title">Grade 1 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.science_modules_grade1 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                            <!-- Table Title -->
+                            <div class="mb-4">
+                                {{ form.science_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.science_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            </div>
+                            
+                            <!-- Table Configuration -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                                    <select name="science_table_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('science')">
+                                        <option value="2">2 rows</option>
+                                        <option value="3" selected>3 rows</option>
+                                        <option value="4">4 rows</option>
+                                        <option value="5">5 rows</option>
+                                        <option value="6">6 rows</option>
+                                    </select>
                                 </div>
-                                
-                                <!-- Grade 2 Modules -->
-                                <div id="science-grade2-container" style="display: none;">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="science-grade2-title">Grade 2 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.science_modules_grade2 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                
-                                <!-- Grade 3 Modules -->
-                                <div id="science-grade3-container" style="display: none;">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="science-grade3-title">Grade 3 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.science_modules_grade3 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                                    <select name="science_table_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('science')">
+                                        <option value="2">2 columns</option>
+                                        <option value="3" selected>3 columns</option>
+                                        <option value="4">4 columns</option>
+                                        <option value="5">5 columns</option>
+                                    </select>
                                 </div>
                             </div>
                             
-                            <!-- Fallback: General modules field (for single grade or simple mode) -->
-                            <div id="science-general-modules" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for module_field in form.science_modules %}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                        {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                    </div>
-                                {% endfor %}
+                            <!-- Dynamic Table Grid -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Content</label>
+                                <div id="science-table-grid" class="table-grid border border-gray-300 rounded-md overflow-hidden">
+                                    <!-- Table grid will be generated here -->
+                                </div>
                             </div>
                         </div>
                         
@@ -417,61 +402,46 @@
                             </div>
                         </div>
                         
-                        <!-- Math Modules -->
+                        <!-- Math Table -->
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Modules</h3>
-                            <p class="text-sm text-gray-600 mb-4">Enter modules for each grade level. If you have multiple grade levels (e.g., "7th Grade, 8th Grade"), you can assign specific modules to each grade.</p>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Math Curriculum Table</h3>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your math curriculum content. You have full control over the rows, columns, and content.</p>
                             
-                            <!-- Grade-specific module fields (hidden by default) -->
-                            <div id="math-grade-specific-modules" class="space-y-6" style="display: none;">
-                                <!-- Grade 1 Modules -->
-                                <div id="math-grade1-container">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="math-grade1-title">Grade 1 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.math_modules_grade1 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                            <!-- Table Title -->
+                            <div class="mb-4">
+                                {{ form.math_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.math_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            </div>
+                            
+                            <!-- Table Configuration -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                                    <select name="math_table_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('math')">
+                                        <option value="2">2 rows</option>
+                                        <option value="3" selected>3 rows</option>
+                                        <option value="4">4 rows</option>
+                                        <option value="5">5 rows</option>
+                                        <option value="6">6 rows</option>
+                                    </select>
                                 </div>
-                                
-                                <!-- Grade 2 Modules -->
-                                <div id="math-grade2-container" style="display: none;">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="math-grade2-title">Grade 2 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.math_modules_grade2 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                
-                                <!-- Grade 3 Modules -->
-                                <div id="math-grade3-container" style="display: none;">
-                                    <h4 class="font-medium text-gray-800 mb-3" id="math-grade3-title">Grade 3 Modules</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {% for module_field in form.math_modules_grade3 %}
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                                {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                                    <select name="math_table_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('math')">
+                                        <option value="2">2 columns</option>
+                                        <option value="3" selected>3 columns</option>
+                                        <option value="4">4 columns</option>
+                                        <option value="5">5 columns</option>
+                                    </select>
                                 </div>
                             </div>
                             
-                            <!-- Fallback: General modules field (for single grade or simple mode) -->
-                            <div id="math-general-modules" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for module_field in form.math_modules %}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Module {{ loop.index }}</label>
-                                        {{ module_field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
-                                    </div>
-                                {% endfor %}
+                            <!-- Dynamic Table Grid -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Content</label>
+                                <div id="math-table-grid" class="table-grid border border-gray-300 rounded-md overflow-hidden">
+                                    <!-- Table grid will be generated here -->
+                                </div>
                             </div>
                         </div>
                         
@@ -560,6 +530,49 @@
                                 {% if form.ss_grade_levels.errors %}
                                     <p class="mt-1 text-sm text-red-600">{{ form.ss_grade_levels.errors[0] }}</p>
                                 {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Social Studies Table -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Social Studies Curriculum Table</h3>
+                            <p class="text-sm text-gray-600 mb-4">Create a custom table to organize your social studies curriculum content. You have full control over the rows, columns, and content.</p>
+                            
+                            <!-- Table Title -->
+                            <div class="mb-4">
+                                {{ form.social_studies_table_title.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ form.social_studies_table_title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                            </div>
+                            
+                            <!-- Table Configuration -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Rows</label>
+                                    <select name="social_studies_table_rows" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('social_studies')">
+                                        <option value="2">2 rows</option>
+                                        <option value="3" selected>3 rows</option>
+                                        <option value="4">4 rows</option>
+                                        <option value="5">5 rows</option>
+                                        <option value="6">6 rows</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Columns</label>
+                                    <select name="social_studies_table_cols" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" data-autosave="true" onchange="updateCurriculumTableGrid('social_studies')">
+                                        <option value="2">2 columns</option>
+                                        <option value="3" selected>3 columns</option>
+                                        <option value="4">4 columns</option>
+                                        <option value="5">5 columns</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic Table Grid -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Table Content</label>
+                                <div id="social_studies-table-grid" class="table-grid border border-gray-300 rounded-md overflow-hidden">
+                                    <!-- Table grid will be generated here -->
+                                </div>
                             </div>
                         </div>
                         
@@ -739,14 +752,12 @@
                 tier_one_component: document.querySelector('[name="tier_one_component"]').value,
                 science_design_domain: document.querySelector('[name="science_design_domain"]').value,
                 science_grade_levels: document.querySelector('[name="science_grade_levels"]').value,
-                science_modules: [],
                 science_standard_coverage: {},
                 science_district_standards: document.querySelector('[name="science_district_standards"]').value,
                 state_math_domains: document.querySelector('[name="state_math_domains"]').value,
                 ipls_additional_coverage: document.querySelector('[name="ipls_additional_coverage"]').value,
                 ipls_critical_standards: document.querySelector('[name="ipls_critical_standards"]').value,
                 math_grade_levels: document.querySelector('[name="math_grade_levels"]').value,
-                math_modules: [],
                 math_standard_coverage: {},
                 math_ipl_standards: document.querySelector('[name="math_ipl_standards"]').value,
                 math_district_standards: document.querySelector('[name="math_district_standards"]').value,
@@ -757,23 +768,14 @@
                 ss_district_standards: []
             };
             
-            // Collect science modules (both general and grade-specific)
-            formData.science_modules = [];
-            formData.science_modules_grade1 = [];
-            formData.science_modules_grade2 = [];
-            formData.science_modules_grade3 = [];
+            // Collect science table data
+            formData.science_table_title = document.querySelector('[name="science_table_title"]').value.trim();
+            formData.science_table_rows = document.querySelector('[name="science_table_rows"]').value;
+            formData.science_table_cols = document.querySelector('[name="science_table_cols"]').value;
             
-            document.querySelectorAll('[name^="science_modules-"]').forEach((field, index) => {
-                formData.science_modules[index] = field.value.trim();
-            });
-            document.querySelectorAll('[name^="science_modules_grade1-"]').forEach((field, index) => {
-                formData.science_modules_grade1[index] = field.value.trim();
-            });
-            document.querySelectorAll('[name^="science_modules_grade2-"]').forEach((field, index) => {
-                formData.science_modules_grade2[index] = field.value.trim();
-            });
-            document.querySelectorAll('[name^="science_modules_grade3-"]').forEach((field, index) => {
-                formData.science_modules_grade3[index] = field.value.trim();
+            // Collect science table cell data
+            document.querySelectorAll('[name^="science_table_cell_"]').forEach((field) => {
+                formData[field.name] = field.value.trim();
             });
             
             // Collect science standard coverage
@@ -784,23 +786,24 @@
                 etas: document.querySelector('[name="science_standard_coverage-etas"]').value
             };
             
-            // Collect math modules (both general and grade-specific)
-            formData.math_modules = [];
-            formData.math_modules_grade1 = [];
-            formData.math_modules_grade2 = [];
-            formData.math_modules_grade3 = [];
+            // Collect math table data
+            formData.math_table_title = document.querySelector('[name="math_table_title"]').value.trim();
+            formData.math_table_rows = document.querySelector('[name="math_table_rows"]').value;
+            formData.math_table_cols = document.querySelector('[name="math_table_cols"]').value;
             
-            document.querySelectorAll('[name^="math_modules-"]').forEach((field, index) => {
-                formData.math_modules[index] = field.value.trim();
+            // Collect math table cell data
+            document.querySelectorAll('[name^="math_table_cell_"]').forEach((field) => {
+                formData[field.name] = field.value.trim();
             });
-            document.querySelectorAll('[name^="math_modules_grade1-"]').forEach((field, index) => {
-                formData.math_modules_grade1[index] = field.value.trim();
-            });
-            document.querySelectorAll('[name^="math_modules_grade2-"]').forEach((field, index) => {
-                formData.math_modules_grade2[index] = field.value.trim();
-            });
-            document.querySelectorAll('[name^="math_modules_grade3-"]').forEach((field, index) => {
-                formData.math_modules_grade3[index] = field.value.trim();
+            
+            // Collect social studies table data
+            formData.social_studies_table_title = document.querySelector('[name="social_studies_table_title"]').value.trim();
+            formData.social_studies_table_rows = document.querySelector('[name="social_studies_table_rows"]').value;
+            formData.social_studies_table_cols = document.querySelector('[name="social_studies_table_cols"]').value;
+            
+            // Collect social studies table cell data
+            document.querySelectorAll('[name^="social_studies_table_cell_"]').forEach((field) => {
+                formData[field.name] = field.value.trim();
             });
             
             // Collect math standard coverage
@@ -847,46 +850,49 @@
         }
     }
     
-    // Grade-level specific module fields functionality
-    function updateModuleFields() {
-        // Science modules
-        const scienceGradeLevels = document.querySelector('[name="science_grade_levels"]').value.trim();
-        updateSubjectModuleFields('science', scienceGradeLevels);
+    // Dynamic table functionality for curriculum forms
+    function updateCurriculumTableGrid(subject) {
+        const rowsSelect = document.querySelector(`select[name="${subject}_table_rows"]`);
+        const colsSelect = document.querySelector(`select[name="${subject}_table_cols"]`);
+        const gridContainer = document.getElementById(`${subject}-table-grid`);
         
-        // Math modules
-        const mathGradeLevels = document.querySelector('[name="math_grade_levels"]').value.trim();
-        updateSubjectModuleFields('math', mathGradeLevels);
+        if (!rowsSelect || !colsSelect || !gridContainer) return;
+        
+        const rows = parseInt(rowsSelect.value);
+        const cols = parseInt(colsSelect.value);
+        
+        generateCurriculumTableGrid(gridContainer, rows, cols, subject);
     }
     
-    function updateSubjectModuleFields(subject, gradeLevelsText) {
-        const gradeLevels = gradeLevelsText.split(',').map(g => g.trim()).filter(g => g.length > 0);
-        const hasMultipleGrades = gradeLevels.length > 1;
+    function generateCurriculumTableGrid(container, rows, cols, subject) {
+        let gridHTML = '<div class="grid gap-0" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
         
-        // Get containers
-        const gradeSpecificContainer = document.getElementById(`${subject}-grade-specific-modules`);
-        const generalContainer = document.getElementById(`${subject}-general-modules`);
-        
-        if (hasMultipleGrades) {
-            // Show grade-specific fields
-            gradeSpecificContainer.style.display = 'block';
-            generalContainer.style.display = 'none';
-            
-            // Update grade containers and titles
-            for (let i = 0; i < 3; i++) {
-                const container = document.getElementById(`${subject}-grade${i+1}-container`);
-                const title = document.getElementById(`${subject}-grade${i+1}-title`);
-                
-                if (i < gradeLevels.length) {
-                    container.style.display = 'block';
-                    title.textContent = `${gradeLevels[i]} Modules`;
-                } else {
-                    container.style.display = 'none';
-                }
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cellName = `${subject}_table_cell_${r}_${c}`;
+                gridHTML += `
+                    <input type="text" 
+                           name="${cellName}" 
+                           class="px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
+                           placeholder="${r === 0 ? 'Header' : 'Cell'} ${r + 1}-${c + 1}"
+                           data-autosave="true">
+                `;
             }
-        } else {
-            // Show general fields (single grade or fallback)
-            gradeSpecificContainer.style.display = 'none';
-            generalContainer.style.display = 'block';
+        }
+        
+        gridHTML += '</div>';
+        container.innerHTML = gridHTML;
+        
+        // Re-attach autosave listeners to new inputs
+        if (window.autosaveInstance) {
+            container.querySelectorAll('input[data-autosave="true"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    window.autosaveInstance.scheduleAutosave();
+                });
+                input.addEventListener('blur', () => {
+                    window.autosaveInstance.performAutosave();
+                });
+            });
         }
     }
     
@@ -895,12 +901,10 @@
         // Initialize autosave
         window.autosaveInstance = new CurriculumDesignBuildAutosave();
         
-        // Initialize grade-level detection
-        updateModuleFields();
-        
-        // Add event listeners for grade level changes
-        document.querySelector('[name="science_grade_levels"]').addEventListener('input', updateModuleFields);
-        document.querySelector('[name="math_grade_levels"]').addEventListener('input', updateModuleFields);
+        // Initialize curriculum table grids
+        updateCurriculumTableGrid('science');
+        updateCurriculumTableGrid('math');
+        updateCurriculumTableGrid('social_studies');
     });
 </script>
 

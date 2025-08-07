@@ -1142,22 +1142,12 @@ class CurriculumDesignBuildForm(FlaskForm):
                                      validators=[DataRequired(), Length(min=1, max=100)],
                                      render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
-    # Science modules - grade-level specific (up to 10 per grade)
-    # These fields will be dynamically populated based on grade levels entered
-    science_modules_grade1 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                       min_entries=10, max_entries=10, label="Grade 1 Modules")
-    science_modules_grade2 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                       min_entries=10, max_entries=10, label="Grade 2 Modules")
-    science_modules_grade3 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                       min_entries=10, max_entries=10, label="Grade 3 Modules")
+    # Dynamic Science Table - replaces hardcoded module structure
+    science_table_title = StringField('Science Table Title (optional)', 
+                                     validators=[Optional(), Length(max=200)],
+                                     render_kw={"placeholder": "e.g., Science Curriculum Overview", "data-autosave": "true"})
     
-    # Fallback for single grade or simple mode
-    science_modules = FieldList(StringField('Module Title', validators=[Optional()], 
-                                          render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                               min_entries=10, max_entries=10)
+    # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
     # Science standard coverage
     science_standard_coverage = FormField(ScienceStandardCoverageForm)
@@ -1183,22 +1173,12 @@ class CurriculumDesignBuildForm(FlaskForm):
                                   validators=[DataRequired(), Length(min=1, max=100)],
                                   render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
     
-    # Math modules - grade-level specific (up to 10 per grade)
-    # These fields will be dynamically populated based on grade levels entered
-    math_modules_grade1 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                   min_entries=10, max_entries=10, label="Grade 1 Modules")
-    math_modules_grade2 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                   min_entries=10, max_entries=10, label="Grade 2 Modules")
-    math_modules_grade3 = FieldList(StringField('Module Title', validators=[Optional()], 
-                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                                   min_entries=10, max_entries=10, label="Grade 3 Modules")
+    # Dynamic Math Table - replaces hardcoded module structure
+    math_table_title = StringField('Math Table Title (optional)', 
+                                  validators=[Optional(), Length(max=200)],
+                                  render_kw={"placeholder": "e.g., Math Curriculum Overview", "data-autosave": "true"})
     
-    # Fallback for single grade or simple mode
-    math_modules = FieldList(StringField('Module Title', validators=[Optional()], 
-                                       render_kw={"placeholder": "Enter module title", "data-autosave": "true"}), 
-                            min_entries=10, max_entries=10)
+    # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
     # Math standard coverage
     math_standard_coverage = FormField(MathStandardCoverageForm)
@@ -1223,6 +1203,13 @@ class CurriculumDesignBuildForm(FlaskForm):
     ss_grade_levels = StringField('Social Studies Grade Level(s) for Table', 
                                 validators=[DataRequired(), Length(min=1, max=100)],
                                 render_kw={"placeholder": "e.g., 7th Grade, 8th Grade", "data-autosave": "true"})
+    
+    # Dynamic Social Studies Table - replaces hardcoded structure
+    social_studies_table_title = StringField('Social Studies Table Title (optional)', 
+                                            validators=[Optional(), Length(max=200)],
+                                            render_kw={"placeholder": "e.g., Social Studies Curriculum Overview", "data-autosave": "true"})
+    
+    # Note: Table configuration and cell data will be handled via JavaScript like in generic worksheet
     
     # Social Studies standard coverage percentages (up to 2 grade levels)
     ss_standard_coverage = FieldList(StringField('Grade Level Coverage (%)', validators=[Optional()], 
@@ -6662,27 +6649,9 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.ss_course_title.data = form_data.get('ss_course_title', '')
         form.ss_grade_levels.data = form_data.get('ss_grade_levels', '')
         
-        # Load science modules (both general and grade-specific)
-        science_modules = form_data.get('science_modules', [])
-        for i, module in enumerate(science_modules):
-            if i < len(form.science_modules):
-                form.science_modules[i].data = module
-        
-        # Load grade-specific science modules
-        science_modules_grade1 = form_data.get('science_modules_grade1', [])
-        for i, module in enumerate(science_modules_grade1):
-            if i < len(form.science_modules_grade1):
-                form.science_modules_grade1[i].data = module
-                
-        science_modules_grade2 = form_data.get('science_modules_grade2', [])
-        for i, module in enumerate(science_modules_grade2):
-            if i < len(form.science_modules_grade2):
-                form.science_modules_grade2[i].data = module
-                
-        science_modules_grade3 = form_data.get('science_modules_grade3', [])
-        for i, module in enumerate(science_modules_grade3):
-            if i < len(form.science_modules_grade3):
-                form.science_modules_grade3[i].data = module
+        # Load science table data
+        form.science_table_title.data = form_data.get('science_table_title', '')
+        # Note: Table cell data will be handled via JavaScript/form submission
         
         # Load science standard coverage
         science_coverage = form_data.get('science_standard_coverage', {})
@@ -6691,27 +6660,13 @@ def load_curriculum_design_build_draft_into_form(form, draft):
         form.science_standard_coverage.earth_space_sciences.data = science_coverage.get('earth_space_sciences', '')
         form.science_standard_coverage.etas.data = science_coverage.get('etas', '')
         
-        # Load math modules (both general and grade-specific)
-        math_modules = form_data.get('math_modules', [])
-        for i, module in enumerate(math_modules):
-            if i < len(form.math_modules):
-                form.math_modules[i].data = module
+        # Load math table data
+        form.math_table_title.data = form_data.get('math_table_title', '')
+        # Note: Table cell data will be handled via JavaScript/form submission
         
-        # Load grade-specific math modules
-        math_modules_grade1 = form_data.get('math_modules_grade1', [])
-        for i, module in enumerate(math_modules_grade1):
-            if i < len(form.math_modules_grade1):
-                form.math_modules_grade1[i].data = module
-                
-        math_modules_grade2 = form_data.get('math_modules_grade2', [])
-        for i, module in enumerate(math_modules_grade2):
-            if i < len(form.math_modules_grade2):
-                form.math_modules_grade2[i].data = module
-                
-        math_modules_grade3 = form_data.get('math_modules_grade3', [])
-        for i, module in enumerate(math_modules_grade3):
-            if i < len(form.math_modules_grade3):
-                form.math_modules_grade3[i].data = module
+        # Load social studies table data
+        form.social_studies_table_title.data = form_data.get('social_studies_table_title', '')
+        # Note: Table cell data will be handled via JavaScript/form submission
         
         # Load math standard coverage
         math_coverage = form_data.get('math_standard_coverage', {})
@@ -6770,12 +6725,12 @@ def generate_curriculum_design_build_document(form):
             'ela': escape_xml(form.ela_course_grades.data)
         }
         
-        # Generate subdocuments first
-        print("Generating subdocuments...")
-        science_table_subdoc = generate_science_table_subdocument(doc, form)
-        math_table_subdoc = generate_math_table_subdocument(doc, form)
-        social_studies_table_subdoc = generate_social_studies_table_subdocument(doc, form)
-        print(f"Subdocs created - Science: {type(science_table_subdoc)}, Math: {type(math_table_subdoc)}, SS: {type(social_studies_table_subdoc)}")
+        # Generate dynamic table subdocuments
+        print("Generating dynamic table subdocuments...")
+        science_table_subdoc = generate_dynamic_table_subdocument(doc, request.form, 'science')
+        math_table_subdoc = generate_dynamic_table_subdocument(doc, request.form, 'math')
+        social_studies_table_subdoc = generate_dynamic_table_subdocument(doc, request.form, 'social_studies')
+        print(f"Dynamic subdocs created - Science: {type(science_table_subdoc)}, Math: {type(math_table_subdoc)}, SS: {type(social_studies_table_subdoc)}")
         
         # Curriculum Elements - build science dict carefully
         context['science'] = {
@@ -6824,345 +6779,49 @@ def generate_curriculum_design_build_document(form):
         
         return output_path
 
-def generate_science_table_subdocument(doc, form):
-    """Generate science curriculum table as subdocument"""
+def generate_dynamic_table_subdocument(doc, form_data, subject_type):
+    """Generate dynamic table subdocument for any subject"""
     subdoc = doc.new_subdoc()
     
-    # Add introductory paragraph
-    intro_text = f"Science modules are based upon the disciplinary core ideas in Physical Science, Life Science and Earth and Space Science. Blended {form.science_design_domain.data} Science will aid the students in learning the scientific method focusing on {form.science_design_domain.data} Science standards in {form.science_grade_levels.data}."
-    subdoc.add_paragraph(intro_text)
+    # Get table configuration from form data
+    table_title = form_data.get(f'{subject_type}_table_title', '').strip()
+    table_rows = int(form_data.get(f'{subject_type}_table_rows', 3))
+    table_cols = int(form_data.get(f'{subject_type}_table_cols', 3))
     
-    # Parse grade levels (expecting comma-separated like "7th Grade, 8th Grade")
-    grade_levels = [grade.strip() for grade in form.science_grade_levels.data.split(',') if grade.strip()]
-    if not grade_levels:
-        grade_levels = [form.science_grade_levels.data]  # fallback to single grade
+    print(f"DEBUG: {subject_type} table - title='{table_title}', rows={table_rows}, cols={table_cols}")
     
-    # Get grade-specific modules data
-    grade_module_fields = [form.science_modules_grade1, form.science_modules_grade2, form.science_modules_grade3]
+    # Add table title if provided
+    if table_title:
+        p = subdoc.add_paragraph(table_title)
+        for run in p.runs:
+            run.font.name = 'Segoe UI'
+            run.font.size = Pt(12)
+            run.font.bold = True
+        p.paragraph_format.space_after = Pt(6)
     
-    # Create main curriculum table with grade levels as columns
-    # Structure: Row labels | Grade 1 | Grade 2 | ...
-    num_cols = len(grade_levels) + 1  # +1 for the row label column
-    main_table = subdoc.add_table(rows=4, cols=num_cols)  # 4 rows: header, modules, focus area, standard coverage
-    # Remove table borders/outline
-    main_table.style = None
+    # Create the dynamic table
+    table = subdoc.add_table(rows=table_rows, cols=table_cols)
+    table.style = None  # No borders by default, but can be customized
     
-    # Set headers - first column is empty, then grade levels
-    header_cells = main_table.rows[0].cells
-    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
-    for i, grade in enumerate(grade_levels):
-        cell = header_cells[i + 1]
-        cell.text = grade
-        # Format grade level headers: bold, italic, underline
-        for paragraph in cell.paragraphs:
-            for run in paragraph.runs:
-                run.bold = True
-                run.italic = True
-                run.underline = True
-    
-    # Modules row
-    modules_row = main_table.rows[1].cells
-    modules_cell = modules_row[0]
-    modules_cell.text = "Modules:"
-    # Format row label: bold and right-aligned
-    for paragraph in modules_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    # Get modules for each grade level from grade-specific fields
-    for i, grade in enumerate(grade_levels):
-        grade_modules = []
-        
-        # Use grade-specific module field if available, otherwise fall back to general modules
-        if i < len(grade_module_fields):
-            grade_modules = [module.data.strip() for module in grade_module_fields[i] if module.data and module.data.strip()]
-        
-        # If no grade-specific modules and only one grade, use general modules field
-        if not grade_modules and len(grade_levels) == 1:
-            grade_modules = [module.data.strip() for module in form.science_modules if module.data and module.data.strip()]
-        
-        # Join modules with line breaks
-        modules_text = "\n".join(grade_modules) if grade_modules else ""
-        modules_row[i + 1].text = modules_text
-    
-    # Focus Area row
-    focus_row = main_table.rows[2].cells
-    focus_cell = focus_row[0]
-    focus_cell.text = "Focus Area:"
-    # Format row label: bold and right-aligned
-    for paragraph in focus_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    focus_area_text = f"Blended {form.science_design_domain.data} Science"
-    for i in range(len(grade_levels)):
-        focus_row[i + 1].text = focus_area_text
-    
-    # Standard Coverage row
-    coverage_row = main_table.rows[3].cells
-    coverage_cell = coverage_row[0]
-    coverage_cell.text = "Standard Coverage:"
-    # Format row label: bold and right-aligned
-    for paragraph in coverage_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    # Build coverage text
-    coverage_parts = []
-    if form.science_standard_coverage.physical_sciences.data:
-        coverage_parts.append(f"Physical Sciences – {form.science_standard_coverage.physical_sciences.data}%")
-    if form.science_standard_coverage.life_sciences.data:
-        coverage_parts.append(f"Life Sciences – {form.science_standard_coverage.life_sciences.data}%")
-    if form.science_standard_coverage.earth_space_sciences.data:
-        coverage_parts.append(f"Earth & Space – {form.science_standard_coverage.earth_space_sciences.data}%")
-    if form.science_standard_coverage.etas.data:
-        coverage_parts.append(f"ETAS – {form.science_standard_coverage.etas.data}%")
-    
-    coverage_text = "\n".join(coverage_parts) if coverage_parts else ""
-    for i in range(len(grade_levels)):
-        coverage_row[i + 1].text = coverage_text
-    
-    # Add district standards if provided
-    if form.science_district_standards.data:
-        subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
-        standards_lines = [line.strip() for line in form.science_district_standards.data.split('\n') if line.strip()]
-        for line in standards_lines:
-            subdoc.add_paragraph(f"• {line}")
+    # Populate table cells with user data
+    for row_idx in range(table_rows):
+        for col_idx in range(table_cols):
+            cell_name = f'{subject_type}_table_cell_{row_idx}_{col_idx}'
+            cell_value = form_data.get(cell_name, '').strip()
+            
+            if cell_value:
+                cell = table.rows[row_idx].cells[col_idx]
+                cell.text = cell_value
+                
+                # Format first row as headers (bold)
+                if row_idx == 0:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.bold = True
     
     return subdoc
 
-def generate_math_table_subdocument(doc, form):
-    """Generate math curriculum table as subdocument"""
-    subdoc = doc.new_subdoc()
-    
-    # Add introductory paragraph
-    intro_text = f"Math modules are based upon the {form.state_math_domains.data} Math Domains for {form.math_grade_levels.data}."
-    if form.ipls_additional_coverage.data:
-        intro_text += f" {form.site_name.data} Star Academy will receive all IPL Units to allow for additional {form.ipls_additional_coverage.data} standard coverage"
-    if form.ipls_critical_standards.data:
-        intro_text += f", as well as to review {form.ipls_critical_standards.data} critical standards"
-    intro_text += ". STEPS provides a skills based tiered solution that evaluates student readiness, setting them on a path to success. Steps addresses gaps below grade level using a customized approach to fit each student's needs."
-    
-    subdoc.add_paragraph(intro_text)
-    
-    # Parse grade levels (expecting comma-separated like "7th Grade, 8th Grade")
-    grade_levels = [grade.strip() for grade in form.math_grade_levels.data.split(',') if grade.strip()]
-    if not grade_levels:
-        grade_levels = [form.math_grade_levels.data]  # fallback to single grade
-    
-    # Get grade-specific modules data
-    grade_module_fields = [form.math_modules_grade1, form.math_modules_grade2, form.math_modules_grade3]
-    
-    # Create main curriculum table with grade levels as columns
-    # Structure: Row labels | Grade 1 | Grade 2 | ...
-    # Rows: header, modules, IPL Unit Package, STEPS, standard coverage
-    num_cols = len(grade_levels) + 1  # +1 for the row label column
-    main_table = subdoc.add_table(rows=5, cols=num_cols)  # 5 rows: header, modules, IPL, STEPS, coverage
-    # Remove table borders/outline
-    main_table.style = None
-    
-    # Set headers - first column is empty, then grade levels
-    header_cells = main_table.rows[0].cells
-    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
-    for i, grade in enumerate(grade_levels):
-        cell = header_cells[i + 1]
-        cell.text = grade
-        # Format grade level headers: bold, italic, underline
-        for paragraph in cell.paragraphs:
-            for run in paragraph.runs:
-                run.bold = True
-                run.italic = True
-                run.underline = True
-    
-    # Modules row
-    modules_row = main_table.rows[1].cells
-    modules_cell = modules_row[0]
-    modules_cell.text = "Modules:"
-    # Format row label: bold and right-aligned
-    for paragraph in modules_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    # Get modules for each grade level from grade-specific fields
-    for i, grade in enumerate(grade_levels):
-        grade_modules = []
-        
-        # Use grade-specific module field if available, otherwise fall back to general modules
-        if i < len(grade_module_fields):
-            grade_modules = [module.data.strip() for module in grade_module_fields[i] if module.data and module.data.strip()]
-        
-        # If no grade-specific modules and only one grade, use general modules field
-        if not grade_modules and len(grade_levels) == 1:
-            grade_modules = [module.data.strip() for module in form.math_modules if module.data and module.data.strip()]
-        
-        # Join modules with line breaks
-        modules_text = "\n".join(grade_modules) if grade_modules else ""
-        modules_row[i + 1].text = modules_text
-    
-    # IPL Unit Package row
-    ipl_row = main_table.rows[2].cells
-    ipl_cell = ipl_row[0]
-    ipl_cell.text = "IPL Unit Package:"
-    # Format row label: bold and right-aligned
-    for paragraph in ipl_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    for i in range(len(grade_levels)):
-        ipl_row[i + 1].text = "Supplemental Resources"
-    
-    # STEPS row
-    steps_row = main_table.rows[3].cells
-    steps_cell = steps_row[0]
-    steps_cell.text = "STEPS:"
-    # Format row label: bold and right-aligned
-    for paragraph in steps_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    for i in range(len(grade_levels)):
-        steps_row[i + 1].text = "Intervention Support"
-    
-    # Standard Coverage row
-    coverage_row = main_table.rows[4].cells
-    coverage_cell = coverage_row[0]
-    coverage_cell.text = "Standard Coverage:"
-    # Format row label: bold and right-aligned
-    for paragraph in coverage_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    # Build coverage text
-    coverage_parts = []
-    if form.math_standard_coverage.rp.data:
-        coverage_parts.append(f"RP – {form.math_standard_coverage.rp.data}%")
-    if form.math_standard_coverage.ns.data:
-        coverage_parts.append(f"NS – {form.math_standard_coverage.ns.data}%")
-    if form.math_standard_coverage.ee.data:
-        coverage_parts.append(f"EE – {form.math_standard_coverage.ee.data}%")
-    if form.math_standard_coverage.f.data:
-        coverage_parts.append(f"F – {form.math_standard_coverage.f.data}%")
-    if form.math_standard_coverage.g.data:
-        coverage_parts.append(f"G – {form.math_standard_coverage.g.data}%")
-    if form.math_standard_coverage.sp.data:
-        coverage_parts.append(f"SP – {form.math_standard_coverage.sp.data}%")
-    
-    coverage_text = "\n".join(coverage_parts) if coverage_parts else ""
-    for i in range(len(grade_levels)):
-        coverage_row[i + 1].text = coverage_text
-    
-    # Add IPL standards if provided
-    if form.math_ipl_standards.data:
-        subdoc.add_paragraph("\nStandards to be Covered by IPL Units:")
-        ipl_lines = [line.strip() for line in form.math_ipl_standards.data.split('\n') if line.strip()]
-        for line in ipl_lines:
-            subdoc.add_paragraph(f"• {line}")
-    
-    # Add district standards if provided
-    if form.math_district_standards.data:
-        subdoc.add_paragraph("\nStandards to be Covered using District Resources:")
-        district_lines = [line.strip() for line in form.math_district_standards.data.split('\n') if line.strip()]
-        for line in district_lines:
-            subdoc.add_paragraph(f"• {line}")
-    
-    return subdoc
 
-def generate_social_studies_table_subdocument(doc, form):
-    """Generate social studies curriculum table as subdocument"""
-    subdoc = doc.new_subdoc()
-    
-    # Add introductory paragraph
-    intro_text = f"{form.tci_program_title.data} will teach {form.ss_course_title.data}."
-    subdoc.add_paragraph(intro_text)
-    
-    # Parse grade levels (expecting comma-separated like "7th Grade, 8th Grade")
-    grade_levels = [grade.strip() for grade in form.ss_grade_levels.data.split(',') if grade.strip()]
-    if not grade_levels:
-        grade_levels = [form.ss_grade_levels.data]  # fallback to single grade
-    
-    # Create main curriculum table with grade levels as columns
-    # Structure: Row labels | Grade 1 | Grade 2 | ...
-    # Rows: header, course title, TCI program, standard coverage
-    num_cols = len(grade_levels) + 1  # +1 for the row label column
-    main_table = subdoc.add_table(rows=4, cols=num_cols)  # 4 rows: header, course title, TCI program, coverage
-    # Remove table borders/outline
-    main_table.style = None
-    
-    # Set headers - first column is empty, then grade levels
-    header_cells = main_table.rows[0].cells
-    header_cells[0].text = ""  # Empty cell instead of "Grade Level"
-    for i, grade in enumerate(grade_levels):
-        cell = header_cells[i + 1]
-        cell.text = grade
-        # Format grade level headers: bold, italic, underline
-        for paragraph in cell.paragraphs:
-            for run in paragraph.runs:
-                run.bold = True
-                run.italic = True
-                run.underline = True
-    
-    # Course Title row
-    course_row = main_table.rows[1].cells
-    course_cell = course_row[0]
-    course_cell.text = "Course Title:"
-    # Format row label: bold and right-aligned
-    for paragraph in course_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    for i in range(len(grade_levels)):
-        course_row[i + 1].text = form.ss_course_title.data or ""
-    
-    # TCI Program Title row
-    tci_row = main_table.rows[2].cells
-    tci_cell = tci_row[0]
-    tci_cell.text = "TCI Program Title:"
-    # Format row label: bold and right-aligned
-    for paragraph in tci_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    for i in range(len(grade_levels)):
-        tci_row[i + 1].text = form.tci_program_title.data or ""
-    
-    # Standard Coverage row
-    coverage_row = main_table.rows[3].cells
-    coverage_cell = coverage_row[0]
-    coverage_cell.text = "Standard Coverage:"
-    # Format row label: bold and right-aligned
-    for paragraph in coverage_cell.paragraphs:
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-        for run in paragraph.runs:
-            run.bold = True
-    
-    # Build coverage text for each grade level
-    for i, grade in enumerate(grade_levels):
-        coverage_parts = []
-        # Check if we have coverage data for this grade level (index based)
-        if i < len(form.ss_standard_coverage) and form.ss_standard_coverage[i].data:
-            coverage_parts.append(f"Grade Level {i+1} – {form.ss_standard_coverage[i].data}%")
-        
-        coverage_text = "\n".join(coverage_parts) if coverage_parts else ""
-        coverage_row[i + 1].text = coverage_text
-    
-    # Add district standards if provided
-    for i, district_standards in enumerate(form.ss_district_standards):
-        if district_standards.data and i < len(grade_levels):
-            subdoc.add_paragraph(f"\nStandards to be Covered using District Resources (Grade Level {i+1}):")
-            district_lines = [line.strip() for line in district_standards.data.split('\n') if line.strip()]
-            for line in district_lines:
-                subdoc.add_paragraph(f"• {line}")
-    
-    return subdoc
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
