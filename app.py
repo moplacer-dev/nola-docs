@@ -6769,6 +6769,16 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
                         if i < len(lines) - 1:  # Not the last line
                             p.paragraph_format.space_after = Pt(2)
     
+    # Add extra spacing between table rows for better readability
+    for row_idx, row in enumerate(table.rows):
+        if row_idx > 0:  # Skip the header row
+            # Add bottom margin to each row for better separation
+            for cell in row.cells:
+                # Get the last paragraph in each cell and add space after it
+                if cell.paragraphs:
+                    last_para = cell.paragraphs[-1]
+                    last_para.paragraph_format.space_after = Pt(12)  # Add 12pt space after each row
+    
     return subdoc
 
 
