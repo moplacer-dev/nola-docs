@@ -200,4 +200,70 @@ class ActivityLog(db.Model):
             user_agent=request.headers.get('User-Agent') if request else None
         )
         db.session.add(log)
-        return log 
+        return log
+
+class State(db.Model):
+    """US States for correlation reports"""
+    __tablename__ = 'states'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(2), unique=True, nullable=False, index=True)  # e.g., 'LA'
+    name = db.Column(db.String(100), nullable=False)  # e.g., 'Louisiana'
+    
+    def __repr__(self):
+        return f'<State {self.code}: {self.name}>'
+
+class Standard(db.Model):
+    """Educational standards (CCSS, NGSS, etc.)"""
+    __tablename__ = 'standards'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    framework = db.Column(db.String(20), nullable=False)   # 'CCSS-M' or 'NGSS'
+    subject = db.Column(db.String(10), nullable=False)      # 'MATH' or 'SCIENCE'
+    grade_band = db.Column(db.String(10))                   # 'MS', 'HS', or None
+    grade_level = db.Column(db.Integer)                     # 7, 8, None
+    code = db.Column(db.String(50), nullable=False)         # e.g., '8.EE.A.1', 'MS-PS1-1'
+    description = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('framework', 'code', name='uq_framework_code'),
+        db.Index('ix_framework_subject_grade', 'framework','subject','grade_level'),
+    )
+    
+    # Relationships
+    module_mappings = db.relationship('ModuleStandardMapping', backref='standard', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Standard {self.framework}:{self.code}>'
+
+class Module(db.Model):
+    """Star Academy modules"""
+    __tablename__ = 'modules'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(10), nullable=False)      # 'MATH' or 'SCIENCE'
+    grade_level = db.Column(db.Integer)                     # 7, 8, None for banded MS science
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('title','subject','grade_level', name='uq_module_title_subject_grade'),)
+    
+    # Relationships
+    standard_mappings = db.relationship('ModuleStandardMapping', backref='module', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Module {self.title} ({self.subject})>'
+
+class ModuleStandardMapping(db.Model):
+    """Maps modules to standards"""
+    __tablename__ = 'module_standard_mappings'
+    
+    module_id = db.Column(db.Integer, db.ForeignKey('modules.id'), primary_key=True)
+    standard_id = db.Column(db.Integer, db.ForeignKey('standards.id'), primary_key=True)
+    source = db.Column(db.String(50), default='MATRIX_V1')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Mapping Module:{self.module_id} -> Standard:{self.standard_id}>'

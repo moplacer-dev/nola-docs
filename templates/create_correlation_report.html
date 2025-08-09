@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Create Correlation Report - NOLA.docs{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Star Academy Correlation Report</h1>
+            <p class="text-lg text-gray-600">Generate formatted correlation tables based on grade level, subject, and selected modules</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_correlation_report') }}" id="correlation-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Report Configuration Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Report Configuration</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- State -->
+                    <div class="mb-6">
+                        {{ form.state.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.state(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.state.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.state.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Grade Level -->
+                    <div class="mb-6">
+                        {{ form.grade.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.grade(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.grade.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.grade.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="mb-6">
+                        {{ form.subject.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.subject(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", id="subject-select") }}
+                        {% if form.subject.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.subject.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Selected Modules -->
+                    <div class="mb-6 md:col-span-2">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-gray-700">Selected Modules</label>
+                            <span id="selected-count" class="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">0 selected</span>
+                        </div>
+                        
+                        <!-- Selected modules list -->
+                        <div id="selected-modules-list" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-blue-800">Selected Modules:</span>
+                                <button type="button" id="clear-selected-btn" class="text-xs text-blue-600 hover:text-blue-800 underline">Clear all</button>
+                            </div>
+                            <div id="selected-modules-tags" class="flex flex-wrap gap-1">
+                                <!-- Selected module tags will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Search and bulk actions -->
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="module-search" placeholder="Search modules..." 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            <button type="button" id="select-all-btn" 
+                                    class="px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 text-sm font-medium">
+                                Select All
+                            </button>
+                            <button type="button" id="clear-all-btn" 
+                                    class="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                                Clear All
+                            </button>
+                        </div>
+                        
+                        <!-- Modules container -->
+                        <div id="modules-container" class="border border-gray-300 rounded-md bg-white max-h-80 overflow-y-auto">
+                            <div class="p-4 text-center text-gray-500">Loading modules...</div>
+                        </div>
+                        
+                        <!-- Hidden select for form submission -->
+                        <select name="selected_modules" multiple id="modules-select" class="hidden" required>
+                        </select>
+                        
+                        <p class="mt-2 text-xs text-gray-500">Check the boxes to select modules. You can select any combination regardless of subject.</p>
+                        {% if form.selected_modules.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.selected_modules.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button type="submit" id="generate-btn" disabled
+                        class="bg-violet-600 text-white px-8 py-3 rounded-md hover:bg-violet-700 transition-colors text-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Generate Correlation Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modulesContainer = document.getElementById('modules-container');
+    const modulesSelect = document.getElementById('modules-select');
+    const generateBtn = document.getElementById('generate-btn');
+    const selectedCount = document.getElementById('selected-count');
+    const moduleSearch = document.getElementById('module-search');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    const selectedModulesList = document.getElementById('selected-modules-list');
+    const selectedModulesTags = document.getElementById('selected-modules-tags');
+    const clearSelectedBtn = document.getElementById('clear-selected-btn');
+    
+    let allModules = [];
+    let filteredModules = [];
+    let selectedModuleIds = new Set(); // Track selected module IDs separately
+    
+    // Load all modules on page load
+    function loadAllModules() {
+        modulesContainer.innerHTML = '<div class="p-4 text-center text-gray-500">Loading modules...</div>';
+        
+        fetch('/api/modules')
+            .then(response => response.json())
+            .then(data => {
+                allModules = data.modules || [];
+                filteredModules = [...allModules];
+                
+                if (allModules.length === 0) {
+                    modulesContainer.innerHTML = '<div class="p-4 text-center text-gray-500">No modules available</div>';
+                } else {
+                    renderModules();
+                    updateGenerateButton();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading modules:', error);
+                modulesContainer.innerHTML = '<div class="p-4 text-center text-red-500">Error loading modules</div>';
+            });
+    }
+    
+    // Render modules as checkboxes organized by subject
+    function renderModules() {
+        if (filteredModules.length === 0) {
+            modulesContainer.innerHTML = '<div class="p-4 text-center text-gray-500">No modules match your search</div>';
+            return;
+        }
+        
+        // Group modules by subject
+        const modulesBySubject = {};
+        filteredModules.forEach(module => {
+            const subject = module.subject || 'Other';
+            if (!modulesBySubject[subject]) {
+                modulesBySubject[subject] = [];
+            }
+            modulesBySubject[subject].push(module);
+        });
+        
+        let html = '';
+        Object.keys(modulesBySubject).sort().forEach(subject => {
+            html += `<div class="border-b border-gray-200 last:border-b-0">`;
+            html += `<div class="bg-gray-50 px-4 py-2 font-medium text-gray-700 text-sm">${subject}</div>`;
+            
+            modulesBySubject[subject].forEach(module => {
+                const isChecked = selectedModuleIds.has(module.id.toString());
+                
+                let gradeInfo = '';
+                if (module.grade_level) {
+                    gradeInfo = ` <span class="text-gray-500">(${module.grade_level})</span>`;
+                }
+                
+                html += `
+                <div class="flex items-center px-4 py-3 hover:bg-gray-50 ${isChecked ? 'bg-blue-50' : ''}">
+                    <input type="checkbox" id="module-${module.id}" value="${module.id}" 
+                           class="module-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                           ${isChecked ? 'checked' : ''}>
+                    <label for="module-${module.id}" class="ml-3 text-sm text-gray-900 flex-1 cursor-pointer">
+                        ${module.title}${gradeInfo}
+                    </label>
+                </div>`;
+            });
+            
+            html += '</div>';
+        });
+        
+        modulesContainer.innerHTML = html;
+        attachCheckboxListeners();
+    }
+    
+    // Attach event listeners to checkboxes
+    function attachCheckboxListeners() {
+        const checkboxes = modulesContainer.querySelectorAll('.module-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Update selected set
+                if (this.checked) {
+                    selectedModuleIds.add(this.value);
+                } else {
+                    selectedModuleIds.delete(this.value);
+                }
+                
+                updateHiddenSelect();
+                updateSelectedCount();
+                updateSelectedModulesList();
+                updateGenerateButton();
+                
+                // Update visual state
+                const container = this.closest('div');
+                if (this.checked) {
+                    container.classList.add('bg-blue-50');
+                } else {
+                    container.classList.remove('bg-blue-50');
+                }
+            });
+        });
+    }
+    
+    // Update hidden select element for form submission
+    function updateHiddenSelect() {
+        modulesSelect.innerHTML = '';
+        
+        selectedModuleIds.forEach(moduleId => {
+            const option = document.createElement('option');
+            option.value = moduleId;
+            option.selected = true;
+            modulesSelect.appendChild(option);
+        });
+    }
+    
+    // Update selected count display
+    function updateSelectedCount() {
+        const checkedCount = selectedModuleIds.size;
+        selectedCount.textContent = `${checkedCount} selected`;
+        selectedCount.className = checkedCount > 0 
+            ? 'text-sm text-blue-700 bg-blue-100 px-2 py-1 rounded font-medium'
+            : 'text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded';
+    }
+    
+    // Update the visual list of selected modules
+    function updateSelectedModulesList() {
+        if (selectedModuleIds.size === 0) {
+            selectedModulesList.classList.add('hidden');
+            return;
+        }
+        
+        selectedModulesList.classList.remove('hidden');
+        selectedModulesTags.innerHTML = '';
+        
+        selectedModuleIds.forEach(moduleId => {
+            const module = allModules.find(m => m.id.toString() === moduleId);
+            if (module) {
+                const tag = document.createElement('div');
+                tag.className = 'inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full';
+                tag.innerHTML = `
+                    <span>${module.title}</span>
+                    <button type="button" class="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none" 
+                            onclick="removeSelectedModule('${moduleId}')">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                `;
+                selectedModulesTags.appendChild(tag);
+            }
+        });
+    }
+    
+    // Search functionality
+    moduleSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        if (searchTerm === '') {
+            filteredModules = [...allModules];
+        } else {
+            filteredModules = allModules.filter(module => 
+                module.title.toLowerCase().includes(searchTerm) ||
+                (module.subject && module.subject.toLowerCase().includes(searchTerm))
+            );
+        }
+        renderModules();
+    });
+    
+    // Remove a specific selected module
+    window.removeSelectedModule = function(moduleId) {
+        selectedModuleIds.delete(moduleId);
+        updateHiddenSelect();
+        updateSelectedCount();
+        updateSelectedModulesList();
+        updateGenerateButton();
+        renderModules(); // Re-render to update checkbox states
+    };
+    
+    // Select all visible modules
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = modulesContainer.querySelectorAll('.module-checkbox');
+        checkboxes.forEach(checkbox => {
+            selectedModuleIds.add(checkbox.value);
+            checkbox.checked = true;
+            checkbox.closest('div').classList.add('bg-blue-50');
+        });
+        updateHiddenSelect();
+        updateSelectedCount();
+        updateSelectedModulesList();
+        updateGenerateButton();
+    });
+    
+    // Clear all selections
+    function clearAllSelections() {
+        selectedModuleIds.clear();
+        const checkboxes = modulesContainer.querySelectorAll('.module-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            checkbox.closest('div').classList.remove('bg-blue-50');
+        });
+        updateHiddenSelect();
+        updateSelectedCount();
+        updateSelectedModulesList();
+        updateGenerateButton();
+    }
+    
+    clearAllBtn.addEventListener('click', clearAllSelections);
+    clearSelectedBtn.addEventListener('click', clearAllSelections);
+    
+    // Enable/disable generate button based on form completion
+    function updateGenerateButton() {
+        const stateSelected = document.querySelector('select[name="state"]').value;
+        const gradeSelected = document.querySelector('select[name="grade"]').value;
+        const subjectSelected = document.querySelector('select[name="subject"]').value;
+        const modulesSelected = selectedModuleIds.size > 0;
+        
+        generateBtn.disabled = !(stateSelected && gradeSelected && subjectSelected && modulesSelected);
+    }
+    
+    // Update button state when other form fields change
+    document.querySelector('select[name="state"]').addEventListener('change', updateGenerateButton);
+    document.querySelector('select[name="grade"]').addEventListener('change', updateGenerateButton);
+    document.querySelector('select[name="subject"]').addEventListener('change', updateGenerateButton);
+    
+    // Load modules on page load
+    loadAllModules();
+    
+    // Initial button check
+    updateGenerateButton();
+});
+</script>
+{% endblock %}

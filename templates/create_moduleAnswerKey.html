@@ -579,42 +579,6 @@
             </div>
 
             <!-- Enrichment section removed - moved to separate Academic Worksheet Builder template -->
-                            <h3 class="text-lg font-medium text-gray-800 mb-3">Select Field Type to Add:</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                <button type="button" class="field-type-btn bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-3 rounded-md transition-colors" data-type="section_header" data-section="enrichment">
-                                    📋 Section Header
-                                </button>
-                                <button type="button" class="field-type-btn bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-3 rounded-md transition-colors" data-type="section_instructions" data-section="enrichment">
-                                    📝 Instructions
-                                </button>
-                                <button type="button" class="field-type-btn bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-3 rounded-md transition-colors" data-type="paragraph_text" data-section="enrichment">
-                                    📄 Paragraph Text
-                                </button>
-                                <button type="button" class="field-type-btn bg-green-100 hover:bg-green-200 text-green-800 px-4 py-3 rounded-md transition-colors" data-type="multiple_choice" data-section="enrichment">
-                                    ☑️ Multiple Choice
-                                </button>
-                                <button type="button" class="field-type-btn bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-4 py-3 rounded-md transition-colors" data-type="fill_in_blank" data-section="enrichment">
-                                    ✏️ Fill in Blank
-                                </button>
-                                <button type="button" class="field-type-btn bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-3 rounded-md transition-colors" data-type="math_problem" data-section="enrichment">
-                                    🔢 Math Problem
-                                </button>
-                                <button type="button" class="field-type-btn bg-red-100 hover:bg-red-200 text-red-800 px-4 py-3 rounded-md transition-colors" data-type="text_entry" data-section="enrichment">
-                                    📄 Text Entry
-                                </button>
-
-                            </div>
-                            <button type="button" class="mt-3 text-gray-600 hover:text-gray-800" onclick="hideFieldTypeSelector('enrichment')">Cancel</button>
-                        </div>
-                        
-                        <div class="text-right mt-6">
-                            <button type="button" id="enrichment-add-field-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" onclick="showFieldTypeSelector('enrichment')">
-                                + Add Field
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Worksheet Answer Keys section removed - moved to separate Academic Worksheet Builder template -->
 
@@ -1341,19 +1305,6 @@ let enrichmentFieldIndex = 0;
 let worksheetFieldIndex = 0;
 
 // Enrichment Section Functions
-function showFieldTypeSelector(section) {
-    if (section === 'enrichment') {
-        document.getElementById('enrichment-field-type-selector').classList.remove('hidden');
-        document.getElementById('enrichment-add-field-btn').style.display = 'none';
-    }
-}
-
-function hideFieldTypeSelector(section) {
-    if (section === 'enrichment') {
-        document.getElementById('enrichment-field-type-selector').classList.add('hidden');
-        document.getElementById('enrichment-add-field-btn').style.display = '';
-    }
-}
 
 function addEnrichmentField(fieldType) {
     const container = document.getElementById('enrichment-fields-container');
@@ -1385,8 +1336,6 @@ function addEnrichmentField(fieldType) {
     
     enrichmentFieldIndex++;
     
-    // Hide selector and show add button
-    hideFieldTypeSelector('enrichment');
     
     // Setup autosave for new fields
     if (window.autosaveInstance) {
@@ -1529,8 +1478,6 @@ function addWorksheetField(worksheetIndex, fieldType) {
     
     worksheetFieldIndex++;
     
-    // Hide selector
-    hideWorksheetFieldTypeSelector(worksheetIndex);
     
     // Setup autosave for new fields
     if (window.autosaveInstance) {
@@ -1631,30 +1578,7 @@ function createWorksheetFieldHtml(fieldType, worksheetIndex, fieldIndex) {
     return baseFields + specificFields;
 }
 
-function showWorksheetFieldTypeSelector(worksheetIndex) {
-    const selector = document.querySelector(`.worksheet-field-type-selector[data-worksheet-index="${worksheetIndex}"]`);
-    const addBtn = document.querySelector(`.add-field-btn[data-worksheet-index="${worksheetIndex}"]`);
-    
-    if (selector) selector.classList.remove('hidden');
-    if (addBtn) addBtn.style.display = 'none';
-}
 
-function hideWorksheetFieldTypeSelector(worksheetIndex) {
-    const selector = document.querySelector(`.worksheet-field-type-selector[data-worksheet-index="${worksheetIndex}"]`);
-    const addBtn = document.querySelector(`.add-field-btn[data-worksheet-index="${worksheetIndex}"]`);
-    
-    if (selector) selector.classList.add('hidden');
-    if (addBtn) addBtn.style.display = '';
-}
-
-function checkWorksheetEmptyState(worksheetIndex) {
-    const container = document.querySelector(`.worksheet-fields-container[data-worksheet-index="${worksheetIndex}"]`);
-    const emptyMessage = document.querySelector(`.worksheet-empty-message[data-worksheet-index="${worksheetIndex}"]`);
-    
-    if (container && emptyMessage && container.children.length === 0) {
-        emptyMessage.style.display = 'block';
-    }
-}
 
 function getFieldTypeLabel(fieldType) {
     const labels = {
@@ -1700,8 +1624,6 @@ function addWorksheet() {
         }
     });
     
-    // Add event listeners for the new worksheet's buttons
-    setupWorksheetEventListeners(worksheetIndex);
     
     worksheetIndex++;
     
@@ -1731,90 +1653,9 @@ function createWorksheetHtml(index) {
         <div class="worksheet-fields-container" data-worksheet-index="${index}">
         </div>
         
-        <!-- Empty state message for this worksheet -->
-        <div class="worksheet-empty-message text-gray-500 text-center py-4" data-worksheet-index="${index}">
-            <p>No fields added to this worksheet yet.</p>
-            <p class="text-sm">Click "Add Field" below to start building this worksheet's content.</p>
-        </div>
-        
-        <!-- Field Type Selector for this worksheet -->
-        <div class="worksheet-field-type-selector hidden" data-worksheet-index="${index}">
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 class="font-medium text-gray-800 mb-3">Select Field Type to Add:</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_header" data-worksheet-index="${index}">
-                        📝 Section Header
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="section_instructions" data-worksheet-index="${index}">
-                        📋 Instructions
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="multiple_choice" data-worksheet-index="${index}">
-                        ✅ Multiple Choice
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="fill_in_blank" data-worksheet-index="${index}">
-                        ✏️ Fill in Blank
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="text_entry" data-worksheet-index="${index}">
-                        📝 Text Entry
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="math_problem" data-worksheet-index="${index}">
-                        🔢 Math Problem
-                    </button>
-                    <button type="button" class="worksheet-field-type-btn bg-white border border-gray-300 rounded px-3 py-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500" data-type="paragraph_text" data-worksheet-index="${index}">
-                        📄 Paragraph Text
-                    </button>
-
-                </div>
-                <div class="mt-3 text-center">
-                    <button type="button" class="cancel-field-selection-btn text-gray-600 hover:text-gray-800" data-worksheet-index="${index}">Cancel</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Add Field Button for this worksheet -->
-        <div class="text-center mt-4">
-            <button type="button" class="add-field-btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-worksheet-index="${index}">
-                ➕ Add Field
-            </button>
-        </div>
     `;
 }
 
-function setupWorksheetEventListeners(worksheetIdx) {
-    // Add field button
-    const addFieldBtn = document.querySelector(`.add-field-btn[data-worksheet-index="${worksheetIdx}"]`);
-    if (addFieldBtn) {
-        addFieldBtn.addEventListener('click', function() {
-            showWorksheetFieldTypeSelector(worksheetIdx);
-        });
-    }
-    
-    // Field type buttons - remove existing listeners first to prevent duplicates
-    document.querySelectorAll(`.worksheet-field-type-btn[data-worksheet-index="${worksheetIdx}"]`).forEach(button => {
-        // Clone button to remove all event listeners
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        // Add single event listener
-        newButton.addEventListener('click', function() {
-            const fieldType = this.dataset.type;
-            addWorksheetField(worksheetIdx, fieldType);
-            
-            // Trigger autosave after adding field
-            if (window.autosaveInstance) {
-                window.autosaveInstance.scheduleAutosave();
-            }
-        });
-    });
-    
-    // Cancel button
-    const cancelBtn = document.querySelector(`.cancel-field-selection-btn[data-worksheet-index="${worksheetIdx}"]`);
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', function() {
-            hideWorksheetFieldTypeSelector(worksheetIdx);
-        });
-    }
-}
 
 function checkWorksheetsEmptyState() {
     const container = document.getElementById('worksheets-container');
@@ -1840,25 +1681,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Enrichment field type buttons
-    document.querySelectorAll('.field-type-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const fieldType = this.dataset.type;
-            addEnrichmentField(fieldType);
-            
-            // Trigger autosave after adding field
-            if (window.autosaveInstance) {
-                window.autosaveInstance.scheduleAutosave();
-            }
-        });
-    });
     
-    // Setup existing worksheet event listeners
+    // Update global counter to be higher than existing worksheets
     document.querySelectorAll('.worksheet-container').forEach(worksheet => {
         const worksheetIdx = parseInt(worksheet.dataset.worksheetIndex);
-        setupWorksheetEventListeners(worksheetIdx);
-        
-        // Update global counter to be higher than existing worksheets
         if (worksheetIdx >= worksheetIndex) {
             worksheetIndex = worksheetIdx + 1;
         }

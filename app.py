@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
-from wtforms import StringField, TextAreaField, SelectField, SubmitField, FieldList, FormField, IntegerField, HiddenField, BooleanField, RadioField
+from wtforms import StringField, TextAreaField, SelectField, SelectMultipleField, SubmitField, FieldList, FormField, IntegerField, HiddenField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from docxtpl import DocxTemplate, RichText, InlineImage
 from docx import Document
-from docx.shared import Inches, Pt
+from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.oxml import OxmlElement
 from werkzeug.utils import secure_filename
 from flask_wtf.file import FileField, FileAllowed
 import os
@@ -48,9 +50,43 @@ app.config['IS_PRODUCTION'] = os.environ.get('FLASK_ENV') == 'production' or 're
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize database and migrations
-from models import db, User, FormDraft, GeneratedDocument, TemplateFile, ActivityLog
+from models import db, User, FormDraft, GeneratedDocument, TemplateFile, ActivityLog, State, Standard, Module, ModuleStandardMapping
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# Helper functions for standards/modules queries
+def get_framework_for(state: str, subject: str) -> str:
+    """Get the framework for a given state and subject"""
+    return 'CCSS-M' if subject.upper() == 'MATH' else 'NGSS'
+
+def get_all_standards(state: str, grade: int, subject: str) -> list:
+    """Get all standard codes for a given state, grade, and subject"""
+    fw = get_framework_for(state, subject)
+    q = Standard.query.filter_by(framework=fw, subject=subject.upper())
+    
+    if subject.upper() == 'MATH':
+        q = q.filter_by(grade_level=int(grade))
+    else:
+        q = q.filter_by(grade_band='MS')  # middle school band
+    
+    return [s.code for s in q.order_by(Standard.code).all()]
+
+def get_module_to_standards(subject: str, grade: int) -> dict:
+    """Get mapping of module titles to their covered standard codes"""
+    q = (db.session.query(Module.title, Standard.code)
+         .join(ModuleStandardMapping, Module.id==ModuleStandardMapping.module_id)
+         .join(Standard, Standard.id==ModuleStandardMapping.standard_id)
+         .filter(Module.subject==subject.upper()))
+    
+    if subject.upper() == 'MATH':
+        q = q.filter(Module.grade_level==int(grade), Standard.framework=='CCSS-M')
+    else:
+        q = q.filter(Standard.framework=='NGSS', Standard.grade_band=='MS')
+    
+    out = {}
+    for title, code in q:
+        out.setdefault(title, set()).add(code)
+    return out
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -288,6 +324,79 @@ def load_module_answer_key2_draft_into_form(form, user_id):
         import traceback
         traceback.print_exc()
         return False
+
+def create_correlation_table(selected_modules, grade_level, subject):
+    """Generate a formatted correlation table subdoc with specific formatting requirements"""
+    from docx import Document
+    from docx.shared import Inches, Pt
+    
+    # Create a new document to hold just the table
+    subdoc = Document()
+    
+    # Get all standards for the selected grade and subject
+    standards = Standard.query.filter_by(
+        grade_level=grade_level,
+        subject=subject
+    ).order_by(Standard.code).limit(10).all()  # Limit to 10 for testing
+    
+    if not standards:
+        # Add a simple paragraph if no standards found
+        p = subdoc.add_paragraph("No standards found for this grade level and subject.")
+        return subdoc
+    
+    # Get module objects
+    modules = Module.query.filter(
+        Module.id.in_(selected_modules),
+        Module.subject == subject
+    ).all()
+    
+    if not modules:
+        # Add a simple paragraph if no modules found
+        p = subdoc.add_paragraph("No modules found.")
+        return subdoc
+    
+    # Create a simple table: 1 column for standards + 1 column per module
+    num_cols = 1 + len(modules)
+    num_rows = 1 + len(standards)  # Header + standards rows
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    table.style = 'Table Grid'
+    
+    # Configure header row
+    header_cells = table.rows[0].cells
+    
+    # Header: "Standards" column
+    header_cells[0].text = 'Standards'
+    
+    # Header: Module columns
+    for i, module in enumerate(modules):
+        header_cells[i + 1].text = module.title[:20]  # Truncate long names
+    
+    # Fill data rows - simplified version
+    for row_idx, standard in enumerate(standards, 1):
+        row = table.rows[row_idx]
+        
+        # Standards column
+        standards_cell = row.cells[0]
+        standards_cell.text = standard.code
+        
+        # Module columns - simplified without complex XML formatting
+        for col_idx, module in enumerate(modules, 1):
+            module_cell = row.cells[col_idx]
+            
+            # Check if this module covers this standard
+            mapping = ModuleStandardMapping.query.filter_by(
+                module_id=module.id,
+                standard_id=standard.id,
+                grade_level=grade_level
+            ).first()
+            
+            if mapping:
+                module_cell.text = 'X'
+            else:
+                module_cell.text = ''
+    
+    return subdoc
 
 # Custom validator for correct answer field
 def validate_answer_choice(form, field):
@@ -970,11 +1079,11 @@ class HorizontalLessonPlanSessionForm(FlaskForm):
     class Meta:
         csrf = False  # Disable CSRF for nested forms
     
-    focus = TextAreaField('Session Focus', validators=[Optional(), Length(max=500)])
-    objectives = TextAreaField('Learning Objectives', validators=[Optional(), Length(max=1000)])
-    materials = TextAreaField('Materials', validators=[Optional(), Length(max=1000)])
-    teacher_prep = TextAreaField('Teacher Preparations', validators=[Optional(), Length(max=1000)])
-    assessments = TextAreaField('Performance Based Assessments', validators=[Optional(), Length(max=1000)])
+    focus = TextAreaField('Session Focus', validators=[Optional(), Length(max=1000)])
+    objectives = TextAreaField('Learning Objectives', validators=[Optional(), Length(max=2500)])
+    materials = TextAreaField('Materials', validators=[Optional(), Length(max=2500)])
+    teacher_prep = TextAreaField('Teacher Preparations', validators=[Optional(), Length(max=2500)])
+    assessments = TextAreaField('Performance Based Assessments', validators=[Optional(), Length(max=2500)])
 
 class HorizontalLessonPlanModuleForm(FlaskForm):
     class Meta:
@@ -990,7 +1099,7 @@ class HorizontalLessonPlanModuleForm(FlaskForm):
     # 7 sessions for this module
     sessions = FieldList(FormField(HorizontalLessonPlanSessionForm), min_entries=7, max_entries=7)
     
-    enrichment_activities = TextAreaField('Enrichment Activities', validators=[Optional(), Length(max=1000)])
+    enrichment_activities = TextAreaField('Enrichment Activities', validators=[Optional(), Length(max=3000)])
 
 class HorizontalLessonPlanForm(FlaskForm):
     # Basic information
@@ -1192,6 +1301,33 @@ class CurriculumDesignBuildForm(FlaskForm):
     # Social Studies standard coverage percentages (up to 2 grade levels)
     
     submit = SubmitField('Generate Curriculum Design Build')
+
+class CorrelationReportForm(FlaskForm):
+    state = SelectField('State', 
+                       choices=[('', 'Select State...')],
+                       validators=[DataRequired()])
+    
+    grade = SelectField('Grade Level', 
+                       choices=[
+                           ('', 'Select Grade...'),
+                           ('7th Grade', '7th Grade'),
+                           ('8th Grade', '8th Grade')
+                       ],
+                       validators=[DataRequired()])
+    
+    subject = SelectField('Subject', 
+                         choices=[
+                             ('', 'Select Subject...'),
+                             ('Math', 'Math'),
+                             ('Science', 'Science')
+                         ],
+                         validators=[DataRequired()])
+    
+    selected_modules = SelectMultipleField('Selected Modules',
+                                         choices=[],
+                                         validators=[DataRequired()])
+    
+    submit = SubmitField('Generate Correlation Report')
 
 @app.route('/dashboard')
 @login_required
@@ -6540,6 +6676,7 @@ def create_curriculum_design_build():
             flash(f'Error generating document: {str(e)}', 'error')
     
     # Load existing draft if editing
+    draft = None
     draft_id = request.args.get('draft_id')
     if draft_id:
         try:
@@ -6784,7 +6921,709 @@ def generate_dynamic_table_subdocument(doc, form_data, subject_type):
     
     return subdoc
 
+@app.route('/create-correlation-report', methods=['GET', 'POST'])
+@login_required
+def create_correlation_report():
+    form = CorrelationReportForm()
+    
+    # Populate state choices
+    states = State.query.order_by(State.name).all()
+    form.state.choices = [('', 'Select State...')] + [(s.code, s.name) for s in states]
+    
+    if request.method == 'POST':
+        # Get form data manually to avoid validation issues with dynamic choices
+        state = request.form.get('state')
+        grade = request.form.get('grade') 
+        subject = request.form.get('subject')
+        selected_modules = request.form.getlist('selected_modules')
+        
+        # Basic validation
+        if not state or not grade or not subject or not selected_modules:
+            flash('Please fill in all fields and select at least one module.', 'error')
+        else:
+            try:
+                # Generate the document
+                doc_path = generate_correlation_report_document(
+                    state,
+                    grade,
+                    subject,
+                    selected_modules
+                )
+                
+                # Store in database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='correlation_report',
+                    filename=os.path.basename(doc_path),
+                    file_path=doc_path,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                flash('Correlation Report generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+                
+            except Exception as e:
+                print(f"Error generating Correlation Report: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Error generating document: {str(e)}', 'error')
+    
+    return render_template('create_correlation_report.html', form=form)
 
+@app.route('/api/modules')
+@login_required
+def get_modules_api():
+    """API endpoint to get all modules for correlation report form"""
+    try:
+        modules = Module.query.order_by(Module.title).all()
+        module_data = []
+        
+        for module in modules:
+            # Skip "Unnamed: 1" modules which are Excel artifacts
+            if module.title.startswith('Unnamed:'):
+                continue
+                
+            module_data.append({
+                'id': module.id,
+                'title': module.title,
+                'subject': module.subject,
+                'grade_level': module.grade_level
+            })
+        
+        return {'modules': module_data}
+        
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+@app.route('/api/modules/<subject>', methods=['GET'])
+@login_required
+def get_modules_by_subject(subject):
+    """API endpoint to get modules filtered by subject"""
+    modules = Module.query.filter_by(subject=subject).order_by(Module.title).all()
+    return jsonify([{'id': m.id, 'title': m.title, 'acronym': m.acronym} for m in modules])
+
+# Correlation Report Helper Functions
+def safe_clear_cell(cell):
+    """Safely clear a cell without nuking XML relationships."""
+    cell.text = ""  # resets to a single empty paragraph
+
+def set_cell_text(cell, text, font_name, size_pt, bold=False, align='center', vcenter=True):
+    """Write formatted text into a cell safely."""
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.shared import Pt
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    import html
+    
+    safe_clear_cell(cell)
+    p = cell.paragraphs[0]
+    
+    # Properly handle ampersand symbols and other HTML entities
+    # First unescape any existing HTML entities, then let python-docx handle XML escaping
+    if text:
+        clean_text = html.unescape(str(text))
+    else:
+        clean_text = ""
+    
+    run = p.add_run(clean_text)
+    
+    # Set font; python-docx sometimes needs rFonts for reliability
+    run.font.name = font_name
+    run.font.size = Pt(size_pt)
+    run.font.bold = bold
+
+    # Force font via rPr.rFonts (helps Rockwell/Arial stick)
+    r = run._r
+    rPr = r.get_or_add_rPr()
+    rFonts = OxmlElement('w:rFonts')
+    rFonts.set(qn('w:ascii'), font_name)
+    rFonts.set(qn('w:hAnsi'), font_name)
+    rPr.append(rFonts)
+
+    if align == 'center':
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    elif align == 'left':
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    elif align == 'right':
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+
+    if vcenter:
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+def shade_cell(cell, hex_fill):
+    """Apply background fill to a cell (e.g., '8DC593' or 'EFEFEF')."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:val'), 'clear')
+    shd.set(qn('w:color'), 'auto')
+    shd.set(qn('w:fill'), hex_fill.upper().lstrip('#'))
+    tcPr.append(shd)
+
+def set_cell_margins(cell, top_inches=0, bottom_inches=0, left_inches=0, right_inches=0):
+    """Set cell margins in inches."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    # Get cell properties
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    
+    # Create margin element
+    tc_mar = tcPr.find(qn('w:tcMar'))
+    if tc_mar is None:
+        tc_mar = OxmlElement('w:tcMar')
+        tcPr.append(tc_mar)
+    
+    # Convert inches to twips (1 inch = 1440 twips)
+    def inches_to_twips(inches):
+        return str(int(inches * 1440))
+    
+    # Set margins
+    if top_inches > 0:
+        top = tc_mar.find(qn('w:top'))
+        if top is None:
+            top = OxmlElement('w:top')
+            tc_mar.append(top)
+        top.set(qn('w:w'), inches_to_twips(top_inches))
+        top.set(qn('w:type'), 'dxa')
+    
+    if bottom_inches > 0:
+        bottom = tc_mar.find(qn('w:bottom'))
+        if bottom is None:
+            bottom = OxmlElement('w:bottom')
+            tc_mar.append(bottom)
+        bottom.set(qn('w:w'), inches_to_twips(bottom_inches))
+        bottom.set(qn('w:type'), 'dxa')
+    
+    if left_inches > 0:
+        left = tc_mar.find(qn('w:left'))
+        if left is None:
+            left = OxmlElement('w:left')
+            tc_mar.append(left)
+        left.set(qn('w:w'), inches_to_twips(left_inches))
+        left.set(qn('w:type'), 'dxa')
+    
+    if right_inches > 0:
+        right = tc_mar.find(qn('w:right'))
+        if right is None:
+            right = OxmlElement('w:right')
+            tc_mar.append(right)
+        right.set(qn('w:w'), inches_to_twips(right_inches))
+        right.set(qn('w:type'), 'dxa')
+
+def set_row_height(row, inches, exact=True):
+    """Set row height; exact prevents Word from auto-expanding."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    tr = row._tr
+    trPr = tr.get_or_add_trPr()
+    trHeight = OxmlElement('w:trHeight')
+    # 1 inch = 1440 twips
+    h_twips = int(inches * 1440)
+    trHeight.set(qn('w:val'), str(h_twips))
+    if exact:
+        trHeight.set(qn('w:hRule'), 'exact')
+    trPr.append(trHeight)
+
+def set_table_borders(table):
+    """Add all borders to the table (top, bottom, left, right, inside)."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    tbl = table._tbl
+    tblPr = tbl.tblPr
+    if tblPr is None:
+        tblPr = OxmlElement('w:tblPr')
+        tbl.insert(0, tblPr)
+    
+    # Create table borders element
+    tblBorders = OxmlElement('w:tblBorders')
+    
+    # Define all border sides
+    border_sides = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']
+    
+    for side in border_sides:
+        border = OxmlElement(f'w:{side}')
+        border.set(qn('w:val'), 'single')  # Single line border
+        border.set(qn('w:sz'), '4')        # Border width (4 = 0.5pt)
+        border.set(qn('w:space'), '0')     # No spacing
+        border.set(qn('w:color'), '000000') # Black color
+        tblBorders.append(border)
+    
+    tblPr.append(tblBorders)
+
+def set_table_left_indent(table, inches=0.13):
+    """Set left indent via tblInd."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    tblPr = table._tbl.tblPr
+    tblInd = tblPr.xpath('./w:tblInd')
+    if tblInd:
+        tblInd = tblInd[0]
+    else:
+        tblInd = OxmlElement('w:tblInd')
+        tblPr.append(tblInd)
+    # 1 inch = 1440 twips
+    tblInd.set(qn('w:w'), str(int(inches * 1440)))
+    tblInd.set(qn('w:type'), 'dxa')
+
+
+def build_correlation_subdoc(doc, title_set, all_standards, module_to_standards):
+    """Build correlation table as subdocument with exact formatting"""
+    from docx.shared import Inches
+    from docxtpl import Subdoc
+    
+    print(f"DEBUG: Building subdoc with {len(title_set)} modules, {len(all_standards)} standards")
+    print(f"DEBUG: Column widths - Standards: {Inches(0.67)}, Modules: {Inches(1.62)} each")
+    
+    # Create subdocument
+    subdoc = doc.new_subdoc()
+    
+    # Add table (standards + modules)
+    num_cols = len(title_set) + 1  # +1 for standards column
+    num_rows = len(all_standards) + 1  # +1 for header
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    
+    # Set table-level properties
+    set_table_left_indent(table, 0.13)
+    set_table_borders(table)
+    print(f"DEBUG: Set table indent to 0.13 inches (187 twips) and added all borders")
+    
+    # Set column widths
+    table.columns[0].width = Inches(0.67)  # Standards column
+    for i in range(1, num_cols):
+        table.columns[i].width = Inches(1.62)  # Module columns
+    
+    print(f"DEBUG: Set column widths - Col 0: {Inches(0.67)}, Cols 1-{num_cols-1}: {Inches(1.62)}")
+    
+    # Header row
+    header_row = table.rows[0]
+    set_row_height(header_row, 0.38, exact=True)
+    
+    # Header: Standards column
+    header_cell = header_row.cells[0]
+    set_cell_text(header_cell, "Standards", "Rockwell", 10, bold=True, align='center')
+    
+    # Header: Module columns
+    for i, module_title in enumerate(title_set):
+        header_cell = header_row.cells[i + 1]
+        set_cell_text(header_cell, module_title, "Rockwell", 10, bold=True, align='center')
+    
+    print(f"DEBUG: Header row height set to 0.38 inches EXACT")
+    
+    # Data rows
+    for row_idx, standard_code in enumerate(all_standards):
+        data_row = table.rows[row_idx + 1]
+        set_row_height(data_row, 0.31, exact=True)
+        
+        # Determine row shading (alternating: #EFEFEF, white)
+        is_gray_row = row_idx % 2 == 0  # First data row (row_idx=0) gets gray
+        row_shade = "EFEFEF" if is_gray_row else "FFFFFF"
+        
+        # Standards column
+        std_cell = data_row.cells[0]
+        set_cell_text(std_cell, standard_code, "Arial", 8, bold=False, align='center')
+        shade_cell(std_cell, row_shade)
+        
+        # Module columns
+        for col_idx, module_title in enumerate(title_set):
+            module_cell = data_row.cells[col_idx + 1]
+            
+            # Check if this module covers this standard
+            module_standards = module_to_standards.get(module_title, set())
+            has_coverage = standard_code in module_standards
+            
+            if has_coverage:
+                set_cell_text(module_cell, "X", "Arial", 8, bold=True, align='center')
+                shade_cell(module_cell, "8DC593")  # Green override
+            else:
+                set_cell_text(module_cell, "", "Arial", 8, bold=False, align='center')
+                shade_cell(module_cell, row_shade)  # Row alternating color
+    
+    print(f"DEBUG: Data rows height set to 0.31 inches EXACT, alternating shades applied")
+    print(f"DEBUG: Green cells (#8DC593) applied for coverage, alternating row shades: #EFEFEF/white")
+    
+    return subdoc
+
+def build_coverage_report_subdoc(doc, title_set, all_standards, module_to_standards, standard_descriptions):
+    """Build coverage report table showing standards and which modules cover them"""
+    from docx.shared import Inches
+    from docxtpl import Subdoc
+    import html
+    
+    print(f"DEBUG: Building coverage report subdoc with {len(all_standards)} standards, {len(title_set)} modules")
+    
+    # Create subdocument
+    subdoc = doc.new_subdoc()
+    
+    # Create table with 3 columns: Standard, Standard Description, Selected Module
+    num_cols = 3
+    num_rows = len(all_standards) + 1  # +1 for header
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    
+    # Set table-level properties
+    set_table_left_indent(table, 0.13)
+    set_table_borders(table)
+    
+    # Enable autofit for coverage report table (handles long descriptions)
+    table.autofit = True
+    
+    # Set initial column widths as proportional guidelines for autofit
+    table.columns[0].width = Inches(0.8)   # Standard code column
+    table.columns[1].width = Inches(3.5)   # Standard description column (wider for descriptions)
+    table.columns[2].width = Inches(2.0)   # Selected modules column
+    
+    print(f"DEBUG: Set coverage table column widths - Standard: {Inches(0.8)}, Description: {Inches(3.5)}, Modules: {Inches(2.0)}, Autofit: ENABLED")
+    
+    # Header row
+    header_row = table.rows[0]
+    set_row_height(header_row, 0.38, exact=True)
+    
+    # Header cells - Rockwell 11pt bold
+    set_cell_text(header_row.cells[0], "Standard", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[1], "Standard Description", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[2], "Selected Module", "Rockwell", 11, bold=True, align='center')
+    
+    # Apply cell margins to header row
+    for cell in header_row.cells:
+        set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Build reverse mapping: standard -> list of modules that cover it
+    standard_to_modules = {}
+    for standard_code in all_standards:
+        covering_modules = []
+        for module_title in title_set:
+            module_standards = module_to_standards.get(module_title, set())
+            if standard_code in module_standards:
+                covering_modules.append(module_title)
+        standard_to_modules[standard_code] = covering_modules
+    
+    # Data rows
+    for row_idx, standard_code in enumerate(all_standards):
+        data_row = table.rows[row_idx + 1]
+        # Allow rows to auto-size based on content (don't set exact height for long descriptions)
+        # set_row_height(data_row, 0.31, exact=True)  # Commented out to allow auto-sizing
+        
+        # Get covering modules for this standard
+        covering_modules = standard_to_modules[standard_code]
+        is_uncovered = len(covering_modules) == 0
+        
+        # Determine row shading
+        if is_uncovered:
+            # Gray shading for uncovered standards
+            row_shade = "D3D3D3"  # Light gray for uncovered standards
+        else:
+            # Alternating shading for covered standards
+            is_gray_row = row_idx % 2 == 0
+            row_shade = "EFEFEF" if is_gray_row else "FFFFFF"
+        
+        # Standard code column - Times New Roman 10pt
+        std_cell = data_row.cells[0]
+        set_cell_text(std_cell, standard_code, "Times New Roman", 10, bold=False, align='center')
+        shade_cell(std_cell, row_shade)
+        set_cell_margins(std_cell, top_inches=0.05, bottom_inches=0.05)
+        
+        # Standard description column - Times New Roman 10pt
+        desc_cell = data_row.cells[1]
+        # Get description from standard_descriptions dict
+        description = standard_descriptions.get(standard_code, "")
+        # Handle math symbols and HTML entities
+        clean_description = html.unescape(description) if description else ""
+        set_cell_text(desc_cell, clean_description, "Times New Roman", 10, bold=False, align='left')
+        shade_cell(desc_cell, row_shade)
+        set_cell_margins(desc_cell, top_inches=0.05, bottom_inches=0.05)
+        
+        # Selected modules column - Rockwell 10pt bold centered
+        modules_cell = data_row.cells[2]
+        if covering_modules:
+            # Join module names with line breaks
+            modules_text = "\n".join(covering_modules)
+            set_cell_text(modules_cell, modules_text, "Rockwell", 10, bold=True, align='center')
+        else:
+            set_cell_text(modules_cell, "", "Rockwell", 10, bold=True, align='center')
+        shade_cell(modules_cell, row_shade)
+        set_cell_margins(modules_cell, top_inches=0.05, bottom_inches=0.05)
+    
+    print(f"DEBUG: Coverage report table completed - {len([s for s, m in standard_to_modules.items() if not m])} uncovered standards (gray)")
+    print(f"DEBUG: Coverage report - uncovered standards are shaded #D3D3D3, others alternate #EFEFEF/white")
+    print(f"DEBUG: Coverage report - AUTOFIT ENABLED, rows will auto-size for long descriptions")
+    print(f"DEBUG: Coverage report formatting - Headers: Rockwell 11pt bold, Standards: Times New Roman 10pt, Modules: Rockwell 10pt bold centered")
+    print(f"DEBUG: Coverage report - Cell margins: 0.05\" top/bottom applied to all cells")
+    
+    return subdoc
+
+def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, module_to_standards, standard_descriptions):
+    """Build coverage report table organized by product/module with individual rows for each standard"""
+    from docx.shared import Inches
+    from docxtpl import Subdoc
+    import html
+    
+    print(f"DEBUG: Building coverage report by product subdoc with {len(title_set)} modules")
+    
+    # Create subdocument
+    subdoc = doc.new_subdoc()
+    
+    # Calculate total rows needed - one row per standard across all modules
+    total_rows = 0
+    sorted_modules = sorted(title_set)
+    for module_title in sorted_modules:
+        module_standards = module_to_standards.get(module_title, set())
+        total_rows += max(1, len(module_standards))  # At least 1 row per module
+    
+    # Create table with 3 columns: Title, Standards, Statement
+    num_cols = 3
+    num_rows = total_rows + 1  # +1 for header
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    
+    # Set table-level properties
+    set_table_left_indent(table, 0.13)
+    set_table_borders(table)
+    
+    # Enable autofit for by-product table
+    table.autofit = True
+    
+    # Set column widths - Title, Standards, Statement
+    table.columns[0].width = Inches(1.8)   # Title column
+    table.columns[1].width = Inches(0.8)   # Standards column (narrow for codes)
+    table.columns[2].width = Inches(3.7)   # Statement column (wide for descriptions)
+    
+    print(f"DEBUG: Set by-product table column widths - Title: {Inches(1.8)}, Standards: {Inches(0.8)}, Statement: {Inches(3.7)}")
+    
+    # Header row
+    header_row = table.rows[0]
+    set_row_height(header_row, 0.38, exact=True)
+    
+    # Header cells - Rockwell 11pt bold
+    set_cell_text(header_row.cells[0], "Title", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[1], "Standards", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[2], "Statement", "Rockwell", 11, bold=True, align='center')
+    
+    # Apply cell margins to header row
+    for cell in header_row.cells:
+        set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Data rows - create individual rows for each standard
+    current_row = 1
+    
+    for module_idx, module_title in enumerate(sorted_modules):
+        # Get standards covered by this module
+        module_standards = module_to_standards.get(module_title, set())
+        sorted_standards = sorted(list(module_standards))
+        
+        if not sorted_standards:
+            # Handle modules with no standards - create one row
+            sorted_standards = [""]
+        
+        # Alternating shading per module (not per row)
+        is_gray_module = module_idx % 2 == 0
+        row_shade = "EFEFEF" if is_gray_module else "FFFFFF"
+        
+        # Create a row for each standard in this module
+        for standard_code in sorted_standards:
+            data_row = table.rows[current_row]
+            
+            # Title column - Rockwell 10pt bold (repeated for each standard)
+            title_cell = data_row.cells[0]
+            set_cell_text(title_cell, module_title, "Rockwell", 10, bold=True, align='center')
+            shade_cell(title_cell, row_shade)
+            set_cell_margins(title_cell, top_inches=0.05, bottom_inches=0.05)
+            
+            # Standards column - Times New Roman 10pt centered
+            standards_cell = data_row.cells[1]
+            set_cell_text(standards_cell, standard_code, "Times New Roman", 10, bold=False, align='center')
+            shade_cell(standards_cell, row_shade)
+            set_cell_margins(standards_cell, top_inches=0.05, bottom_inches=0.05)
+            
+            # Statement column - Times New Roman 10pt left-aligned
+            statement_cell = data_row.cells[2]
+            if standard_code and standard_code in standard_descriptions:
+                description = standard_descriptions[standard_code]
+                clean_description = html.unescape(description) if description else ""
+                set_cell_text(statement_cell, clean_description, "Times New Roman", 10, bold=False, align='left')
+            else:
+                placeholder_text = "No standards mapped" if not standard_code else ""
+                set_cell_text(statement_cell, placeholder_text, "Times New Roman", 10, bold=False, align='left')
+            shade_cell(statement_cell, row_shade)
+            set_cell_margins(statement_cell, top_inches=0.05, bottom_inches=0.05)
+            
+            current_row += 1
+    
+    print(f"DEBUG: Coverage by product table completed - {len(sorted_modules)} modules, {total_rows} total standard rows")
+    print(f"DEBUG: By-product formatting - Headers: Rockwell 11pt bold, Titles: Rockwell 10pt bold (repeated), Standards: Times New Roman 10pt centered, Statements: Times New Roman 10pt left")
+    print(f"DEBUG: By-product table - alternating module shades: #EFEFEF/white, no cell merging")
+    
+    return subdoc
+
+def generate_correlation_report_document(state, grade_level, subject, selected_module_ids):
+    """Generate correlation report document using subdoc approach"""
+    print(f"DEBUG: Generating report for {state}, {grade_level}, {subject}")
+    print(f"DEBUG: Selected module IDs: {selected_module_ids}")
+    
+    # Get basic data
+    state_obj = State.query.filter_by(code=state).first()
+    state_name = state_obj.name if state_obj else state
+    
+    # Get modules (ordered by selection)
+    modules = Module.query.filter(Module.id.in_([int(mid) for mid in selected_module_ids])).all()
+    # Maintain order from selection
+    module_lookup = {m.id: m for m in modules}
+    ordered_modules = [module_lookup[int(mid)] for mid in selected_module_ids if int(mid) in module_lookup]
+    title_set = [m.title for m in ordered_modules]
+    
+    # Get standards using clean helper function
+    # Extract grade number from formats like "8th Grade" -> 8
+    grade_num = None
+    if 'Grade' in grade_level:
+        grade_part = grade_level.split()[0]  # "8th" from "8th Grade"
+        grade_num = int(grade_part.rstrip('thrdns'))  # Remove ordinal suffixes
+    all_standards = get_all_standards(state, grade_num, subject)
+    
+    print(f"DEBUG: Found {len(ordered_modules)} modules, {len(all_standards)} standards")
+    
+    # Get module-to-standards mapping for ALL selected modules (any subject/grade)
+    module_to_standards = {}
+    if ordered_modules:
+        module_ids = [m.id for m in ordered_modules]
+        mappings = (db.session.query(Module.title, Standard.code)
+                   .join(ModuleStandardMapping, Module.id==ModuleStandardMapping.module_id)
+                   .join(Standard, Standard.id==ModuleStandardMapping.standard_id)
+                   .filter(Module.id.in_(module_ids))
+                   .all())
+        
+        for title, code in mappings:
+            if title not in module_to_standards:
+                module_to_standards[title] = set()
+            module_to_standards[title].add(code)
+    
+    # Subset for selected modules only (but we already filtered above)
+    subset = {t: module_to_standards.get(t, set()) for t in title_set}
+    
+    print(f"DEBUG: Prepared module-to-standards mapping for {len(subset)} modules")
+    for title, codes in subset.items():
+        print(f"DEBUG: {title} covers {len(codes)} standards")
+    
+    # Template handling
+    template_path = 'templates/docx_templates/correlation_report_master.docx'
+    print(f"DEBUG: Using template at: {template_path}")
+    
+    # Load template
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(template_path, temp_file.name)
+        temp_template_path = temp_file.name
+    
+    try:
+        doc = DocxTemplate(temp_template_path)
+        print(f"DEBUG: TPL instance for subdoc+render: {id(doc)}")
+        
+        # Generate subdocument FROM THIS EXACT INSTANCE
+        subdoc = build_correlation_subdoc(doc, title_set, all_standards, subset)
+        
+        # Get standard descriptions for coverage report
+        standard_descriptions = {}
+        if all_standards:
+            standards_with_desc = (db.session.query(Standard.code, Standard.description)
+                                  .filter(Standard.code.in_(all_standards))
+                                  .all())
+            standard_descriptions = {code: desc for code, desc in standards_with_desc}
+            print(f"DEBUG: Fetched descriptions for {len(standard_descriptions)} standards")
+        
+        # Generate coverage report subdocument
+        coverage_subdoc = build_coverage_report_subdoc(doc, title_set, all_standards, subset, standard_descriptions)
+        
+        # Generate coverage report by product subdocument
+        coverage_by_product_subdoc = build_coverage_report_by_product_subdoc(doc, title_set, all_standards, subset, standard_descriptions)
+        
+        # Create modules list for template (maintains compatibility with existing template)
+        import html
+        
+        # Clean module titles and prepare for template
+        modules_list = []
+        for title in title_set:
+            # Unescape any XML/HTML entities to ensure symbols like & display correctly
+            clean_title = html.unescape(title) if title else title
+            modules_list.append(clean_title)
+            print(f"DEBUG: Module title '{title}' -> cleaned: '{clean_title}'")
+        
+        # Create a formatted string that maintains line breaks for the existing template placeholder
+        modules_newline_list = '\n'.join(modules_list)
+        print(f"DEBUG: modules_newline_list content: '{modules_newline_list}'")
+        
+        # Context for template
+        context = {
+            'state': state_name,
+            'grade': grade_level,
+            'subject': subject,
+            'module_list': modules_list,  # For loop-based template (matches your template variable)
+            'modules_list': modules_list,  # For future use
+            'modules_newline_list': modules_newline_list,  # For current template compatibility
+            'correlation_table': subdoc,
+            'coverage_report': coverage_subdoc,  # Standards-first coverage report table
+            'coverage_report_by_product': coverage_by_product_subdoc  # Product-first coverage report table
+        }
+        
+        print("DEBUG: Rendering template with subdoc...")
+        doc.render(context)
+        
+        # Save
+        filename = f"Correlation_Report_{subject}_{grade_level.replace(' ', '_')}.docx"
+        
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, filename)
+        
+        print(f"DEBUG: Saving to {output_path}")
+        print(f"DEBUG: Rendered with tpl id: {id(doc)} -> {output_path}")
+        doc.save(output_path)
+        
+        return output_path
+        
+    except Exception as e:
+        print(f"Error generating correlation report: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_template_path):
+            os.unlink(temp_template_path)
+
+@app.route('/test-correlation-table/<grade>/<subject>/<int:num_modules>')
+@login_required
+def test_correlation_table(grade, subject, num_modules):
+    """Test route for correlation table generation"""
+    try:
+        # Get sample modules for the subject (limit by num_modules)
+        modules = Module.query.filter_by(subject=subject).limit(num_modules).all()
+        module_ids = [str(m.id) for m in modules]
+        
+        if not modules:
+            return f"No modules found for subject: {subject}", 404
+        
+        # Generate document
+        doc_path = generate_correlation_report_document(
+            state='LA',  # Louisiana
+            grade_level=grade,
+            subject=subject,
+            selected_module_ids=module_ids
+        )
+        
+        # Return file
+        return send_file(doc_path, as_attachment=True, download_name=f"TEST_{subject}_{grade}_{num_modules}modules.docx")
+        
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
@@ -6809,4 +7648,4 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Note: {e}")
     
-    app.run(debug=True) 
+    app.run(debug=True, port=5002) 
