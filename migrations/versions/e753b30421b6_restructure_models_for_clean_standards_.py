@@ -54,7 +54,8 @@ def upgrade():
         batch_op.alter_column('grade_level',
                existing_type=sa.VARCHAR(length=20),
                type_=sa.Integer(),
-               nullable=True)
+               nullable=True,
+               postgresql_using='CASE WHEN grade_level ~ \'^[0-9]+$\' THEN grade_level::integer ELSE NULL END')
         batch_op.drop_index(batch_op.f('ix_standards_code'))
         batch_op.drop_index(batch_op.f('ix_standards_grade_level'))
         batch_op.drop_index(batch_op.f('ix_standards_standard_type'))
@@ -79,7 +80,8 @@ def downgrade():
         batch_op.alter_column('grade_level',
                existing_type=sa.Integer(),
                type_=sa.VARCHAR(length=20),
-               nullable=False)
+               nullable=False,
+               postgresql_using='grade_level::text')
         batch_op.alter_column('subject',
                existing_type=sa.String(length=10),
                type_=sa.VARCHAR(length=20),
