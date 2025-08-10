@@ -29,15 +29,22 @@ def fix_missing_8th_grade():
         excel_file = pd.ExcelFile(standards_path)
         print(f"📋 Available sheets: {excel_file.sheet_names}")
         
-        # Look for 8th Grade Math sheet or data
+        # Look for Middle School Math sheet (contains both 7th and 8th grade)
         target_sheet = None
         for sheet_name in excel_file.sheet_names:
-            if '8' in sheet_name and 'Math' in sheet_name:
+            if 'MS Math' in sheet_name or 'Middle School Math' in sheet_name:
                 target_sheet = sheet_name
                 break
         
         if not target_sheet:
-            print("❌ No 8th Grade Math sheet found")
+            # Fallback to any Math sheet
+            for sheet_name in excel_file.sheet_names:
+                if 'Math' in sheet_name:
+                    target_sheet = sheet_name
+                    break
+        
+        if not target_sheet:
+            print("❌ No Math sheet found")
             print("Available sheets:", excel_file.sheet_names)
             return
         
