@@ -71,7 +71,8 @@ def get_all_standards(state: str, grade: int, subject: str) -> list:
     if subject.upper() == 'MATH':
         q = q.filter_by(grade_level=int(grade))
     else:
-        q = q.filter_by(grade_band='MS')  # middle school band
+        # For Science, our data has grade_level=None, not grade_band='MS'
+        q = q.filter_by(grade_level=None)
     
     return [s.code for s in q.order_by(Standard.code).all()]
 
@@ -85,7 +86,8 @@ def get_module_to_standards(subject: str, grade: int) -> dict:
     if subject.upper() == 'MATH':
         q = q.filter(Module.grade_level==int(grade), Standard.framework=='CCSS-M')
     else:
-        q = q.filter(Standard.framework=='NGSS', Standard.grade_band=='MS')
+        # For Science, our data has grade_level=None, not grade_band='MS'
+        q = q.filter(Standard.framework=='NGSS', Standard.grade_level==None)
     
     out = {}
     for title, code in q:
