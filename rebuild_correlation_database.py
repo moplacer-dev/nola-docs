@@ -340,12 +340,13 @@ def verify_data_integrity(app):
         print(f"  Science 8th grade: {sci_8th} standards")
         
         # Check for orphaned records
-        orphaned_mappings = db.session.execute("""
+        from sqlalchemy import text
+        orphaned_mappings = db.session.execute(text("""
             SELECT COUNT(*) FROM module_standard_mappings m
             LEFT JOIN modules mod ON m.module_id = mod.id
             LEFT JOIN standards std ON m.standard_id = std.id
             WHERE mod.id IS NULL OR std.id IS NULL
-        """).scalar()
+        """)).scalar()
         
         if orphaned_mappings > 0:
             print(f"  ⚠️  Warning: {orphaned_mappings} orphaned mappings found")
