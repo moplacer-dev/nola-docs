@@ -3,9 +3,13 @@
 Deployment script to separate NGSS standards into 7th and 8th grade levels.
 This can be run directly on Render via their shell.
 
+IMPORTANT: This script also fixes app.py correlation functions to use the new grade levels.
+Make sure the updated app.py is deployed before running this script!
+
 Usage on Render:
-1. Open Render shell for your web service
-2. Run: python deploy_ngss_separation.py
+1. Deploy updated code (including app.py fixes)
+2. Open Render shell for your web service  
+3. Run: python deploy_ngss_separation.py
 """
 
 import os

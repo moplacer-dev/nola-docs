@@ -4,7 +4,8 @@
 This document outlines how to deploy the NGSS grade separation changes from your local development environment to production (Render).
 
 ## Current Status
-✅ **Local Development**: NGSS standards successfully separated into 7th and 8th grade
+✅ **Local Development**: NGSS standards successfully separated into 7th and 8th grade  
+✅ **App.py Fixed**: Updated correlation functions to use grade-specific filtering
 ✅ **Deployment Script**: Created and tested
 🔄 **Production**: Ready to deploy
 
@@ -15,7 +16,11 @@ This document outlines how to deploy the NGSS grade separation changes from your
 1. **Commit and Push Changes**
    ```bash
    git add .
-   git commit -m "Add NGSS grade separation deployment script"
+   git commit -m "Fix NGSS correlation reports - separate grades and update app.py
+
+   - Fix app.py correlation functions to use grade_level filtering instead of None
+   - Add NGSS grade separation deployment script  
+   - Resolve issue where correlation reports showed no science module mappings"
    git push origin main
    ```
 
