@@ -65,8 +65,10 @@ app.cli.add_command(fix_standards_data)
 # Register verification and sync commands
 from verify_production_data import verify_production_data
 from sync_to_production import sync_to_production
+from fix_missing_8th_grade import fix_missing_8th_grade
 app.cli.add_command(verify_production_data)
 app.cli.add_command(sync_to_production)
+app.cli.add_command(fix_missing_8th_grade)
 
 # Helper functions for standards/modules queries
 def get_framework_for(state: str, subject: str) -> str:
