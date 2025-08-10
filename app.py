@@ -58,6 +58,10 @@ migrate = Migrate(app, db)
 from load_production_data import load_production_data
 app.cli.add_command(load_production_data)
 
+# Register emergency fix command
+from fix_standards_data import fix_standards_data
+app.cli.add_command(fix_standards_data)
+
 # Helper functions for standards/modules queries
 def get_framework_for(state: str, subject: str) -> str:
     """Get the framework for a given state and subject"""
