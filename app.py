@@ -54,6 +54,10 @@ from models import db, User, FormDraft, GeneratedDocument, TemplateFile, Activit
 db.init_app(app)
 migrate = Migrate(app, db)
 
+# Register CLI command for loading production data
+from load_production_data import load_production_data
+app.cli.add_command(load_production_data)
+
 # Helper functions for standards/modules queries
 def get_framework_for(state: str, subject: str) -> str:
     """Get the framework for a given state and subject"""
