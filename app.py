@@ -62,6 +62,12 @@ app.cli.add_command(load_production_data)
 from fix_standards_data import fix_standards_data
 app.cli.add_command(fix_standards_data)
 
+# Register verification and sync commands
+from verify_production_data import verify_production_data
+from sync_to_production import sync_to_production
+app.cli.add_command(verify_production_data)
+app.cli.add_command(sync_to_production)
+
 # Helper functions for standards/modules queries
 def get_framework_for(state: str, subject: str) -> str:
     """Get the framework for a given state and subject"""
