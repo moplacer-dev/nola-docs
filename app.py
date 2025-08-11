@@ -7488,6 +7488,97 @@ def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, modul
     
     return subdoc
 
+def build_uncorrelated_standards_subdoc(doc, all_standards, module_to_standards, standard_descriptions, title_set):
+    """Build table showing standards NOT covered by the selected modules"""
+    from docx.shared import Inches
+    from docxtpl import Subdoc
+    import html
+    
+    # Find uncorrelated standards (standards not covered by any selected module)
+    covered_standards = set()
+    for module_standards in module_to_standards.values():
+        covered_standards.update(module_standards)
+    
+    uncorrelated_standards = [std for std in all_standards if std not in covered_standards]
+    
+    print(f"DEBUG: Building uncorrelated standards subdoc with {len(uncorrelated_standards)} uncovered standards out of {len(all_standards)} total")
+    
+    if not uncorrelated_standards:
+        # If no uncorrelated standards, create empty subdoc with message
+        subdoc = doc.new_subdoc()
+        para = subdoc.add_paragraph("All standards are covered by the selected modules.")
+        return subdoc
+    
+    # Create subdocument
+    subdoc = doc.new_subdoc()
+    
+    # Create table with 3 columns: Standard, Description, District Resources
+    num_cols = 3
+    num_rows = len(uncorrelated_standards) + 1  # +1 for header
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    
+    # Set table-level properties
+    set_table_left_indent(table, 0.13)
+    set_table_borders(table)
+    
+    # Enable autofit for uncorrelated standards table (handles long descriptions)
+    table.autofit = True
+    
+    # Set initial column widths
+    table.columns[0].width = Inches(0.8)   # Standard code column
+    table.columns[1].width = Inches(3.5)   # Standard description column (wider for descriptions)
+    table.columns[2].width = Inches(2.0)   # District resources column
+    
+    print(f"DEBUG: Set uncorrelated standards table column widths - Standard: {Inches(0.8)}, Description: {Inches(3.5)}, Resources: {Inches(2.0)}, Autofit: ENABLED")
+    
+    # Header row
+    header_row = table.rows[0]
+    set_row_height(header_row, 0.38, exact=True)
+    
+    # Header cells - Rockwell 11pt bold
+    set_cell_text(header_row.cells[0], "Standard", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[1], "Description", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[2], "District Resources", "Rockwell", 11, bold=True, align='center')
+    
+    # Apply cell margins to header row
+    for cell in header_row.cells:
+        set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Data rows
+    for row_idx, standard_code in enumerate(uncorrelated_standards):
+        data_row = table.rows[row_idx + 1]
+        
+        # Alternating shading for rows
+        is_gray_row = row_idx % 2 == 0
+        row_shade = "EFEFEF" if is_gray_row else "FFFFFF"
+        
+        # Standard code column - Times New Roman 10pt centered
+        std_cell = data_row.cells[0]
+        set_cell_text(std_cell, standard_code, "Times New Roman", 10, bold=False, align='center')
+        shade_cell(std_cell, row_shade)
+        set_cell_margins(std_cell, top_inches=0.05, bottom_inches=0.05)
+        
+        # Standard description column - Times New Roman 10pt left-aligned
+        desc_cell = data_row.cells[1]
+        # Get description from standard_descriptions dict
+        description = standard_descriptions.get(standard_code, "")
+        # Handle math symbols and HTML entities
+        clean_description = html.unescape(description) if description else ""
+        set_cell_text(desc_cell, clean_description, "Times New Roman", 10, bold=False, align='left')
+        shade_cell(desc_cell, row_shade)
+        set_cell_margins(desc_cell, top_inches=0.05, bottom_inches=0.05)
+        
+        # District resources column - empty for user to fill in manually
+        resources_cell = data_row.cells[2]
+        set_cell_text(resources_cell, "", "Times New Roman", 10, bold=False, align='left')
+        shade_cell(resources_cell, row_shade)
+        set_cell_margins(resources_cell, top_inches=0.05, bottom_inches=0.05)
+    
+    print(f"DEBUG: Uncorrelated standards table completed - {len(uncorrelated_standards)} standards not covered by selected modules")
+    
+    return subdoc
+
 def generate_correlation_report_document(state, grade_level, subject, selected_module_ids):
     """Generate correlation report document using subdoc approach"""
     print(f"DEBUG: Generating report for {state}, {grade_level}, {subject}")
@@ -7567,6 +7658,9 @@ def generate_correlation_report_document(state, grade_level, subject, selected_m
         # Generate coverage report by product subdocument
         coverage_by_product_subdoc = build_coverage_report_by_product_subdoc(doc, title_set, all_standards, subset, standard_descriptions)
         
+        # Generate uncorrelated standards subdocument
+        district_covered_standards = build_uncorrelated_standards_subdoc(doc, all_standards, subset, standard_descriptions, title_set)
+        
         # Create modules list for template (maintains compatibility with existing template)
         import html
         
@@ -7592,7 +7686,8 @@ def generate_correlation_report_document(state, grade_level, subject, selected_m
             'modules_newline_list': modules_newline_list,  # For current template compatibility
             'correlation_table': subdoc,
             'coverage_report': coverage_subdoc,  # Standards-first coverage report table
-            'coverage_report_by_product': coverage_by_product_subdoc  # Product-first coverage report table
+            'coverage_report_by_product': coverage_by_product_subdoc,  # Product-first coverage report table
+            'district_covered_standards': district_covered_standards  # Uncorrelated standards table
         }
         
         print("DEBUG: Rendering template with subdoc...")
