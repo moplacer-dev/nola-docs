@@ -4618,6 +4618,9 @@ def clean_text(text):
     # Remove common PDF artifacts
     text = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', text)
     
+    # Fix spacing issues around punctuation (remove spaces before punctuation)
+    text = re.sub(r'\s+([.!?,:;])', r'\1', text)
+    
     return text
 
 def generate_horizontal_lesson_plan(form):
