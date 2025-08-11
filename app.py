@@ -4475,14 +4475,17 @@ def remove_header_artifacts(text):
     # List of common header/footer patterns to remove
     artifacts = [
         r'Nola\s+Education,?\s*Llc',
+        r'NOLA\s+EDUCATION,?\s*LLC',
         r'www\.staracademyprogram\.com',
-        r'This\s+Page\s+May\s+Be\s+Photocopied\s+for\s+Use\s+Only\s+Within\s+the',
+        r'This\s+Page\s+May\s+Be\s+Photocopied\s+for\s+Use\s+Only\s+Within\s+the.*?Star\s+Academy',
+        r'This\s+page\s+may\s+be\s+photocopied\s+for\s+use\s+only\s+within\s+the.*?Star\s+Academy',
         r'star\s*ACADEMY',
         r'Session\s+Notes\s+Animals',
-        r'NOLA\s+EDUCATION,?\s*LLC',
         r'⎢.*?\.com',
         r'www\..*?\.com',
-        r'This\s+page\s+may\s+be\s+photocopied.*?Star\s+Academy',
+        r'\|\s*www\.staracademyprogram\.com',
+        r'NOLA\s+EDUCATION,?\s*LLC\s*\|\s*www\.staracademyprogram\.com',
+        r'NOLA\s+EDUCATION,?\s*LLC\s*[|\u007c\u2502\u2500-\u257F]*\s*www\.staracademyprogram\.com',
     ]
     
     # Remove each artifact pattern
