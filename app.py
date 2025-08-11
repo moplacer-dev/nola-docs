@@ -7170,6 +7170,18 @@ def merge_cells_vertically(table, col, start_row, end_row):
         # For continuation cells, vMerge has no val attribute or val="continue"
         # We'll leave it empty which defaults to continue
 
+def set_header_row_repeat(row):
+    """Set table row to repeat as header on each page"""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    tr = row._tr
+    trPr = tr.get_or_add_trPr()
+    tblHeader = trPr.find(qn('w:tblHeader'))
+    if tblHeader is None:
+        tblHeader = OxmlElement('w:tblHeader')
+        trPr.append(tblHeader)
+
 def set_row_height(row, inches, exact=True):
     """Set row height; exact prevents Word from auto-expanding."""
     from docx.oxml import OxmlElement
@@ -7273,6 +7285,9 @@ def build_correlation_subdoc(doc, title_set, all_standards, module_to_standards)
     
     print(f"DEBUG: Header row height set to 0.38 inches EXACT")
     
+    # Set header row to repeat on each page
+    set_header_row_repeat(header_row)
+    
     # Data rows
     for row_idx, standard_code in enumerate(all_standards):
         data_row = table.rows[row_idx + 1]
@@ -7350,6 +7365,9 @@ def build_coverage_report_subdoc(doc, title_set, all_standards, module_to_standa
     # Apply cell margins to header row
     for cell in header_row.cells:
         set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Set header row to repeat on each page
+    set_header_row_repeat(header_row)
     
     # Build reverse mapping: standard -> list of modules that cover it
     standard_to_modules = {}
@@ -7465,6 +7483,9 @@ def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, modul
     # Apply cell margins to header row
     for cell in header_row.cells:
         set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Set header row to repeat on each page
+    set_header_row_repeat(header_row)
     
     # Data rows - create individual rows for each standard with merged title cells
     current_row = 1
@@ -7584,6 +7605,9 @@ def build_uncorrelated_standards_subdoc(doc, all_standards, module_to_standards,
     # Apply cell margins to header row
     for cell in header_row.cells:
         set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
+    
+    # Set header row to repeat on each page
+    set_header_row_repeat(header_row)
     
     # Data rows
     for row_idx, standard_code in enumerate(uncorrelated_standards):
