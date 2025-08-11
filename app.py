@@ -7318,7 +7318,7 @@ def build_coverage_report_subdoc(doc, title_set, all_standards, module_to_standa
     # Create subdocument
     subdoc = doc.new_subdoc()
     
-    # Create table with 3 columns: Standard, Standard Description, Selected Module
+    # Create table with 3 columns: Standard, Statement, Selected Module
     num_cols = 3
     num_rows = len(all_standards) + 1  # +1 for header
     
@@ -7344,7 +7344,7 @@ def build_coverage_report_subdoc(doc, title_set, all_standards, module_to_standa
     
     # Header cells - Rockwell 11pt bold
     set_cell_text(header_row.cells[0], "Standard", "Rockwell", 11, bold=True, align='center')
-    set_cell_text(header_row.cells[1], "Standard Description", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[1], "Statement", "Rockwell", 11, bold=True, align='center')
     set_cell_text(header_row.cells[2], "Selected Module", "Rockwell", 11, bold=True, align='center')
     
     # Apply cell margins to header row
@@ -7552,7 +7552,7 @@ def build_uncorrelated_standards_subdoc(doc, all_standards, module_to_standards,
     # Create subdocument
     subdoc = doc.new_subdoc()
     
-    # Create table with 3 columns: Standard, Description, District Resources
+    # Create table with 3 columns: Standard, Statement, District Resources
     num_cols = 3
     num_rows = len(uncorrelated_standards) + 1  # +1 for header
     
@@ -7578,7 +7578,7 @@ def build_uncorrelated_standards_subdoc(doc, all_standards, module_to_standards,
     
     # Header cells - Rockwell 11pt bold
     set_cell_text(header_row.cells[0], "Standard", "Rockwell", 11, bold=True, align='center')
-    set_cell_text(header_row.cells[1], "Description", "Rockwell", 11, bold=True, align='center')
+    set_cell_text(header_row.cells[1], "Statement", "Rockwell", 11, bold=True, align='center')
     set_cell_text(header_row.cells[2], "District Resources", "Rockwell", 11, bold=True, align='center')
     
     # Apply cell margins to header row
