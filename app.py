@@ -7140,6 +7140,36 @@ def set_cell_margins(cell, top_inches=0, bottom_inches=0, left_inches=0, right_i
         right.set(qn('w:w'), inches_to_twips(right_inches))
         right.set(qn('w:type'), 'dxa')
 
+def merge_cells_vertically(table, col, start_row, end_row):
+    """Merge cells vertically in a table column from start_row to end_row (inclusive)"""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    if start_row >= end_row:
+        return  # Nothing to merge
+    
+    # Set vertical merge for the first cell (vMerge restart)
+    first_cell = table.cell(start_row, col)
+    first_tc = first_cell._tc
+    first_tcPr = first_tc.get_or_add_tcPr()
+    first_vmerge = first_tcPr.find(qn('w:vMerge'))
+    if first_vmerge is None:
+        first_vmerge = OxmlElement('w:vMerge')
+        first_tcPr.append(first_vmerge)
+    first_vmerge.set(qn('w:val'), 'restart')
+    
+    # Set vertical merge for subsequent cells (vMerge continue)
+    for row_idx in range(start_row + 1, end_row + 1):
+        cell = table.cell(row_idx, col)
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        vmerge = tcPr.find(qn('w:vMerge'))
+        if vmerge is None:
+            vmerge = OxmlElement('w:vMerge')
+            tcPr.append(vmerge)
+        # For continuation cells, vMerge has no val attribute or val="continue"
+        # We'll leave it empty which defaults to continue
+
 def set_row_height(row, inches, exact=True):
     """Set row height; exact prevents Word from auto-expanding."""
     from docx.oxml import OxmlElement
@@ -7436,7 +7466,7 @@ def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, modul
     for cell in header_row.cells:
         set_cell_margins(cell, top_inches=0.05, bottom_inches=0.05)
     
-    # Data rows - create individual rows for each standard
+    # Data rows - create individual rows for each standard with merged title cells
     current_row = 1
     
     for module_idx, module_title in enumerate(sorted_modules):
@@ -7452,13 +7482,17 @@ def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, modul
         is_gray_module = module_idx % 2 == 0
         row_shade = "EFEFEF" if is_gray_module else "FFFFFF"
         
+        # Remember the start row for this module (for merging)
+        module_start_row = current_row
+        
         # Create a row for each standard in this module
-        for standard_code in sorted_standards:
+        for standard_idx, standard_code in enumerate(sorted_standards):
             data_row = table.rows[current_row]
             
-            # Title column - Rockwell 10pt bold (repeated for each standard)
+            # Title column - only set text in first row, then we'll merge all rows for this module
             title_cell = data_row.cells[0]
-            set_cell_text(title_cell, module_title, "Rockwell", 10, bold=True, align='center')
+            if standard_idx == 0:  # Only set text in the first row
+                set_cell_text(title_cell, module_title, "Rockwell", 10, bold=True, align='center')
             shade_cell(title_cell, row_shade)
             set_cell_margins(title_cell, top_inches=0.05, bottom_inches=0.05)
             
@@ -7481,10 +7515,16 @@ def build_coverage_report_by_product_subdoc(doc, title_set, all_standards, modul
             set_cell_margins(statement_cell, top_inches=0.05, bottom_inches=0.05)
             
             current_row += 1
+        
+        # Merge title cells vertically for this module (if more than one row)
+        module_end_row = current_row - 1
+        if module_end_row > module_start_row:
+            merge_cells_vertically(table, 0, module_start_row, module_end_row)  # Column 0 is the Title column
+            print(f"DEBUG: Merged title cells for '{module_title}' from row {module_start_row} to {module_end_row}")
     
     print(f"DEBUG: Coverage by product table completed - {len(sorted_modules)} modules, {total_rows} total standard rows")
-    print(f"DEBUG: By-product formatting - Headers: Rockwell 11pt bold, Titles: Rockwell 10pt bold (repeated), Standards: Times New Roman 10pt centered, Statements: Times New Roman 10pt left")
-    print(f"DEBUG: By-product table - alternating module shades: #EFEFEF/white, no cell merging")
+    print(f"DEBUG: By-product formatting - Headers: Rockwell 11pt bold, Titles: Rockwell 10pt bold (merged), Standards: Times New Roman 10pt centered, Statements: Times New Roman 10pt left")
+    print(f"DEBUG: By-product table - alternating module shades: #EFEFEF/white, WITH vertical cell merging for module titles")
     
     return subdoc
 
