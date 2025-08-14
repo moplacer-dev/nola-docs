@@ -2625,32 +2625,27 @@ def generate_generic_worksheet(form):
             if not text.strip():
                 return create_text_run('')
             
-            # Process from left to right, handling the first LaTeX command found
+            # Process from left to right, handling the FIRST (leftmost) LaTeX command found
+            # This ensures we handle outer expressions before inner ones
             
-            # Handle square roots (process before fractions to handle nested cases)
-            sqrt_pos = text.find('\\sqrt{')
-            if sqrt_pos != -1:
-                brace_start = sqrt_pos + 5  # Position of '{'
-                brace_end = find_matching_brace(text, brace_start)
-                
-                if brace_end != -1:
-                    before = text[:sqrt_pos]
-                    radicand = text[brace_start + 1:brace_end]  # Content between braces
-                    after = text[brace_end + 1:]
-                    
-                    sqrt_omml = create_square_root(radicand)
-                    
-                    result = ''
-                    if before.strip():
-                        result += latex_to_omml_content(before)
-                    result += sqrt_omml
-                    if after.strip():
-                        result += latex_to_omml_content(after)
-                    return result
-            
-            # Handle fractions
+            # Find positions of all LaTeX commands
             frac_pos = text.find('\\frac{')
+            sqrt_pos = text.find('\\sqrt{')
+            
+            # Determine which command comes first (leftmost)
+            first_cmd_pos = float('inf')
+            first_cmd_type = None
+            
             if frac_pos != -1:
+                first_cmd_pos = frac_pos
+                first_cmd_type = 'frac'
+            
+            if sqrt_pos != -1 and sqrt_pos < first_cmd_pos:
+                first_cmd_pos = sqrt_pos
+                first_cmd_type = 'sqrt'
+            
+            # Process the first (leftmost) command found
+            if first_cmd_type == 'frac':
                 # Find numerator
                 num_brace_start = frac_pos + 5  # Position of first '{'
                 num_brace_end = find_matching_brace(text, num_brace_start)
@@ -2676,6 +2671,25 @@ def generate_generic_worksheet(form):
                             if after.strip():
                                 result += latex_to_omml_content(after)
                             return result
+            
+            elif first_cmd_type == 'sqrt':
+                brace_start = sqrt_pos + 5  # Position of '{'
+                brace_end = find_matching_brace(text, brace_start)
+                
+                if brace_end != -1:
+                    before = text[:sqrt_pos]
+                    radicand = text[brace_start + 1:brace_end]  # Content between braces
+                    after = text[brace_end + 1:]
+                    
+                    sqrt_omml = create_square_root(radicand)
+                    
+                    result = ''
+                    if before.strip():
+                        result += latex_to_omml_content(before)
+                    result += sqrt_omml
+                    if after.strip():
+                        result += latex_to_omml_content(after)
+                    return result
             
             # Handle integrals with bounds
             int_match = re.search(r'\\int_{([^{}]*(?:\{[^{}]*\}[^{}]*)*)}(?:\^{([^{}]*(?:\{[^{}]*\}[^{}]*)*)})?(?:\s+([^\\]*))?', text)
