@@ -2605,40 +2605,77 @@ def generate_generic_worksheet(form):
                 <m:e>{latex_to_omml_content(body_content)}</m:e>
             </m:nary>'''
         
+        def find_matching_brace(text, start_pos):
+            """Find the matching closing brace for an opening brace at start_pos"""
+            if start_pos >= len(text) or text[start_pos] != '{':
+                return -1
+            
+            brace_count = 0
+            for i in range(start_pos, len(text)):
+                if text[i] == '{':
+                    brace_count += 1
+                elif text[i] == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        return i
+            return -1
+        
         def latex_to_omml_content(text):
-            """Convert LaTeX content to OMML, handling nested expressions"""
+            """Convert LaTeX content to OMML, handling nested expressions properly"""
             if not text.strip():
                 return create_text_run('')
             
-            # Handle fractions first (highest precedence)
-            frac_match = re.search(r'\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', text)
-            if frac_match:
-                before = text[:frac_match.start()]
-                after = text[frac_match.end():]
-                frac_omml = create_fraction(frac_match.group(1), frac_match.group(2))
-                
-                result = ''
-                if before.strip():
-                    result += latex_to_omml_content(before)
-                result += frac_omml
-                if after.strip():
-                    result += latex_to_omml_content(after)
-                return result
+            # Process from left to right, handling the first LaTeX command found
             
-            # Handle square roots
-            sqrt_match = re.search(r'\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', text)
-            if sqrt_match:
-                before = text[:sqrt_match.start()]
-                after = text[sqrt_match.end():]
-                sqrt_omml = create_square_root(sqrt_match.group(1))
+            # Handle square roots (process before fractions to handle nested cases)
+            sqrt_pos = text.find('\\sqrt{')
+            if sqrt_pos != -1:
+                brace_start = sqrt_pos + 5  # Position of '{'
+                brace_end = find_matching_brace(text, brace_start)
                 
-                result = ''
-                if before.strip():
-                    result += latex_to_omml_content(before)
-                result += sqrt_omml
-                if after.strip():
-                    result += latex_to_omml_content(after)
-                return result
+                if brace_end != -1:
+                    before = text[:sqrt_pos]
+                    radicand = text[brace_start + 1:brace_end]  # Content between braces
+                    after = text[brace_end + 1:]
+                    
+                    sqrt_omml = create_square_root(radicand)
+                    
+                    result = ''
+                    if before.strip():
+                        result += latex_to_omml_content(before)
+                    result += sqrt_omml
+                    if after.strip():
+                        result += latex_to_omml_content(after)
+                    return result
+            
+            # Handle fractions
+            frac_pos = text.find('\\frac{')
+            if frac_pos != -1:
+                # Find numerator
+                num_brace_start = frac_pos + 5  # Position of first '{'
+                num_brace_end = find_matching_brace(text, num_brace_start)
+                
+                if num_brace_end != -1:
+                    # Find denominator
+                    den_brace_start = num_brace_end + 1
+                    if den_brace_start < len(text) and text[den_brace_start] == '{':
+                        den_brace_end = find_matching_brace(text, den_brace_start)
+                        
+                        if den_brace_end != -1:
+                            before = text[:frac_pos]
+                            numerator = text[num_brace_start + 1:num_brace_end]
+                            denominator = text[den_brace_start + 1:den_brace_end]
+                            after = text[den_brace_end + 1:]
+                            
+                            frac_omml = create_fraction(numerator, denominator)
+                            
+                            result = ''
+                            if before.strip():
+                                result += latex_to_omml_content(before)
+                            result += frac_omml
+                            if after.strip():
+                                result += latex_to_omml_content(after)
+                            return result
             
             # Handle integrals with bounds
             int_match = re.search(r'\\int_{([^{}]*(?:\{[^{}]*\}[^{}]*)*)}(?:\^{([^{}]*(?:\{[^{}]*\}[^{}]*)*)})?(?:\s+([^\\]*))?', text)
