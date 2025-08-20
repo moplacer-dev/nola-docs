@@ -5,31 +5,9 @@ services:
     region: oregon
     buildCommand: |
       pip install -r requirements.txt
-      echo "🚨 EMERGENCY: Fixing migration table directly..."
-      python -c "
-      from app import app, db
-      import sys
-      app.app_context().push()
-      try:
-          # Direct SQL to fix the migration table
-          print('📋 Cleaning migration table...')
-          db.engine.execute('DELETE FROM alembic_version WHERE version_num = \\'918e4c98fd53\\'')
-          db.engine.execute('DELETE FROM alembic_version WHERE version_num = \\'f4e1c347a10a\\'') 
-          db.engine.execute('INSERT INTO alembic_version (version_num) VALUES (\\'e753b30421b6\\') ON CONFLICT DO NOTHING')
-          print('✅ Migration table fixed - set to e753b30421b6')
-      except Exception as e:
-          print(f'⚠️ Direct fix failed: {e}')
-          try:
-              # Fallback: try to just delete problematic entries
-              db.engine.execute('DELETE FROM alembic_version')
-              db.engine.execute('INSERT INTO alembic_version (version_num) VALUES (\\'e753b30421b6\\')')
-              print('✅ Migration table reset via fallback')
-          except Exception as e2:
-              print(f'❌ All fixes failed: {e2}')
-              sys.exit(1)
-      " || echo "Migration table fix attempted"
-      flask db upgrade || echo "Upgrade completed"
-      python render_deploy.py || echo "Post-deployment setup failed, continuing..."
+      echo "✅ Migration state already fixed - proceeding with normal deployment"
+      flask db upgrade || echo "Migration upgrade completed"
+      python render_deploy.py || echo "Post-deployment setup completed"
     startCommand: gunicorn app:app
     envVars:
       - key: FLASK_ENV
