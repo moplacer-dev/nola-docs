@@ -54,25 +54,8 @@ from models import db, User, FormDraft, GeneratedDocument, TemplateFile, Activit
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Register CLI command for loading production data
-from load_production_data import load_production_data
-app.cli.add_command(load_production_data)
-
-# Register emergency fix command
-from fix_standards_data import fix_standards_data
-app.cli.add_command(fix_standards_data)
-
-# Register verification and sync commands
-from verify_production_data import verify_production_data
-from sync_to_production import sync_to_production
-from fix_missing_8th_grade import fix_missing_8th_grade
-from diagnose_standards import diagnose_standards
-from fix_grade_level_8 import fix_grade_level_8
-app.cli.add_command(verify_production_data)
-app.cli.add_command(sync_to_production)
-app.cli.add_command(fix_missing_8th_grade)
-app.cli.add_command(diagnose_standards)
-app.cli.add_command(fix_grade_level_8)
+# CLI commands for development/maintenance have been archived
+# These scripts are now available in archive/dev-scripts/ if needed
 
 # Helper functions for standards/modules queries
 def get_framework_for(state: str, subject: str) -> str:
