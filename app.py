@@ -650,14 +650,14 @@ class FamilyBriefingForm(FlaskForm):
     learningobjective5 = TextAreaField('Learning Objective 5', validators=[Optional(), Length(max=300)])
     learningobjective6 = TextAreaField('Learning Objective 6', validators=[Optional(), Length(max=300)])
     
-    # Session Activities (7)
-    activityname1 = StringField('Activity 1', validators=[Optional(), Length(max=300)])
-    activityname2 = StringField('Activity 2', validators=[Optional(), Length(max=300)])
-    activityname3 = StringField('Activity 3', validators=[Optional(), Length(max=300)])
-    activityname4 = StringField('Activity 4', validators=[Optional(), Length(max=300)])
-    activityname5 = StringField('Activity 5', validators=[Optional(), Length(max=300)])
-    activityname6 = StringField('Activity 6', validators=[Optional(), Length(max=300)])
-    activityname7 = StringField('Activity 7', validators=[Optional(), Length(max=300)])
+    # Session Focus (7)
+    activityname1 = StringField('Focus 1', validators=[Optional(), Length(max=300)])
+    activityname2 = StringField('Focus 2', validators=[Optional(), Length(max=300)])
+    activityname3 = StringField('Focus 3', validators=[Optional(), Length(max=300)])
+    activityname4 = StringField('Focus 4', validators=[Optional(), Length(max=300)])
+    activityname5 = StringField('Focus 5', validators=[Optional(), Length(max=300)])
+    activityname6 = StringField('Focus 6', validators=[Optional(), Length(max=300)])
+    activityname7 = StringField('Focus 7', validators=[Optional(), Length(max=300)])
     
     # Key Terminology (21 terms)
     term1 = StringField('Term 1', validators=[Optional(), Length(max=100)])
@@ -3210,7 +3210,7 @@ def generate_family_briefing(form):
             'learningobjective5': escape_xml(form.learningobjective5.data) if form.learningobjective5.data else '',
             'learningobjective6': escape_xml(form.learningobjective6.data) if form.learningobjective6.data else '',
             
-            # Session Activities
+            # Session Focus
             'activityname1': escape_xml(form.activityname1.data) if form.activityname1.data else '',
             'activityname2': escape_xml(form.activityname2.data) if form.activityname2.data else '',
             'activityname3': escape_xml(form.activityname3.data) if form.activityname3.data else '',
