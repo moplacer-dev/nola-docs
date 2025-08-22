@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Create Student Module Workbook - NOLA.docs{% endblock %}
+
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+    
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+    
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Draft saved</span>
+</div>
+
+<div class="max-w-6xl mx-auto py-8 px-4 pb-24">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Student Module Workbook</h1>
+        <p class="text-gray-600 mt-2">Generate a comprehensive student workbook with session goals, vocabulary, and assessments. <strong>Your progress is automatically saved as you type.</strong></p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST" action="{{ url_for('create_studentmoduleworkbook') }}" id="studentmoduleworkbook-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Module Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
+                
+                <div class="mb-6">
+                    {{ form.module_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                    {{ form.module_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
+                        id="module_name",
+                        data_autosave="true") }}
+                    {% if form.module_name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.module_name.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Session Focus Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Session Focus</h2>
+                <p class="text-sm text-gray-600 mb-4">Enter the main focus for each session (1-7).</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for i in range(1, 8) %}
+                        {% set field = form['focus_s' ~ i] %}
+                        <div>
+                            {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                rows=2,
+                                data_autosave="true") }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Sessions 1-7 -->
+            {% for session_num in range(1, 8) %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Session {{ session_num }}</h2>
+                
+                <!-- Goals -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Session Goals</h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        {% for goal_num in range(1, 4) %}
+                            {% set field = form['s' ~ session_num ~ '_goal' ~ goal_num] %}
+                            {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                data_autosave="true") }}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Vocabulary -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Session Vocabulary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for vocab_num in range(1, 6) %}
+                            {% set field = form['s' ~ session_num ~ '_vocab' ~ vocab_num] %}
+                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                placeholder="Vocabulary " ~ vocab_num,
+                                data_autosave="true") }}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Assessments -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Performance Based Assessments</h3>
+                    <p class="text-sm text-gray-600 mb-3">Enter up to 4 assessments for this session (optional).</p>
+                    <div class="space-y-3">
+                        {% for assessment_num in range(1, 5) %}
+                            {% set field = form['s' ~ session_num ~ '_assessment' ~ assessment_num] %}
+                            <div>
+                                {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                                {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    rows=2,
+                                    data_autosave="true") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button type="submit" name="action" value="generate" 
+                        class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
+                    Generate Student Module Workbook
+                </button>
+            </div>
+            
+            <!-- Hidden field to track if we're editing an existing draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+    // Autosave functionality
+    class StudentModuleWorkbookAutosave {
+        constructor() {
+            this.autosaveTimeout = null;
+            this.autosaveDelay = 2000; // 2 seconds after user stops typing
+            this.currentDraftId = document.getElementById('current_draft_id').value || null;
+            this.isAutosaving = false;
+            this.lastSaveData = null;
+            
+            this.initializeEventListeners();
+            this.showAutosaveStatus('Ready to autosave', 'saved');
+        }
+        
+        initializeEventListeners() {
+            // Listen for changes on autosave-enabled fields
+            const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
+            
+            autosaveFields.forEach(field => {
+                field.addEventListener('input', () => {
+                    this.scheduleAutosave();
+                });
+                
+                field.addEventListener('blur', () => {
+                    // Save immediately when user leaves a field
+                    this.performAutosave();
+                });
+            });
+        }
+        
+        scheduleAutosave() {
+            // Clear existing timeout
+            if (this.autosaveTimeout) {
+                clearTimeout(this.autosaveTimeout);
+            }
+            
+            // Schedule new autosave
+            this.autosaveTimeout = setTimeout(() => {
+                this.performAutosave();
+            }, this.autosaveDelay);
+        }
+        
+        async performAutosave() {
+            if (this.isAutosaving) {
+                return; // Already autosaving
+            }
+            
+            // Collect form data
+            const formData = this.collectFormData();
+            
+            // Check if data has changed
+            if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
+                return; // No changes to save
+            }
+            
+            this.isAutosaving = true;
+            this.showAutosaveStatus('Saving...', 'saving');
+            
+            try {
+                // Add draft_id to the data
+                formData.draft_id = this.currentDraftId;
+                
+                const response = await fetch('/autosave-studentmoduleworkbook-draft', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update current draft ID if this was a new draft
+                    if (result.draft_id && !this.currentDraftId) {
+                        this.currentDraftId = result.draft_id;
+                        document.getElementById('current_draft_id').value = result.draft_id;
+                    }
+                    
+                    this.lastSaveData = formData;
+                    this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+                } else {
+                    this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Autosave error:', error);
+                this.showAutosaveStatus('Save failed - check connection', 'error');
+            } finally {
+                this.isAutosaving = false;
+            }
+        }
+        
+        collectFormData() {
+            // Collect all form fields with their values
+            const formData = {};
+            
+            // Module information
+            formData.module_name = document.getElementById('module_name').value;
+            
+            // Session focus
+            for (let i = 1; i <= 7; i++) {
+                formData[`focus_s${i}`] = document.querySelector(`[name="focus_s${i}"]`).value;
+            }
+            
+            // Session goals, vocabulary, and assessments
+            for (let s = 1; s <= 7; s++) {
+                for (let g = 1; g <= 3; g++) {
+                    formData[`s${s}_goal${g}`] = document.querySelector(`[name="s${s}_goal${g}"]`).value;
+                }
+                for (let v = 1; v <= 5; v++) {
+                    formData[`s${s}_vocab${v}`] = document.querySelector(`[name="s${s}_vocab${v}"]`).value;
+                }
+                for (let a = 1; a <= 4; a++) {
+                    formData[`s${s}_assessment${a}`] = document.querySelector(`[name="s${s}_assessment${a}"]`).value;
+                }
+            }
+            
+            return formData;
+        }
+        
+        showAutosaveStatus(message, type) {
+            const statusElement = document.getElementById('autosave-status');
+            const textElement = document.getElementById('autosave-text');
+            
+            // Update text and styling
+            textElement.textContent = message;
+            statusElement.className = `autosave-status ${type}`;
+            
+            // Show the status
+            setTimeout(() => {
+                statusElement.classList.remove('hidden');
+            }, 10);
+            
+            // Auto-hide after 3 seconds (except for errors)
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusElement.classList.add('hidden');
+                }, 3000);
+            }
+        }
+    }
+    
+    // Initialize everything when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize autosave
+        window.autosaveInstance = new StudentModuleWorkbookAutosave();
+    });
+</script>
+
+{% endblock %}

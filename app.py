@@ -698,6 +698,123 @@ class FamilyBriefingForm(FlaskForm):
     
     submit = SubmitField('Generate Family Briefing')
 
+# ===== STUDENT MODULE WORKBOOK FORMS =====
+
+class StudentModuleWorkbookForm(FlaskForm):
+    # Module Information
+    module_name = StringField('Module Name', 
+                            validators=[DataRequired(), Length(min=1, max=100)],
+                            render_kw={"placeholder": "e.g., APHY, Environmental Science, Biology"})
+    
+    # Session Focus (7 sessions)
+    focus_s1 = TextAreaField('Session 1 Focus', validators=[Optional(), Length(max=500)])
+    focus_s2 = TextAreaField('Session 2 Focus', validators=[Optional(), Length(max=500)])
+    focus_s3 = TextAreaField('Session 3 Focus', validators=[Optional(), Length(max=500)])
+    focus_s4 = TextAreaField('Session 4 Focus', validators=[Optional(), Length(max=500)])
+    focus_s5 = TextAreaField('Session 5 Focus', validators=[Optional(), Length(max=500)])
+    focus_s6 = TextAreaField('Session 6 Focus', validators=[Optional(), Length(max=500)])
+    focus_s7 = TextAreaField('Session 7 Focus', validators=[Optional(), Length(max=500)])
+    
+    # Session 1 Goals, Vocabulary, and Assessments
+    s1_goal1 = StringField('Session 1 Goal 1', validators=[Optional(), Length(max=300)])
+    s1_goal2 = StringField('Session 1 Goal 2', validators=[Optional(), Length(max=300)])
+    s1_goal3 = StringField('Session 1 Goal 3', validators=[Optional(), Length(max=300)])
+    s1_vocab1 = StringField('Session 1 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s1_vocab2 = StringField('Session 1 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s1_vocab3 = StringField('Session 1 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s1_vocab4 = StringField('Session 1 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s1_vocab5 = StringField('Session 1 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s1_assessment1 = TextAreaField('Session 1 Assessment 1', validators=[Optional(), Length(max=500)])
+    s1_assessment2 = TextAreaField('Session 1 Assessment 2', validators=[Optional(), Length(max=500)])
+    s1_assessment3 = TextAreaField('Session 1 Assessment 3', validators=[Optional(), Length(max=500)])
+    s1_assessment4 = TextAreaField('Session 1 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 2 Goals, Vocabulary, and Assessments
+    s2_goal1 = StringField('Session 2 Goal 1', validators=[Optional(), Length(max=300)])
+    s2_goal2 = StringField('Session 2 Goal 2', validators=[Optional(), Length(max=300)])
+    s2_goal3 = StringField('Session 2 Goal 3', validators=[Optional(), Length(max=300)])
+    s2_vocab1 = StringField('Session 2 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s2_vocab2 = StringField('Session 2 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s2_vocab3 = StringField('Session 2 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s2_vocab4 = StringField('Session 2 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s2_vocab5 = StringField('Session 2 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s2_assessment1 = TextAreaField('Session 2 Assessment 1', validators=[Optional(), Length(max=500)])
+    s2_assessment2 = TextAreaField('Session 2 Assessment 2', validators=[Optional(), Length(max=500)])
+    s2_assessment3 = TextAreaField('Session 2 Assessment 3', validators=[Optional(), Length(max=500)])
+    s2_assessment4 = TextAreaField('Session 2 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 3 Goals, Vocabulary, and Assessments
+    s3_goal1 = StringField('Session 3 Goal 1', validators=[Optional(), Length(max=300)])
+    s3_goal2 = StringField('Session 3 Goal 2', validators=[Optional(), Length(max=300)])
+    s3_goal3 = StringField('Session 3 Goal 3', validators=[Optional(), Length(max=300)])
+    s3_vocab1 = StringField('Session 3 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s3_vocab2 = StringField('Session 3 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s3_vocab3 = StringField('Session 3 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s3_vocab4 = StringField('Session 3 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s3_vocab5 = StringField('Session 3 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s3_assessment1 = TextAreaField('Session 3 Assessment 1', validators=[Optional(), Length(max=500)])
+    s3_assessment2 = TextAreaField('Session 3 Assessment 2', validators=[Optional(), Length(max=500)])
+    s3_assessment3 = TextAreaField('Session 3 Assessment 3', validators=[Optional(), Length(max=500)])
+    s3_assessment4 = TextAreaField('Session 3 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 4 Goals, Vocabulary, and Assessments
+    s4_goal1 = StringField('Session 4 Goal 1', validators=[Optional(), Length(max=300)])
+    s4_goal2 = StringField('Session 4 Goal 2', validators=[Optional(), Length(max=300)])
+    s4_goal3 = StringField('Session 4 Goal 3', validators=[Optional(), Length(max=300)])
+    s4_vocab1 = StringField('Session 4 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s4_vocab2 = StringField('Session 4 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s4_vocab3 = StringField('Session 4 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s4_vocab4 = StringField('Session 4 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s4_vocab5 = StringField('Session 4 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s4_assessment1 = TextAreaField('Session 4 Assessment 1', validators=[Optional(), Length(max=500)])
+    s4_assessment2 = TextAreaField('Session 4 Assessment 2', validators=[Optional(), Length(max=500)])
+    s4_assessment3 = TextAreaField('Session 4 Assessment 3', validators=[Optional(), Length(max=500)])
+    s4_assessment4 = TextAreaField('Session 4 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 5 Goals, Vocabulary, and Assessments
+    s5_goal1 = StringField('Session 5 Goal 1', validators=[Optional(), Length(max=300)])
+    s5_goal2 = StringField('Session 5 Goal 2', validators=[Optional(), Length(max=300)])
+    s5_goal3 = StringField('Session 5 Goal 3', validators=[Optional(), Length(max=300)])
+    s5_vocab1 = StringField('Session 5 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s5_vocab2 = StringField('Session 5 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s5_vocab3 = StringField('Session 5 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s5_vocab4 = StringField('Session 5 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s5_vocab5 = StringField('Session 5 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s5_assessment1 = TextAreaField('Session 5 Assessment 1', validators=[Optional(), Length(max=500)])
+    s5_assessment2 = TextAreaField('Session 5 Assessment 2', validators=[Optional(), Length(max=500)])
+    s5_assessment3 = TextAreaField('Session 5 Assessment 3', validators=[Optional(), Length(max=500)])
+    s5_assessment4 = TextAreaField('Session 5 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 6 Goals, Vocabulary, and Assessments
+    s6_goal1 = StringField('Session 6 Goal 1', validators=[Optional(), Length(max=300)])
+    s6_goal2 = StringField('Session 6 Goal 2', validators=[Optional(), Length(max=300)])
+    s6_goal3 = StringField('Session 6 Goal 3', validators=[Optional(), Length(max=300)])
+    s6_vocab1 = StringField('Session 6 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s6_vocab2 = StringField('Session 6 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s6_vocab3 = StringField('Session 6 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s6_vocab4 = StringField('Session 6 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s6_vocab5 = StringField('Session 6 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s6_assessment1 = TextAreaField('Session 6 Assessment 1', validators=[Optional(), Length(max=500)])
+    s6_assessment2 = TextAreaField('Session 6 Assessment 2', validators=[Optional(), Length(max=500)])
+    s6_assessment3 = TextAreaField('Session 6 Assessment 3', validators=[Optional(), Length(max=500)])
+    s6_assessment4 = TextAreaField('Session 6 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    # Session 7 Goals, Vocabulary, and Assessments
+    s7_goal1 = StringField('Session 7 Goal 1', validators=[Optional(), Length(max=300)])
+    s7_goal2 = StringField('Session 7 Goal 2', validators=[Optional(), Length(max=300)])
+    s7_goal3 = StringField('Session 7 Goal 3', validators=[Optional(), Length(max=300)])
+    s7_vocab1 = StringField('Session 7 Vocabulary 1', validators=[Optional(), Length(max=100)])
+    s7_vocab2 = StringField('Session 7 Vocabulary 2', validators=[Optional(), Length(max=100)])
+    s7_vocab3 = StringField('Session 7 Vocabulary 3', validators=[Optional(), Length(max=100)])
+    s7_vocab4 = StringField('Session 7 Vocabulary 4', validators=[Optional(), Length(max=100)])
+    s7_vocab5 = StringField('Session 7 Vocabulary 5', validators=[Optional(), Length(max=100)])
+    s7_assessment1 = TextAreaField('Session 7 Assessment 1', validators=[Optional(), Length(max=500)])
+    s7_assessment2 = TextAreaField('Session 7 Assessment 2', validators=[Optional(), Length(max=500)])
+    s7_assessment3 = TextAreaField('Session 7 Assessment 3', validators=[Optional(), Length(max=500)])
+    s7_assessment4 = TextAreaField('Session 7 Assessment 4', validators=[Optional(), Length(max=500)])
+    
+    submit = SubmitField('Generate Student Module Workbook')
+
 # ===== RCA WORKSHEET FORMS =====
 
 # Form for individual RCA questions (Research, Challenge, Application)
@@ -3276,6 +3393,112 @@ def generate_family_briefing(form):
         doc.save(output_path)
         
         print("Family briefing document saved successfully!")
+        return output_path
+        
+    finally:
+        # Clean up the temporary file
+        try:
+            os.unlink(temp_template_path)
+        except:
+            pass  # Ignore cleanup errors
+
+def generate_student_module_workbook(form):
+    """Generate a student module workbook using docxtpl"""
+    # Use a master template that never gets touched
+    master_template_path = 'templates/docx_templates/student_module_workbook_master.docx'
+    working_template_path = 'templates/docx_templates/student_module_workbook.docx'
+    
+    print(f"Looking for student module workbook master template at: {master_template_path}")
+    
+    # Check if master template exists
+    if not os.path.exists(master_template_path):
+        raise FileNotFoundError("Student Module Workbook master DOCX template not found. Please create the master template first.")
+    
+    # Always copy from master to working template before processing
+    print("Copying fresh student module workbook template from master...")
+    shutil.copy2(master_template_path, working_template_path)
+    
+    print("Loading student module workbook working template...")
+    
+    # Create a temporary copy of the working template
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(working_template_path, temp_file.name)
+        temp_template_path = temp_file.name
+    
+    try:
+        # Load the temporary template
+        doc = DocxTemplate(temp_template_path)
+        
+        # Build the context dictionary based on your template structure
+        context = {
+            # Module information
+            'module_name': escape_xml(form.module_name.data) if form.module_name.data else '',
+            
+            # Session focus
+            'focus': {
+                's1': escape_xml(form.focus_s1.data) if form.focus_s1.data else '',
+                's2': escape_xml(form.focus_s2.data) if form.focus_s2.data else '',
+                's3': escape_xml(form.focus_s3.data) if form.focus_s3.data else '',
+                's4': escape_xml(form.focus_s4.data) if form.focus_s4.data else '',
+                's5': escape_xml(form.focus_s5.data) if form.focus_s5.data else '',
+                's6': escape_xml(form.focus_s6.data) if form.focus_s6.data else '',
+                's7': escape_xml(form.focus_s7.data) if form.focus_s7.data else '',
+            }
+        }
+        
+        # Add session data matching your template structure
+        for s in range(1, 8):
+            # Collect goals (filter out empty ones)
+            goals = []
+            for g in range(1, 4):
+                goal_data = getattr(form, f's{s}_goal{g}').data
+                if goal_data and goal_data.strip():
+                    goals.append(escape_xml(goal_data))
+            
+            # Collect vocabulary (filter out empty ones)
+            vocabulary = []
+            for v in range(1, 6):
+                vocab_data = getattr(form, f's{s}_vocab{v}').data
+                if vocab_data and vocab_data.strip():
+                    vocabulary.append(escape_xml(vocab_data))
+            
+            # Collect assessments for this specific session (filter out empty ones)
+            assessments = []
+            for a in range(1, 5):
+                assessment_data = getattr(form, f's{s}_assessment{a}').data
+                if assessment_data and assessment_data.strip():
+                    assessments.append(escape_xml(assessment_data))
+            
+            # Add both naming patterns to match your template
+            context[f'session{s}'] = {
+                'goals': goals,
+                'vocabulary': vocabulary
+            }
+            context[f's{s}'] = {
+                'assessments': assessments  # Each session now has its own assessments
+            }
+        
+        print(f"Student module workbook context data: {context}")
+        
+        # Render the document
+        doc.render(context)
+        
+        # Save the document
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Generate filename based on module name
+        module_name_safe = 'Module'
+        if form.module_name.data:
+            module_name_safe = escape_xml(form.module_name.data).replace(' ', '_').replace('/', '_').replace('\\', '_')
+        
+        filename = f"{module_name_safe}_Student_Workbook.docx"
+        output_path = os.path.join(output_dir, filename)
+        
+        print(f"Saving student module workbook document to: {output_path}")
+        doc.save(output_path)
+        
+        print("Student module workbook document saved successfully!")
         return output_path
         
     finally:
@@ -6498,6 +6721,177 @@ def load_familybriefing_draft(draft_id):
 def delete_familybriefing_draft(draft_id):
     """Delete family briefing draft"""
     draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+    
+    return redirect(url_for('drafts'))
+
+# ===== STUDENT MODULE WORKBOOK ROUTES =====
+
+@app.route('/create-studentmoduleworkbook', methods=['GET', 'POST'])
+@login_required
+def create_studentmoduleworkbook():
+    form = StudentModuleWorkbookForm()
+    
+    if request.method == 'POST':
+        print("Student Module Workbook form submitted!")
+        print(f"Form data: {request.form}")
+        print(f"Form valid: {form.validate_on_submit()}")
+        if form.errors:
+            print(f"Form errors: {form.errors}")
+    
+    if form.validate_on_submit():
+        print("Student Module Workbook form validation passed!")
+        # Generate the document
+        try:
+            print("Attempting to generate student module workbook...")
+            doc_path = generate_student_module_workbook(form)
+            filename = os.path.basename(doc_path)
+            
+            print(f"Student module workbook generated at: {doc_path}")
+            
+            # Save document info to database
+            doc_record = GeneratedDocument(
+                user_id=current_user.id,
+                document_type='studentmoduleworkbook',
+                filename=filename,
+                file_path=doc_path,
+                module_acronym=form.module_name.data or 'Student Workbook',  # Use the module name
+                file_size=os.path.getsize(doc_path)
+            )
+            db.session.add(doc_record)
+            db.session.commit()
+            
+            flash('Student Module Workbook generated successfully!', 'success')
+            return redirect(url_for('my_documents'))
+        except Exception as e:
+            print(f"Error generating student module workbook: {e}")
+            flash(f'Error generating document: {str(e)}', 'error')
+    
+    return render_template('create_studentmoduleworkbook.html', form=form)
+
+@app.route('/autosave-studentmoduleworkbook-draft', methods=['POST'])
+@login_required
+def autosave_studentmoduleworkbook_draft():
+    """AJAX endpoint for autosaving student module workbook draft"""
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+        
+        # Prepare form data for JSON storage
+        form_data = {
+            'module_name': data.get('module_name', ''),
+        }
+        
+        # Session focus
+        for i in range(1, 8):
+            form_data[f'focus_s{i}'] = data.get(f'focus_s{i}', '')
+        
+        # Session goals, vocabulary, and assessments
+        for s in range(1, 8):
+            for g in range(1, 4):
+                form_data[f's{s}_goal{g}'] = data.get(f's{s}_goal{g}', '')
+            for v in range(1, 6):
+                form_data[f's{s}_vocab{v}'] = data.get(f's{s}_vocab{v}', '')
+            for a in range(1, 5):
+                form_data[f's{s}_assessment{a}'] = data.get(f's{s}_assessment{a}', '')
+        
+        # Check if this is updating an existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                db.session.commit()
+                
+                timestamp = draft.updated_at.strftime('%I:%M %p')
+                return jsonify({
+                    'success': True,
+                    'draft_id': draft.id,
+                    'timestamp': timestamp
+                })
+        
+        # Create new draft
+        # Generate title from first non-empty focus
+        title = 'Student Module Workbook Draft'
+        for i in range(1, 8):
+            focus_text = data.get(f'focus_s{i}', '').strip()
+            if focus_text:
+                title = f'Student Module Workbook - Session {i}: {focus_text[:30]}...' if len(focus_text) > 30 else f'Student Module Workbook - Session {i}: {focus_text}'
+                break
+        
+        draft = FormDraft(
+            user_id=current_user.id,
+            form_type='studentmoduleworkbook',
+            title=title,
+            form_data=form_data
+        )
+        db.session.add(draft)
+        db.session.commit()
+        
+        timestamp = draft.created_at.strftime('%I:%M %p')
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'timestamp': timestamp
+        })
+        
+    except Exception as e:
+        print(f"Error in autosave_studentmoduleworkbook_draft: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/load-studentmoduleworkbook-draft/<int:draft_id>')
+@login_required
+def load_studentmoduleworkbook_draft(draft_id):
+    """Load student module workbook draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
+    
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_studentmoduleworkbook'))
+    
+    try:
+        # Create form and populate with draft data
+        form = StudentModuleWorkbookForm()
+        form_data = draft.form_data
+        
+        # Populate module information
+        form.module_name.data = form_data.get('module_name', '')
+        
+        # Populate session focus fields
+        for i in range(1, 8):
+            getattr(form, f'focus_s{i}').data = form_data.get(f'focus_s{i}', '')
+        
+        # Populate session goals, vocabulary, and assessments
+        for s in range(1, 8):
+            for g in range(1, 4):
+                getattr(form, f's{s}_goal{g}').data = form_data.get(f's{s}_goal{g}', '')
+            for v in range(1, 6):
+                getattr(form, f's{s}_vocab{v}').data = form_data.get(f's{s}_vocab{v}', '')
+            for a in range(1, 5):
+                getattr(form, f's{s}_assessment{a}').data = form_data.get(f's{s}_assessment{a}', '')
+        
+        flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        return render_template('create_studentmoduleworkbook.html', form=form, draft_id=draft.id)
+        
+    except Exception as e:
+        print(f"Error loading student module workbook draft: {e}")
+        flash('Error loading draft', 'error')
+        return redirect(url_for('create_studentmoduleworkbook'))
+
+@app.route('/delete-studentmoduleworkbook-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_studentmoduleworkbook_draft(draft_id):
+    """Delete student module workbook draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
     
     if not draft:
         flash('Draft not found', 'error')

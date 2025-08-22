@@ -16,7 +16,8 @@ class TemplateManager:
         'rca_worksheet_master.docx': 'rca_worksheet_master',
         'module_guide_master.docx': 'moduleGuide_master',
         'module_ak_master.docx': 'moduleAnswerKey_master',
-        'module_activity_sheet_master.docx': 'moduleActivitySheet_master'
+        'module_activity_sheet_master.docx': 'moduleActivitySheet_master',
+        'student_module_workbook_master.docx': 'studentmoduleworkbook_master'
     }
     
     @classmethod

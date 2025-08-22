@@ -46,6 +46,7 @@
                                         {% elif draft.form_type == 'moduleActivitySheet' %}bg-blue-100 text-blue-800
                                         {% elif draft.form_type == 'horizontal_lesson_plan' %}bg-emerald-100 text-emerald-800
                                         {% elif draft.form_type == 'curriculum_design_build' %}bg-emerald-100 text-emerald-800
+                                        {% elif draft.form_type == 'studentmoduleworkbook' %}bg-cyan-100 text-cyan-800
                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
                                         {{ draft.document_type_display }}
                                     </span>
@@ -111,6 +112,13 @@
                                         {% endif %}
                                         {% if draft.form_data.teacher_name %}
                                             <span>👩‍🏫 Teacher: {{ draft.form_data.teacher_name }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if draft.form_type == 'studentmoduleworkbook' %}
+                                        <span>📚 Sessions: 7</span>
+                                        {% set filled_sessions = [draft.form_data.get('focus_s1'), draft.form_data.get('focus_s2'), draft.form_data.get('focus_s3'), draft.form_data.get('focus_s4'), draft.form_data.get('focus_s5'), draft.form_data.get('focus_s6'), draft.form_data.get('focus_s7')] | select | list | length %}
+                                        {% if filled_sessions > 0 %}
+                                            <span>✅ Completed: {{ filled_sessions }}/7 sessions</span>
                                         {% endif %}
                                     {% endif %}
                                 </div>
@@ -266,6 +274,19 @@
                                         📝 Edit
                                     </a>
                                     <form method="POST" action="/delete-draft/{{ draft.id }}" 
+                                          class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" 
+                                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
+                                            🗑️ Delete
+                                        </button>
+                                    </form>
+                                {% elif draft.form_type == 'studentmoduleworkbook' %}
+                                    <a href="/load-studentmoduleworkbook-draft/{{ draft.id }}" 
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                        📝 Edit
+                                    </a>
+                                    <form method="POST" action="/delete-studentmoduleworkbook-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
