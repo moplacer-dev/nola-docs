@@ -691,6 +691,10 @@ class FamilyBriefingForm(FlaskForm):
     
     keyconcept3_name = StringField('Key Concept 3 Name', validators=[Optional(), Length(max=300)])
     keyconcept3_explanation = TextAreaField('Key Concept 3 Explanation', validators=[Optional(), Length(max=600)])
+    keyconcept4_name = StringField('Key Concept 4 Name', validators=[Optional(), Length(max=300)])
+    keyconcept4_explanation = TextAreaField('Key Concept 4 Explanation', validators=[Optional(), Length(max=600)])
+    keyconcept5_name = StringField('Key Concept 5 Name', validators=[Optional(), Length(max=300)])
+    keyconcept5_explanation = TextAreaField('Key Concept 5 Explanation', validators=[Optional(), Length(max=600)])
     
     submit = SubmitField('Generate Family Briefing')
 
@@ -3248,7 +3252,11 @@ def generate_family_briefing(form):
             'keyconcept2': escape_xml(form.keyconcept2_name.data) if form.keyconcept2_name.data else '',
             'keyconcept2_explanation': escape_xml(form.keyconcept2_explanation.data) if form.keyconcept2_explanation.data else '',
             'keyconcept3': escape_xml(form.keyconcept3_name.data) if form.keyconcept3_name.data else '',
-            'keyconcept3_explanation': escape_xml(form.keyconcept3_explanation.data) if form.keyconcept3_explanation.data else ''
+            'keyconcept3_explanation': escape_xml(form.keyconcept3_explanation.data) if form.keyconcept3_explanation.data else '',
+            'keyconcept4': escape_xml(form.keyconcept4_name.data) if form.keyconcept4_name.data else '',
+            'keyconcept4_explanation': escape_xml(form.keyconcept4_explanation.data) if form.keyconcept4_explanation.data else '',
+            'keyconcept5': escape_xml(form.keyconcept5_name.data) if form.keyconcept5_name.data else '',
+            'keyconcept5_explanation': escape_xml(form.keyconcept5_explanation.data) if form.keyconcept5_explanation.data else ''
         }
         
         print(f"Family briefing context data: {context}")
@@ -6285,7 +6293,11 @@ def autosave_familybriefing_draft():
             'keyconcept2_name': data.get('keyconcept2_name', ''),
             'keyconcept2_explanation': data.get('keyconcept2_explanation', ''),
             'keyconcept3_name': data.get('keyconcept3_name', ''),
-            'keyconcept3_explanation': data.get('keyconcept3_explanation', '')
+            'keyconcept3_explanation': data.get('keyconcept3_explanation', ''),
+            'keyconcept4_name': data.get('keyconcept4_name', ''),
+            'keyconcept4_explanation': data.get('keyconcept4_explanation', ''),
+            'keyconcept5_name': data.get('keyconcept5_name', ''),
+            'keyconcept5_explanation': data.get('keyconcept5_explanation', '')
         }
         
         # Check if this is updating an existing draft
@@ -6468,6 +6480,10 @@ def load_familybriefing_draft(draft_id):
         form.keyconcept2_explanation.data = form_data.get('keyconcept2_explanation', '')
         form.keyconcept3_name.data = form_data.get('keyconcept3_name', '')
         form.keyconcept3_explanation.data = form_data.get('keyconcept3_explanation', '')
+        form.keyconcept4_name.data = form_data.get('keyconcept4_name', '')
+        form.keyconcept4_explanation.data = form_data.get('keyconcept4_explanation', '')
+        form.keyconcept5_name.data = form_data.get('keyconcept5_name', '')
+        form.keyconcept5_explanation.data = form_data.get('keyconcept5_explanation', '')
         
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         return render_template('create_familybriefing.html', form=form, draft_id=draft.id)
