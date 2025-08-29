@@ -439,9 +439,9 @@ def create_hlp_table_subdoc(doc, selected_modules):
     
     print(f"DEBUG HLP: Found max {max_sessions} sessions across all modules")
     
-    # Row structure: Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session
+    # Row structure: HORIZONTAL LESSON PLAN header + Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
-    num_rows = len(row_labels) * max_sessions  # One block per session
+    num_rows = 1 + (len(row_labels) * max_sessions)  # +1 for HORIZONTAL LESSON PLAN header
     
     print(f"DEBUG HLP: Creating HLP table with {num_rows} rows and {num_cols} cols")
     table = subdoc.add_table(rows=num_rows, cols=num_cols)
@@ -454,8 +454,54 @@ def create_hlp_table_subdoc(doc, selected_modules):
         shading_elm.set(qn('w:fill'), 'D9D9D9')  # Light grey
         cell._element.get_or_add_tcPr().append(shading_elm)
     
+    # Helper function to shade a cell with custom color
+    def shade_cell_custom(cell, color):
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), color)
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Helper function to set cell margins
+    def set_cell_margins(cell, top=0.02, bottom=0.02, left=0.05, right=0.05):
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        
+        tc_mar = tcPr.find(qn('w:tcMar'))
+        if tc_mar is None:
+            tc_mar = OxmlElement('w:tcMar')
+            tcPr.append(tc_mar)
+        
+        # Convert inches to twips (1 inch = 1440 twips)
+        def inches_to_twips(inches):
+            return str(int(inches * 1440))
+        
+        # Set margins
+        for margin_name, inches in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            margin_elem = tc_mar.find(qn(f'w:{margin_name}'))
+            if margin_elem is None:
+                margin_elem = OxmlElement(f'w:{margin_name}')
+                tc_mar.append(margin_elem)
+            margin_elem.set(qn('w:w'), inches_to_twips(inches))
+            margin_elem.set(qn('w:type'), 'dxa')
+    
+    # Helper function to set row height
+    def set_row_height(row, height_inches):
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        
+        tr = row._tr
+        trPr = tr.get_or_add_trPr()
+        trHeight = trPr.find(qn('w:trHeight'))
+        if trHeight is None:
+            trHeight = OxmlElement('w:trHeight')
+            trPr.append(trHeight)
+        trHeight.set(qn('w:val'), str(int(height_inches * 1440)))  # Convert to twips
+        trHeight.set(qn('w:hRule'), 'exact')
+    
     # Helper function to set cell text with specific formatting
-    def set_cell_text(cell, text, font_name, font_size, bold=False, center=True):
+    def set_cell_text(cell, text, font_name, font_size, bold=False, center=True, color=None):
         cell.text = text
         for paragraph in cell.paragraphs:
             if center:
@@ -464,27 +510,45 @@ def create_hlp_table_subdoc(doc, selected_modules):
                 run.font.name = font_name
                 run.font.size = Pt(font_size)
                 run.font.bold = bold
+                if color:
+                    run.font.color.rgb = RGBColor.from_string(color)
+        
+        # Set cell margins for all cells
+        set_cell_margins(cell)
     
     # Set up column widths
     table.columns[0].width = Inches(1.2)  # Label column
     for i in range(1, num_cols):
         table.columns[i].width = Inches(2.0)  # Module columns
     
-    # Fill all session blocks dynamically
+    # Add HORIZONTAL LESSON PLAN header row
+    header_row = table.rows[0]
+    set_row_height(header_row, 0.3)  # 0.3" height
+    
+    # Merge all cells in the header row
+    merged_cell = header_row.cells[0]
+    for i in range(1, num_cols):
+        merged_cell.merge(header_row.cells[i])
+    
+    # Set header formatting
+    set_cell_text(merged_cell, "HORIZONTAL LESSON PLAN", 'Rockwell', 11, bold=True, center=True, color='FFFFFF')
+    shade_cell_custom(merged_cell, '13205A')  # Dark blue background
+    
+    # Fill all session blocks dynamically (starting from row 1 now)
     for session_num in range(1, max_sessions + 1):
-        session_start_row = (session_num - 1) * len(row_labels)
+        session_start_row = 1 + ((session_num - 1) * len(row_labels))  # +1 for header row offset
         
         print(f"DEBUG HLP: Creating Session {session_num} block starting at row {session_start_row}")
         
         # Session header row
-        header_row = table.rows[session_start_row]
-        set_cell_text(header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
-        shade_cell_grey(header_row.cells[0])
+        session_header_row = table.rows[session_start_row]
+        set_cell_text(session_header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
+        shade_cell_grey(session_header_row.cells[0])
         
         for i, module in enumerate(modules, 1):
             module_header = f"{module.name}:\nSession {session_num}"
-            set_cell_text(header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
-            shade_cell_grey(header_row.cells[i])
+            set_cell_text(session_header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
+            shade_cell_grey(session_header_row.cells[i])
         
         # Session data rows (Focus, Goals, Materials, Teacher Prep, PBA)
         for row_idx, label in enumerate(row_labels[1:], 1):
@@ -515,7 +579,7 @@ def create_hlp_table_subdoc(doc, selected_modules):
                 else:
                     data_text = 'N/A'  # Module doesn't have this session
                 
-                set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
+                set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
     
     print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
     print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
