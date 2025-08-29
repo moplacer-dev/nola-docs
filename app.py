@@ -410,14 +410,21 @@ def create_hlp_table_subdoc(doc, selected_modules):
     from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
     from docx.oxml.shared import OxmlElement, qn
+    from docxtpl import Subdoc  # Add missing import like correlation reports
     from models import LessonPlanModule, LessonPlanSession, LessonPlanEnrichment
+    
+    print(f"DEBUG HLP: Starting subdoc creation for {len(selected_modules)} module IDs: {selected_modules}")
     
     # Create subdoc from the DocxTemplate instance
     subdoc = doc.new_subdoc()
+    print(f"DEBUG HLP: Created subdoc: {type(subdoc)}")
     
     # Get the selected modules
     modules = LessonPlanModule.query.filter(LessonPlanModule.id.in_(selected_modules)).all()
+    print(f"DEBUG HLP: Found {len(modules)} modules from database")
+    
     if not modules:
+        print("DEBUG HLP: No modules found, adding error paragraph")
         p = subdoc.add_paragraph("No modules found.")
         return subdoc
     
@@ -429,9 +436,11 @@ def create_hlp_table_subdoc(doc, selected_modules):
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
     num_rows = len(row_labels) * 2  # Session 1 and Session 2 blocks
     
+    print(f"DEBUG HLP: Creating table with {num_rows} rows and {num_cols} cols")
     table = subdoc.add_table(rows=num_rows, cols=num_cols)
     table.style = 'Table Grid'
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    print(f"DEBUG HLP: Table created successfully")
     
     # Helper function to shade a cell light grey
     def shade_cell_grey(cell):
@@ -543,6 +552,8 @@ def create_hlp_table_subdoc(doc, selected_modules):
             
             set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
     
+    print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
+    print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
     return subdoc
 
 # Custom validator for correct answer field
@@ -7695,7 +7706,9 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
         doc = DocxTemplate(temp_template_path)
         
         # Generate table subdoc using the template instance
+        print(f"DEBUG HLP MAIN: About to create subdoc for module IDs: {module_ids}")
         hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
+        print(f"DEBUG HLP MAIN: Received subdoc: {type(hlp_table_subdoc)}")
 
         # Create context for template - use direct subdoc like correlation report
         context = {
