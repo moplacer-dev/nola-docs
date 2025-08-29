@@ -17,11 +17,19 @@ depends_on = None
 
 
 def upgrade():
-    # Drop the old constraint that only includes title and subject
-    with op.batch_alter_table('modules', schema=None) as batch_op:
-        batch_op.drop_constraint('uq_module_title_subject', type_='unique')
-        # Add new constraint that includes grade_level
-        batch_op.create_unique_constraint('uq_module_title_subject_grade', ['title', 'subject', 'grade_level'])
+    # Check if constraint exists before dropping
+    try:
+        with op.batch_alter_table('modules', schema=None) as batch_op:
+            batch_op.drop_constraint('uq_module_title_subject', type_='unique')
+    except Exception:
+        pass  # Constraint doesn't exist, skip
+    
+    # Add new constraint if it doesn't exist
+    try:
+        with op.batch_alter_table('modules', schema=None) as batch_op:
+            batch_op.create_unique_constraint('uq_module_title_subject_grade', ['title', 'subject', 'grade_level'])
+    except Exception:
+        pass  # Constraint already exists, skip
 
 
 def downgrade():
