@@ -436,121 +436,27 @@ def create_hlp_table_subdoc(doc, selected_modules):
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
     num_rows = len(row_labels) * 2  # Session 1 and Session 2 blocks
     
-    print(f"DEBUG HLP: Creating table with {num_rows} rows and {num_cols} cols")
-    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    # TEMP TEST: Create a simple paragraph and basic table to test subdoc
+    test_para = subdoc.add_paragraph("TEST: This paragraph should appear if subdoc works!")
+    
+    print(f"DEBUG HLP: Creating SIMPLE TEST table with 3 rows and 3 cols")
+    table = subdoc.add_table(rows=3, cols=3)
     table.style = 'Table Grid'
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    print(f"DEBUG HLP: Table created successfully")
     
-    # Helper function to shade a cell light grey
-    def shade_cell_grey(cell):
-        shading_elm = OxmlElement('w:shd')
-        shading_elm.set(qn('w:fill'), 'D9D9D9')  # Light grey
-        cell._element.get_or_add_tcPr().append(shading_elm)
+    # Fill with simple test data
+    table.cell(0, 0).text = "TEST HEADER 1"
+    table.cell(0, 1).text = "TEST HEADER 2" 
+    table.cell(0, 2).text = "TEST HEADER 3"
+    table.cell(1, 0).text = "Row 1 Data"
+    table.cell(1, 1).text = "Row 1 Data 2"
+    table.cell(1, 2).text = "Row 1 Data 3"
+    table.cell(2, 0).text = "Row 2 Data"
+    table.cell(2, 1).text = "Row 2 Data 2" 
+    table.cell(2, 2).text = "Row 2 Data 3"
     
-    # Helper function to set cell text with specific formatting
-    def set_cell_text(cell, text, font_name, font_size, bold=False, center=True):
-        cell.text = text
-        for paragraph in cell.paragraphs:
-            if center:
-                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-            for run in paragraph.runs:
-                run.font.name = font_name
-                run.font.size = Pt(font_size)
-                run.font.bold = bold
+    print(f"DEBUG HLP: SIMPLE table created successfully")
     
-    # Set up column widths
-    table.columns[0].width = Inches(1.2)  # Label column
-    for i in range(1, num_cols):
-        table.columns[i].width = Inches(2.0)  # Module columns
-    
-    # Fill Session 1 block (rows 0-5)
-    session_1_start_row = 0
-    
-    # Session 1 - Row 0: Module headers
-    header_row = table.rows[session_1_start_row]
-    set_cell_text(header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
-    shade_cell_grey(header_row.cells[0])
-    
-    for i, module in enumerate(modules, 1):
-        module_header = f"{module.name}:\nSession 1"
-        set_cell_text(header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
-        shade_cell_grey(header_row.cells[i])
-    
-    # Session 1 - Remaining rows (Focus, Goals, Materials, Teacher Prep, PBA)
-    for row_idx, label in enumerate(row_labels[1:], 1):
-        current_row = table.rows[session_1_start_row + row_idx]
-        
-        # Label column
-        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
-        shade_cell_grey(current_row.cells[0])
-        
-        # Data columns for each module
-        for module_idx, module in enumerate(modules, 1):
-            # Get session 1 data for this module
-            session_1 = module.sessions.filter_by(session_number=1).first()
-            
-            if session_1:
-                if label == 'Focus':
-                    data_text = session_1.focus or 'N/A'
-                elif label == 'Goals':
-                    data_text = session_1.objectives or 'N/A'
-                elif label == 'Material\nList':
-                    data_text = session_1.materials or 'N/A'
-                elif label == 'Teacher\nPrep':
-                    data_text = session_1.teacher_preparations or 'N/A'
-                elif label == 'PBA':
-                    data_text = session_1.performance_assessment_questions or 'N/A'
-                else:
-                    data_text = 'N/A'
-            else:
-                data_text = 'N/A'
-            
-            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
-    
-    # Fill Session 2 block (rows 6-11)
-    session_2_start_row = 6
-    
-    # Session 2 - Row 6: Module headers
-    header_row_2 = table.rows[session_2_start_row]
-    set_cell_text(header_row_2.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
-    shade_cell_grey(header_row_2.cells[0])
-    
-    for i, module in enumerate(modules, 1):
-        module_header = f"{module.name}:\nSession 2"
-        set_cell_text(header_row_2.cells[i], module_header, 'Rockwell', 10, bold=True)
-        shade_cell_grey(header_row_2.cells[i])
-    
-    # Session 2 - Remaining rows
-    for row_idx, label in enumerate(row_labels[1:], 1):
-        current_row = table.rows[session_2_start_row + row_idx]
-        
-        # Label column
-        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
-        shade_cell_grey(current_row.cells[0])
-        
-        # Data columns for each module
-        for module_idx, module in enumerate(modules, 1):
-            # Get session 2 data for this module
-            session_2 = module.sessions.filter_by(session_number=2).first()
-            
-            if session_2:
-                if label == 'Focus':
-                    data_text = session_2.focus or 'N/A'
-                elif label == 'Goals':
-                    data_text = session_2.objectives or 'N/A'
-                elif label == 'Material\nList':
-                    data_text = session_2.materials or 'N/A'
-                elif label == 'Teacher\nPrep':
-                    data_text = session_2.teacher_preparations or 'N/A'
-                elif label == 'PBA':
-                    data_text = session_2.performance_assessment_questions or 'N/A'
-                else:
-                    data_text = 'N/A'
-            else:
-                data_text = 'N/A'
-            
-            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
+    # SKIP all the complex formatting for now - just test basic functionality
     
     print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
     print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
@@ -7710,7 +7616,7 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
         hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
         print(f"DEBUG HLP MAIN: Received subdoc: {type(hlp_table_subdoc)}")
 
-        # Create context for template - use direct subdoc like correlation report
+        # Create context for template - TEST MULTIPLE APPROACHES
         context = {
             'school': {
                 'name': school_name,
@@ -7721,8 +7627,14 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
             },
             'subject': 'Science',  # Default subject, could be made dynamic later
             'modules': modules,
-            'hlp': {'data': hlp_table_subdoc}  # Restore nested structure as template might expect this
+            # Try all possible approaches the template might expect:
+            'hlp': {'data': hlp_table_subdoc},  # Original nested approach
+            'hlp_table': hlp_table_subdoc,      # Direct subdoc approach  
+            'table': hlp_table_subdoc,          # Simple name approach
+            'correlation_table': hlp_table_subdoc  # Same as working correlation
         }
+        
+        print(f"DEBUG HLP MAIN: Context keys: {list(context.keys())}")
 
         # Render and save
         doc.render(context)
