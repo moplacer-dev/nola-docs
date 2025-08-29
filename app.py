@@ -403,17 +403,17 @@ def create_correlation_table(selected_modules, grade_level, subject):
     
     return subdoc
 
-def create_hlp_table(selected_modules):
-    """Generate a formatted horizontal lesson plan table subdoc matching the specified design."""
-    from docx import Document
+
+def create_hlp_table_subdoc(doc, selected_modules):
+    """Generate a formatted horizontal lesson plan table subdoc using DocxTemplate subdoc approach."""
     from docx.shared import Inches, Pt, RGBColor
     from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
     from docx.oxml.shared import OxmlElement, qn
     from models import LessonPlanModule, LessonPlanSession, LessonPlanEnrichment
     
-    # Create a new document to hold the table
-    subdoc = Document()
+    # Create subdoc from the DocxTemplate instance
+    subdoc = doc.new_subdoc()
     
     # Get the selected modules
     modules = LessonPlanModule.query.filter(LessonPlanModule.id.in_(selected_modules)).all()
@@ -7680,23 +7680,6 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
     if not modules:
         raise ValueError("No valid modules found for selected IDs")
 
-    # Create context for template - match template placeholders
-    context = {
-        'school': {
-            'name': school_name,
-            'year': school_year
-        },
-        'teacher': {
-            'name': teacher_name
-        },
-        'subject': 'Science',  # Default subject, could be made dynamic later
-        'modules': modules
-    }
-
-    # Generate table using the new function
-    hlp_table = create_hlp_table(module_ids)
-    context['hlp'] = {'data': hlp_table}
-
     # Use docx template generation
     template_path = 'templates/docx_templates/hlp_master_template.docx'
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -7707,7 +7690,26 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, filename)
 
+    # Create DocxTemplate instance first
     doc = DocxTemplate(template_path)
+    
+    # Generate table subdoc using the template instance
+    hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
+
+    # Create context for template - match template placeholders
+    context = {
+        'school': {
+            'name': school_name,
+            'year': school_year
+        },
+        'teacher': {
+            'name': teacher_name
+        },
+        'subject': 'Science',  # Default subject, could be made dynamic later
+        'modules': modules,
+        'hlp': {'data': hlp_table_subdoc}
+    }
+
     doc.render(context)
     doc.save(output_path)
 
