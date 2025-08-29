@@ -7627,11 +7627,8 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
             },
             'subject': 'Science',  # Default subject, could be made dynamic later
             'modules': modules,
-            # Try all possible approaches the template might expect:
-            'hlp': {'data': hlp_table_subdoc},  # Original nested approach
-            'hlp_table': hlp_table_subdoc,      # Direct subdoc approach  
-            'table': hlp_table_subdoc,          # Simple name approach
-            'correlation_table': hlp_table_subdoc  # Same as working correlation
+            # Template expects {{ hlp.table }} so provide exactly that structure:
+            'hlp': {'table': hlp_table_subdoc}
         }
         
         print(f"DEBUG HLP MAIN: Context keys: {list(context.keys())}")
