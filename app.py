@@ -7680,11 +7680,16 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
     if not modules:
         raise ValueError("No valid modules found for selected IDs")
 
-    # Create context for template
+    # Create context for template - match template placeholders
     context = {
-        'school_name': school_name,
-        'teacher_name': teacher_name,
-        'school_year': school_year,
+        'school': {
+            'name': school_name,
+            'year': school_year
+        },
+        'teacher': {
+            'name': teacher_name
+        },
+        'subject': 'Science',  # Default subject, could be made dynamic later
         'modules': modules
     }
 
