@@ -13,7 +13,14 @@ from models import db, LessonPlanModule, LessonPlanSession, LessonPlanEnrichment
 def create_app():
     """Create Flask app for database operations."""
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/nola_docs.db'
+    
+    # Use the same database configuration as the main app
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///instance/nola_docs.db')
+    # Fix for Render PostgreSQL URL format
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     return app
