@@ -7721,7 +7721,7 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
             },
             'subject': 'Science',  # Default subject, could be made dynamic later
             'modules': modules,
-            'hlp': hlp_table_subdoc  # Direct subdoc, not nested - keep original template variable name
+            'hlp': {'data': hlp_table_subdoc}  # Restore nested structure as template might expect this
         }
 
         # Render and save
