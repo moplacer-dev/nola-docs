@@ -7672,6 +7672,8 @@ def get_lesson_plan_modules_api():
 
 def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, school_year, module_ids):
     """Generate horizontal lesson plan document from database-driven modules"""
+    import tempfile
+    import shutil
     from models import LessonPlanModule, GeneratedDocument
     
     # Load selected modules with sessions
@@ -7680,40 +7682,53 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
     if not modules:
         raise ValueError("No valid modules found for selected IDs")
 
-    # Use docx template generation
+    # Template handling - follow correlation report pattern exactly
     template_path = 'templates/docx_templates/hlp_master_template.docx'
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"Horizontal_Lesson_Plan_{school_name.replace(' ', '_')}_{timestamp}.docx"
     
-    # Create output directory
-    output_dir = 'generated_docs'
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, filename)
-
-    # Create DocxTemplate instance first
-    doc = DocxTemplate(template_path)
+    # Create temporary copy (like correlation report does)
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(template_path, temp_file.name)
+        temp_template_path = temp_file.name
     
-    # Generate table subdoc using the template instance
-    hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
+    try:
+        # Create DocxTemplate instance from temp file
+        doc = DocxTemplate(temp_template_path)
+        
+        # Generate table subdoc using the template instance
+        hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
 
-    # Create context for template - match template placeholders
-    context = {
-        'school': {
-            'name': school_name,
-            'year': school_year
-        },
-        'teacher': {
-            'name': teacher_name
-        },
-        'subject': 'Science',  # Default subject, could be made dynamic later
-        'modules': modules,
-        'hlp': {'data': hlp_table_subdoc}
-    }
+        # Create context for template - use direct subdoc like correlation report
+        context = {
+            'school': {
+                'name': school_name,
+                'year': school_year
+            },
+            'teacher': {
+                'name': teacher_name
+            },
+            'subject': 'Science',  # Default subject, could be made dynamic later
+            'modules': modules,
+            'hlp_table': hlp_table_subdoc  # Direct subdoc, not nested
+        }
 
-    doc.render(context)
-    doc.save(output_path)
-
-    return output_path
+        # Render and save
+        doc.render(context)
+        
+        # Create final output path
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"Horizontal_Lesson_Plan_{school_name.replace(' ', '_')}_{timestamp}.docx"
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, filename)
+        
+        doc.save(output_path)
+        
+        return output_path
+        
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_template_path):
+            os.unlink(temp_template_path)
 
 @app.route('/create-horizontal-lesson-plan-streamlined', methods=['GET', 'POST'])
 @login_required
