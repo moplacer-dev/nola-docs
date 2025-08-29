@@ -7615,6 +7615,10 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
         print(f"DEBUG HLP MAIN: About to create subdoc for module IDs: {module_ids}")
         hlp_table_subdoc = create_hlp_table_subdoc(doc, module_ids)
         print(f"DEBUG HLP MAIN: Received subdoc: {type(hlp_table_subdoc)}")
+        
+        # TEST: Also add the subdoc as direct text to see if ANY subdoc content appears
+        test_subdoc = doc.new_subdoc()
+        test_subdoc.add_paragraph("🚨 DIRECT TEST: If you see this text, subdocs work in this template!")
 
         # Create context for template - TEST MULTIPLE APPROACHES
         context = {
@@ -7628,7 +7632,9 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
             'subject': 'Science',  # Default subject, could be made dynamic later
             'modules': modules,
             # Template expects {{ hlp.table }} so provide exactly that structure:
-            'hlp': {'table': hlp_table_subdoc}
+            'hlp': {'table': hlp_table_subdoc},
+            # ALSO test direct subdoc to see if ANY subdoc content renders:
+            'test_direct': test_subdoc
         }
         
         print(f"DEBUG HLP MAIN: Context keys: {list(context.keys())}")
