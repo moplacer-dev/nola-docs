@@ -431,10 +431,17 @@ def create_hlp_table_subdoc(doc, selected_modules):
     # Create table structure: 1 module column + 1 column per module
     num_cols = 1 + len(modules)
     
-    # Row structure: Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows + repeat for Session 2, etc.
-    # For now, let's do Session 1 only (can expand later)
+    # Find the maximum number of sessions across all modules
+    max_sessions = 0
+    for module in modules:
+        session_count = module.sessions.count()
+        max_sessions = max(max_sessions, session_count)
+    
+    print(f"DEBUG HLP: Found max {max_sessions} sessions across all modules")
+    
+    # Row structure: Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
-    num_rows = len(row_labels) * 2  # Session 1 and Session 2 blocks
+    num_rows = len(row_labels) * max_sessions  # One block per session
     
     print(f"DEBUG HLP: Creating HLP table with {num_rows} rows and {num_cols} cols")
     table = subdoc.add_table(rows=num_rows, cols=num_cols)
@@ -463,93 +470,52 @@ def create_hlp_table_subdoc(doc, selected_modules):
     for i in range(1, num_cols):
         table.columns[i].width = Inches(2.0)  # Module columns
     
-    # Fill Session 1 block (rows 0-5)
-    session_1_start_row = 0
-    
-    # Session 1 - Row 0: Module headers
-    header_row = table.rows[session_1_start_row]
-    set_cell_text(header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
-    shade_cell_grey(header_row.cells[0])
-    
-    for i, module in enumerate(modules, 1):
-        module_header = f"{module.name}:\nSession 1"
-        set_cell_text(header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
-        shade_cell_grey(header_row.cells[i])
-    
-    # Session 1 - Remaining rows (Focus, Goals, Materials, Teacher Prep, PBA)
-    for row_idx, label in enumerate(row_labels[1:], 1):
-        current_row = table.rows[session_1_start_row + row_idx]
+    # Fill all session blocks dynamically
+    for session_num in range(1, max_sessions + 1):
+        session_start_row = (session_num - 1) * len(row_labels)
         
-        # Label column
-        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
-        shade_cell_grey(current_row.cells[0])
+        print(f"DEBUG HLP: Creating Session {session_num} block starting at row {session_start_row}")
         
-        # Data columns for each module
-        for module_idx, module in enumerate(modules, 1):
-            # Get session 1 data for this module
-            session_1 = module.sessions.filter_by(session_number=1).first()
+        # Session header row
+        header_row = table.rows[session_start_row]
+        set_cell_text(header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
+        shade_cell_grey(header_row.cells[0])
+        
+        for i, module in enumerate(modules, 1):
+            module_header = f"{module.name}:\nSession {session_num}"
+            set_cell_text(header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
+            shade_cell_grey(header_row.cells[i])
+        
+        # Session data rows (Focus, Goals, Materials, Teacher Prep, PBA)
+        for row_idx, label in enumerate(row_labels[1:], 1):
+            current_row = table.rows[session_start_row + row_idx]
             
-            if session_1:
-                if label == 'Focus':
-                    data_text = session_1.focus or 'N/A'
-                elif label == 'Goals':
-                    data_text = session_1.objectives or 'N/A'
-                elif label == 'Material\nList':
-                    data_text = session_1.materials or 'N/A'
-                elif label == 'Teacher\nPrep':
-                    data_text = session_1.teacher_preparations or 'N/A'
-                elif label == 'PBA':
-                    data_text = session_1.performance_assessment_questions or 'N/A'
+            # Label column
+            set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
+            shade_cell_grey(current_row.cells[0])
+            
+            # Data columns for each module
+            for module_idx, module in enumerate(modules, 1):
+                # Get session data for this module and session number
+                session = module.sessions.filter_by(session_number=session_num).first()
+                
+                if session:
+                    if label == 'Focus':
+                        data_text = session.focus or 'N/A'
+                    elif label == 'Goals':
+                        data_text = session.objectives or 'N/A'
+                    elif label == 'Material\nList':
+                        data_text = session.materials or 'N/A'
+                    elif label == 'Teacher\nPrep':
+                        data_text = session.teacher_preparations or 'N/A'
+                    elif label == 'PBA':
+                        data_text = session.performance_assessment_questions or 'N/A'
+                    else:
+                        data_text = 'N/A'
                 else:
-                    data_text = 'N/A'
-            else:
-                data_text = 'N/A'
-            
-            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
-    
-    # Fill Session 2 block (rows 6-11)
-    session_2_start_row = 6
-    
-    # Session 2 - Row 6: Module headers
-    header_row_2 = table.rows[session_2_start_row]
-    set_cell_text(header_row_2.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
-    shade_cell_grey(header_row_2.cells[0])
-    
-    for i, module in enumerate(modules, 1):
-        module_header = f"{module.name}:\nSession 2"
-        set_cell_text(header_row_2.cells[i], module_header, 'Rockwell', 10, bold=True)
-        shade_cell_grey(header_row_2.cells[i])
-    
-    # Session 2 - Remaining rows
-    for row_idx, label in enumerate(row_labels[1:], 1):
-        current_row = table.rows[session_2_start_row + row_idx]
-        
-        # Label column
-        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
-        shade_cell_grey(current_row.cells[0])
-        
-        # Data columns for each module
-        for module_idx, module in enumerate(modules, 1):
-            # Get session 2 data for this module
-            session_2 = module.sessions.filter_by(session_number=2).first()
-            
-            if session_2:
-                if label == 'Focus':
-                    data_text = session_2.focus or 'N/A'
-                elif label == 'Goals':
-                    data_text = session_2.objectives or 'N/A'
-                elif label == 'Material\nList':
-                    data_text = session_2.materials or 'N/A'
-                elif label == 'Teacher\nPrep':
-                    data_text = session_2.teacher_preparations or 'N/A'
-                elif label == 'PBA':
-                    data_text = session_2.performance_assessment_questions or 'N/A'
-                else:
-                    data_text = 'N/A'
-            else:
-                data_text = 'N/A'
-            
-            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
+                    data_text = 'N/A'  # Module doesn't have this session
+                
+                set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
     
     print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
     print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
