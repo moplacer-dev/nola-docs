@@ -513,6 +513,10 @@ def create_hlp_table_subdoc(doc, selected_modules):
                 if color:
                     run.font.color.rgb = RGBColor.from_string(color)
         
+        # Set vertical alignment to center
+        from docx.enum.table import WD_ALIGN_VERTICAL
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        
         # Set cell margins for all cells
         set_cell_margins(cell)
     
