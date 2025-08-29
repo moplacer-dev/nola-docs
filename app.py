@@ -403,6 +403,148 @@ def create_correlation_table(selected_modules, grade_level, subject):
     
     return subdoc
 
+def create_hlp_table(selected_modules):
+    """Generate a formatted horizontal lesson plan table subdoc matching the specified design."""
+    from docx import Document
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.oxml.shared import OxmlElement, qn
+    from models import LessonPlanModule, LessonPlanSession, LessonPlanEnrichment
+    
+    # Create a new document to hold the table
+    subdoc = Document()
+    
+    # Get the selected modules
+    modules = LessonPlanModule.query.filter(LessonPlanModule.id.in_(selected_modules)).all()
+    if not modules:
+        p = subdoc.add_paragraph("No modules found.")
+        return subdoc
+    
+    # Create table structure: 1 module column + 1 column per module
+    num_cols = 1 + len(modules)
+    
+    # Row structure: Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows + repeat for Session 2, etc.
+    # For now, let's do Session 1 only (can expand later)
+    row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
+    num_rows = len(row_labels) * 2  # Session 1 and Session 2 blocks
+    
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    table.style = 'Table Grid'
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    
+    # Helper function to shade a cell light grey
+    def shade_cell_grey(cell):
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), 'D9D9D9')  # Light grey
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Helper function to set cell text with specific formatting
+    def set_cell_text(cell, text, font_name, font_size, bold=False, center=True):
+        cell.text = text
+        for paragraph in cell.paragraphs:
+            if center:
+                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            for run in paragraph.runs:
+                run.font.name = font_name
+                run.font.size = Pt(font_size)
+                run.font.bold = bold
+    
+    # Set up column widths
+    table.columns[0].width = Inches(1.2)  # Label column
+    for i in range(1, num_cols):
+        table.columns[i].width = Inches(2.0)  # Module columns
+    
+    # Fill Session 1 block (rows 0-5)
+    session_1_start_row = 0
+    
+    # Session 1 - Row 0: Module headers
+    header_row = table.rows[session_1_start_row]
+    set_cell_text(header_row.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
+    shade_cell_grey(header_row.cells[0])
+    
+    for i, module in enumerate(modules, 1):
+        module_header = f"{module.name}:\nSession 1"
+        set_cell_text(header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
+        shade_cell_grey(header_row.cells[i])
+    
+    # Session 1 - Remaining rows (Focus, Goals, Materials, Teacher Prep, PBA)
+    for row_idx, label in enumerate(row_labels[1:], 1):
+        current_row = table.rows[session_1_start_row + row_idx]
+        
+        # Label column
+        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
+        shade_cell_grey(current_row.cells[0])
+        
+        # Data columns for each module
+        for module_idx, module in enumerate(modules, 1):
+            # Get session 1 data for this module
+            session_1 = module.sessions.filter_by(session_number=1).first()
+            
+            if session_1:
+                if label == 'Focus':
+                    data_text = session_1.focus or 'N/A'
+                elif label == 'Goals':
+                    data_text = session_1.objectives or 'N/A'
+                elif label == 'Material\nList':
+                    data_text = session_1.materials or 'N/A'
+                elif label == 'Teacher\nPrep':
+                    data_text = session_1.teacher_preparations or 'N/A'
+                elif label == 'PBA':
+                    data_text = session_1.performance_assessment_questions or 'N/A'
+                else:
+                    data_text = 'N/A'
+            else:
+                data_text = 'N/A'
+            
+            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
+    
+    # Fill Session 2 block (rows 6-11)
+    session_2_start_row = 6
+    
+    # Session 2 - Row 6: Module headers
+    header_row_2 = table.rows[session_2_start_row]
+    set_cell_text(header_row_2.cells[0], row_labels[0], 'Rockwell', 8, bold=True)
+    shade_cell_grey(header_row_2.cells[0])
+    
+    for i, module in enumerate(modules, 1):
+        module_header = f"{module.name}:\nSession 2"
+        set_cell_text(header_row_2.cells[i], module_header, 'Rockwell', 10, bold=True)
+        shade_cell_grey(header_row_2.cells[i])
+    
+    # Session 2 - Remaining rows
+    for row_idx, label in enumerate(row_labels[1:], 1):
+        current_row = table.rows[session_2_start_row + row_idx]
+        
+        # Label column
+        set_cell_text(current_row.cells[0], label, 'Rockwell', 8, bold=True)
+        shade_cell_grey(current_row.cells[0])
+        
+        # Data columns for each module
+        for module_idx, module in enumerate(modules, 1):
+            # Get session 2 data for this module
+            session_2 = module.sessions.filter_by(session_number=2).first()
+            
+            if session_2:
+                if label == 'Focus':
+                    data_text = session_2.focus or 'N/A'
+                elif label == 'Goals':
+                    data_text = session_2.objectives or 'N/A'
+                elif label == 'Material\nList':
+                    data_text = session_2.materials or 'N/A'
+                elif label == 'Teacher\nPrep':
+                    data_text = session_2.teacher_preparations or 'N/A'
+                elif label == 'PBA':
+                    data_text = session_2.performance_assessment_questions or 'N/A'
+                else:
+                    data_text = 'N/A'
+            else:
+                data_text = 'N/A'
+            
+            set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 9, center=True)
+    
+    return subdoc
+
 # Custom validator for correct answer field
 def validate_answer_choice(form, field):
     """Validate that the answer is A, B, C, or D"""
@@ -1454,6 +1596,35 @@ class CorrelationReportForm(FlaskForm):
                                          validators=[DataRequired()])
     
     submit = SubmitField('Generate Correlation Report')
+
+class StreamlinedHorizontalLessonPlanForm(FlaskForm):
+    """Streamlined horizontal lesson plan form - database driven"""
+    
+    # Basic Information (simplified)
+    school_name = StringField('School Name',
+                             validators=[DataRequired(), Length(min=1, max=200)],
+                             render_kw={"placeholder": "e.g., Jefferson Elementary School"})
+
+    teacher_name = StringField('Teacher Name',
+                              validators=[DataRequired(), Length(min=1, max=100)],
+                              render_kw={"placeholder": "e.g., Ms. Johnson"})
+
+    # School year auto-populated to 2025-2026 (user can edit if needed)
+    school_year = StringField('School Year',
+                             validators=[DataRequired(), Length(min=1, max=20)],
+                             default='2025-2026')
+
+    # Module selection (similar to correlation report)
+    selected_modules = SelectMultipleField('Selected Modules (up to 10)',
+                                          validators=[DataRequired()],
+                                          coerce=int)
+
+    submit = SubmitField('Generate Horizontal Lesson Plan')
+
+    def validate_selected_modules(self, field):
+        """Ensure max 10 modules selected"""
+        if len(field.data) > 10:
+            raise ValidationError('Please select no more than 10 modules.')
 
 @app.route('/dashboard')
 @login_required
@@ -7475,6 +7646,115 @@ def get_modules_by_subject(subject):
     """API endpoint to get modules filtered by subject"""
     modules = Module.query.filter_by(subject=subject).order_by(Module.title).all()
     return jsonify([{'id': m.id, 'title': m.title, 'acronym': m.acronym} for m in modules])
+
+# Streamlined Horizontal Lesson Plan Routes
+@app.route('/api/lesson-plan-modules')
+@login_required
+def get_lesson_plan_modules_api():
+    """API endpoint to get all lesson plan modules"""
+    from models import LessonPlanModule
+    try:
+        modules = LessonPlanModule.query.filter_by(active=True).order_by(LessonPlanModule.name).all()
+        module_data = []
+
+        for module in modules:
+            module_data.append({
+                'id': module.id,
+                'name': module.name,
+                'subject': module.subject,
+                'grade_level': module.grade_level,
+                'session_count': module.sessions.count()
+            })
+
+        return jsonify({'modules': module_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, school_year, module_ids):
+    """Generate horizontal lesson plan document from database-driven modules"""
+    from models import LessonPlanModule, GeneratedDocument
+    
+    # Load selected modules with sessions
+    modules = LessonPlanModule.query.filter(LessonPlanModule.id.in_(module_ids)).all()
+
+    if not modules:
+        raise ValueError("No valid modules found for selected IDs")
+
+    # Create context for template
+    context = {
+        'school_name': school_name,
+        'teacher_name': teacher_name,
+        'school_year': school_year,
+        'modules': modules
+    }
+
+    # Generate table using the new function
+    hlp_table = create_hlp_table(module_ids)
+    context['hlp'] = {'data': hlp_table}
+
+    # Use docx template generation
+    template_path = 'templates/docx_templates/hlp_master_template.docx'
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"Horizontal_Lesson_Plan_{school_name.replace(' ', '_')}_{timestamp}.docx"
+    output_path = os.path.join('generated_docs', filename)
+
+    doc = DocxTemplate(template_path)
+    doc.render(context)
+    doc.save(output_path)
+
+    return output_path
+
+@app.route('/create-horizontal-lesson-plan-streamlined', methods=['GET', 'POST'])
+@login_required
+def create_streamlined_horizontal_lesson_plan():
+    """Streamlined horizontal lesson plan creation - database driven"""
+    from models import LessonPlanModule, GeneratedDocument
+    
+    form = StreamlinedHorizontalLessonPlanForm()
+
+    if request.method == 'POST':
+        # Manual form handling (like correlation report pattern)
+        school_name = request.form.get('school_name')
+        teacher_name = request.form.get('teacher_name')
+        school_year = request.form.get('school_year', '2025-2026')
+        selected_modules = request.form.getlist('selected_modules')
+
+        # Basic validation
+        if not school_name or not teacher_name or not selected_modules:
+            flash('Please fill in all fields and select at least one module.', 'error')
+        elif len(selected_modules) > 10:
+            flash('Please select no more than 10 modules.', 'error')
+        else:
+            try:
+                # Generate the document using database-driven approach
+                doc_path = generate_streamlined_horizontal_lesson_plan(
+                    school_name=school_name,
+                    teacher_name=teacher_name,
+                    school_year=school_year,
+                    module_ids=[int(mid) for mid in selected_modules]
+                )
+
+                # Save document record
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='horizontal_lesson_plan_streamlined',
+                    filename=os.path.basename(doc_path),
+                    file_path=doc_path,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+
+                flash('Streamlined Horizontal Lesson Plan generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+
+            except Exception as e:
+                print(f"Error generating Streamlined HLP: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Error generating document: {str(e)}', 'error')
+
+    return render_template('create_horizontal_lesson_plan_streamlined.html', form=form)
 
 # Correlation Report Helper Functions
 def safe_clear_cell(cell):

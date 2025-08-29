@@ -1,0 +1,133 @@
+Module,Enrichment_Number,Title,Description
+Weather v1.1,1,Dew Point Calculation,"Using information learned about dew point, calculate dew point when given temperature and humidity."
+Weather v1.1,2,Temperature Conversion,"Convert temperatures from Celsius to Fahrenheit and Fahrenheit to Celsius."
+Weather v1.1,3,Temperature Equivalence,"Answer the following question: At what temperature in Celsius would be the same as the temperature in Fahrenheit?"
+Weather v1.1,4,Relative Humidity Calculation,"After learning about relative humidity, calculate relative humidity with the given temperature and water content."
+Where in the World,1,Diagonals,"Write an equation to find the length of d in the graphic shown."
+Where in the World,2,Distances,"Find the distance between the points shown. Remember to convert the latitude and longitude to decimal degrees. Use the equation Decimal degrees = dd + (mm/60) + (ss/3600). Use the distance equation to find the distance between the two locations. Tip: whole degrees = dd; minutes = mm; seconds = ss"
+Organism Reproduction v1.1,1,Flowering Plants,"There are about 285,000 flowering plants. This represents about 66% of all species of plants. Approximately how many species of plants exist?"
+Organism Reproduction v1.1,2,Plant Development,"The seed of a flowering plant contains a supply of food for the new developing plant. Using the resource books located in the Module library, identify another name for this developing plant."
+Organism Reproduction v1.1,3,Edible Plants Statistics,"Scientists estimate that there are 80,000 kinds of edible plants on Earth. Today, only about 150 kinds of edible plants are widely grown by people. Determine the percentage of all edible plants grown by people."
+Body Systems,1,Bones,TSW work with a partner to identify bones and joints by location and category on the mini-skeleton and joint models.
+Body Systems,2,Intestines,TSW learn about the intestines and utilize math skills by working with a partner to 1. create a scale drawing of the small and large intestines after doing online research for the dimensions of both in an average human. 2. Explain the makeup and main function of the integumentary system. 3. Calculate the recommended caloric intake for students their age based on average physical traits.
+Body Systems,3,Gas Exchange,"TSW work in teams to determine the amount of carbon dioxide and oxygen in the air based on the information given in the enrichment list. They will then all exercise in the same room (jumping jacks, run in place, etc.) for two minutes and recalculate the percentages of each gas. They will make a poster comparing the difference in percentages and the reasons they believe there are changes."
+Immunology,1,Book Reports,Students complete book reports on immunology-related topics.
+Reactions,1,Balancing Equations,Students practice balancing chemical equations.
+Reactions,2,Forming Ionic Compounds,Students work with forming ionic compounds.
+Reactions,3,Calculating Molecular Mass,Students learn to calculate molecular mass of compounds.
+Food Science,1,Density and Enzymatic Browning,Students will calculate the density of two egg whites for a meringue before it is beaten with a hand mixer and what the density is for the same egg whites after it has been beaten with a hand mixer. Students will watch a video on enzymatic browning to learn what causes food to brown and how it can be prevented.
+Food Science,2,Fermentation,Students will watch a video on fermentation to learn what fermentation is and why it is important.
+Food Science,3,Food Preservation,Students will watch a video on food preservation to learn different ways to preserve food and the overall goal in packaging foods to preserve it.
+Food Science,4,Analogies,"What is to What—Students will complete the following analogies: acid: vinegar base: __, German shepherd: dog glucose: __, grams: mass pounds: __, crunch: sound ___: mouthfeel"
+Climate & Biomes,1,Career Research,Research related career fields and write a profile of the one that most interests you.
+Eco-Architecture,1,Geothermal - Fantasy Sports,Use the chart shown to fill in the approximate amount it would cost for each system in a 30-day month. One year has 365 days. Use the chart shown to fill in the approximate amount it would cost for each system over a year.
+Eco-Architecture,2,Domes,"Locate the ""Dome Homes"" worksheet. Follow the directions on the worksheet to answer the questions"
+Eco-Architecture,3,Interior Toxins,"The materials used to make your home are just as important as the materials you use for items that you put into your home. If you put all your efforts into building a comfortable earth-sheltered home, you will introduce toxins into your living environment if you use traditional paints, synthetic rugs, and so forth. Research toxic items that are in a typical household."
+Eco-Architecture,4,Toxic Item Analysis,"Use a scrap piece of paper to answer the following questions with your partner: -Of the items you researched, which one or ones do you think you could change all by yourself in your own home? -Of the items you researched, which one or ones do you think you could change with the help of others in your own home? -Of the items you researched, which one or ones do you think would be the best to change in your school? -Once finished, make sure both of your names are on the paper and place it in one of your portfolios."
+Carbon Footprint v1.1,1,Holiday Footprint,"For many Americans, the Christmas holiday wouldn't seem the same without a tree, lights, lots of wrapped presents, and the smell of goodies and a holiday feast. Have you ever considered the amount of energy used during the holiday season? Use the data shown to find the total number of pounds of carbon dioxide produced per person during the holiday season. Now that you have figured out how much CO2 is used per American each Christmas, work with your partner to answer the following two questions. • Using what you know about holiday celebrations, list two or three things that take energy that you would add to the table. For example, some families put up outdoor lights and decorations. Estimate how much you think each additional item would add to the holiday carbon footprint. • Using what you know about holiday celebrations, list two or three things that could be adjusted to use less energy. For example, families could spend time together reading classic Christmas stories rather than watching television and movie specials."
+Ecology,1,Ecological Diary,Observe a plant and the organisms in and near it every day for 7 days. Identify what interactions are taking place in the community. Answer a set of questions. This enrichment is completed over a 7-day period.
+Ecology,2,Adaptations,Research and report on different prey adaptations.
+Ecology,3,Food Chain Energy,"If the herbivores in the field get 1.5% of the producer's energy each day, how much energy do the herbivores receive from the producers? How much energy do the carnivores receive from the herbivores each day?"
+Ecology,4,Linear Versus Exponential,Make a graph and plot the linear values based on given scenario.
+Alternative Energy,1,Hydrogen Fuel Cell Car,The fuel cell car has a hydrogen storage capacity of four cubic meters and an efficiency rating of 55%. Only 55% of the energy is being used for one cubic meter of hydrogen. The car can travel 100 miles per one-half cubic meter of fuel. Considering the efficiency how many miles can this car travel on a full tank of fuel?
+Alternative Energy,2,Hydrogen Production,"Electrolysis is one of the more common methods in producing hydrogen for use in fuel cells. To extract 1 m³ of hydrogen it requires 4.8 kWh (kilowatt-hours) of electricity. Assuming the cost of electricity is $0.07 per kWh, how much does it cost to produce 2 m³ of hydrogen?"
+Alternative Energy,3,Nuclear Fuel Pellets,"In a pressurized water reactor, two pellets of nuclear fuel are the equivalent of 2 1/2 tons of coal. A coal mine in Colorado can produce 14 million tons of coal annually. How many nuclear fuel pellets are needed to equal this amount of coal? Assume that 2 1/2 tons of coal produces all the electricity a single person uses annually. How many years will 100 nuclear fuel pellets provide enough electricity for a family of four? Hint: 2 nuclear fuel pellets = 2 1/2 tons of coal."
+Animals,1,Dating Fossils,Students will find the age of a fossil sample using half-life and ratio concepts.
+Animals,2,Earthworms,Students will calculate the number of animals in an area.
+Animals,3,Insects,Interpret a graph to calculate the number of arthropods and the number of known species in each other group.
+Animals,4,Sea Otters,"Calculate the amount of food an otter would each daily, calculate the amount of food a human would need to eat to match the amount eaten by the sea otter."
+Applied Physics,1,Speed Conversion,Convert the speed from the AirTrack to miles per hour.
+Applied Physics,2,Newton's Laws,Define Newton's three laws of motion and calculate the acceleration and mass of a problem.
+Applied Physics,3,Road Slope Calculation,Calculate the average slope of a road with elevation.
+Bioengineering v1.2,1,Adjacent Angles,"Find the size of each missing angle. Tip: Angle B and Angle C are supplementary angles. Angle C and Angle D are parts of an isosceles triangle. (*refer to Enrichments file in Engage for image of angles)"
+Bioengineering v1.2,2,Calculating Averages,"Find the averages of the flexibility test results listed below. Show all work. 5 ¼, -2 ½, -3, 2; 11 ¾, 6 ¼, -2; -2, -1, 2, 4; -3, 4 ¼, -1, -2; 0, -6, 8, -5 ¼"
+Bioengineering v1.2,3,Inscribed Angles,"Find the size of each missing angle. Tip: The 120° angle is a central angle whose vertex is the center of the circle. Angle f is an inscribed angle with its vertex on the circle. (*refer to Enrichments file in Engage for images of angles)"
+Cell Structure,1,Cancer,"Cancer is a disease in which certain cells of the body lose the ability to control mitosis. Cancerous cells reproduce much more rapidly than normal. They lose their normal shapes and functions and form tumors that take over the affected organ and use the oxygen and nutrients that the normal cells need. In your Module library, research causes of cancer and ways to treat and prevent it. Write a short report giving the results of your research. Use complete sentences and correct grammar, spelling, and punctuation."
+Cell Structure,2,Cell Composition,"The composition of a typical cell is shown in the graph displayed. An egg yolk is a single cell. Assume it has a typical composition. Find the amount of each material in a 63-gram egg yolk."
+Cell Structure,3,Cell Shape,"Many cells have spherical shapes. The volume of a sphere is equal to 4/3 • pi • the cube of the radius. The formula is written mathematically as V = 4/3 • pi • r³. The number ""pi"" is equal to about 3.14. The cube of the radius is equal to the radius • the radius • the radius."
+Cell Structure,4,Life Span,"In mammals, the average life span for most cells is between 25 and 70 hours. Mitosis in these cells lasts about an hour. Suppose a cell has a life span of 35 hours. a. If the cell enters mitosis every 6 hours, how many times will it divide in its lifetime? b. If every generation of this cell has the same life span and the same time between periods of mitosis, how many cells would the original cell produce in its 35 hours of life?"
+Cell Structure,5,STEM Cells,"Stem cells are ""baby"" cells – they still have the potential to develop into any kind of body cell. Because of this potential, stem cells may be able to provide cures for many devastating diseases, including diabetes, Parkinson's disease, and Alzheimer's disease. But to find these cures, scientists must do many years of research on stem cells. Stem cell research is a bioethical problem because most stem cells used in research come from human embryos. After four or five days, the fertilized egg has become a ball of many cells, or blastocyst, which is about the size of the dot on an i. Scientists can harvest the cells, grow them in the laboratory, and treat them so that they can develop into any type of cell. But this process destroys the developing embryo. Some people feel that it is very important to do embryonic stem cell research because it will likely result in cures for serious diseases that kill many people each year and devastate the lives of many more. Others feel that using human embryos in this manner is murder and should not be allowed, no matter what can be gained from it. Which side do you agree with and why? Consider the following issues: a. Should the sanctity of human life be considered in this decision? If so, which lives? b. What are the costs and benefits of the research? c. What are the benefits and dangers to patients? d. What are some potential uses of the research? e. Should we ""play God;"" that is, should we tinker with systems we don't understand? f. Are other methods available for treating these diseases? g. Are there possible compromises?"
+Cell Structure,6,Using the Microscope,"With your teacher's permission, you may also photograph, save, and print the microscopic views. You will need the microscope, lens paper, box of slides, pencil and notebook paper, and your Student Module notebook. To review how to focus the microscope, consult the page titled ""How to Use the Microscope"" in your student Module notebook. Choose one of the following activities: a. Focus on the Onion Mitosis slide. Locate, photograph, and label each stage of mitosis. Save the labeled stages in your class-hour folder, naming each photo by its stage and your initials. b. On the Human Muscle Types slide, look at all three types of muscle tissue. Using the resources in the Module library, identify each muscle type. Photograph, label, and save a photo of each type in your class-hour folder. On a piece of notebook paper, describe differences in the three types."
+Chemical Math,1,ROBO Review,Be the first player to collect 5,000 points and cross the finish line.
+Chemical Math,2,Displacement Volume,Determine the volume using the displacement method.
+Chemical Math,3,Scientific Notation,Students practice working with scientific notation.
+Chemical Math,4,Solving Equations,Students practice solving equations.
+Confident Consumer,1,Buying Clothes,Compare clothing prices to determine how much clients will save by shopping at each store.
+Confident Consumer,2,Coupons,"Determine final costs, best value, and best buy using unit cost and coupon savings."
+Confident Consumer,3,Small Pizza Party,"Use square inches, diameters, and pizza cost to determine unit prices. Materials needed: Pizza Models."
+Dynamic Earth,1,Normalizing Data,"Normalize the data to visualize the difference in planets' diameter in relation to Pluto and Earth."
+Dynamic Earth,2,Reading and Review,"Read from the Module library or go back and complete a session you did not finish."
+Dynamic Earth,3,Size of Earth,"Calculate the Earth's circumference in Egyptian stades two different ways. List reasons why the two calculations might be different."
+Environmental Math,1,Distance Formula,"In this enrichment, the learner will use the distance formula to calculate the hypotenuse of a right triangle."
+Environmental Math,2,Habitat Destruction,"In this enrichment, the learner will research and design an environmental study."
+Environmental Math,3,Special Triangles,"In this enrichment, the learner will calculate the lengths of special triangles."
+Factoring & Polynomials,1,Punnett Squares,"Write the possible genes of one parent across the top of the square and the genes of the other parent along the side of the square. Represent the male parent by writing a capital letter B above each column. Represent the female parent by writing a lowercase b next to each row."
+Factoring & Polynomials,2,Roman Numerals,Find the value of the given Roman numbers.
+Forensic Math,1,Blood Types,"The learner will discover that the human blood is unique and can be grouped in four different blood types. Determine the possible genotypes for parents with a child who has Type B blood. Determine the possible genotypes for parents of a Type A child and a Type AB child."
+Forensic Math,2,Data Ratios,"The learner will discover that the DNA molecule is composed of phosphate, deoxyribose sugar, and one of four nitrogenous bases: adenine, guanine, thymine, and cytosine. Use the ratios of purines to pyrimidines and adenine to thymine to prove that A+C=T+G."
+Forensic Math,3,Forensic Science Literature,"The learner will select and read a book from the school library or provided list that describes the use of forensic science. Written Response: Write about the use of forensic science in the book."
+Geometric Packing v1.1,1,Distance,"Students will construct a right triangle to determine the distance between two given points (coordinates)."
+Geometric Packing v1.1,2,Creating Nets,"After learning about nets, students will draw the net of a cube when given specific parameters. Students will also need to determine the overall length, width, and the amount of material that would be needed to make the pattern."
+Geometric Packing v1.1,3,The Last Stone,"Using given information about the Pyramid of Giza, students will use the Pythagorean theorem to determine the distance the pyramid had to be moved."
+Gravity of Algebra,1,Book reports,Students complete book reports on related topics.
+Gravity of Algebra,2,Linear regression,Students practice linear regression analysis.
+Gravity of Algebra,3,Energy graph,Students create and analyze energy graphs.
+Gravity of Algebra,4,Point-slope to Y-intercept,Students practice converting between different forms of linear equations.
+Heat and Energy v1.2,1,Heat Content,"Using obtained data, calculate the heat content for each of the fuels."
+Heat and Energy v1.2,2,Hydrocarbon Formulas,Answer questions based on the provided formulas.
+Heat and Energy v1.2,3,Methane Combustion,Use the molecular model kit to model different molecules.
+Home Makeover,1,Ceiling Tile,Sketch a room and find its area.
+Home Makeover,2,Trim,Exploring trim and perimeter.
+Home Makeover,3,Wall Board,Reduce waste and finding area.
+Hotel Management,1,Book reports,Students complete book reports on related topics.
+Hotel Management,2,Average nightly costs,Students calculate and analyze average nightly costs.
+Hotel Management,3,Cost-cutting alternatives,Students explore cost-cutting alternatives in hotel management.
+Lenses and Optics,1,Image Size,"Given the distance of an object from a convex lens, students will calculate the how tall an object is if the lens is moved."
+Lenses and Optics,2,Lens Formula,"Given the distance of an object from a convex lens, students will calculate the how tall an object is if the lens is moved."
+Lenses and Optics,3,Missing Facts,Students will use the lens formula and the magnification formula to find the missing information of a given table.
+Material Science,1,Mass of an Atom,Determine the approximate weight of one atom of each of the given isotopes.
+Material Science,2,Molecular Weight,Use the atomic weight listed on the period table for each atom to determine the molecular weight of the molecules.
+Material Science,3,Moles of Isotopes,Determine the number of electrons, protons, and neutrons in one mole of each of the isotopes listed.
+Math Behind Your Meals,1,Holiday Meal Planning,"Teacher will give specific items/ingredients for the meal (Thanksgiving Meal, etc.)"
+Math Behind Your Meals,2,Menu Creation,Students will create a menu for a holiday meal using the information provided by the teacher.
+Microbiology,1,Concept Summary,Write a one-paragraph summary of a concept you learned in this Module.
+Microbiology,2,Book Report,Students complete book reports on microbiology topics.
+Microbiology,3,Internet Exploration,Students conduct internet exploration on microbiology topics.
+Natural Disasters,1,Concept Summary,"Write a one-paragraph summary of a concept you learned in this module. The paragraph should include: A description of the activity that introduced or used the concept. An explanation of the concept. Additional information you would like to learn about the concept."
+Natural Disasters,2,Home Disaster Plan,"Prepare a disaster plan for your home and family: Choose the disaster most likely to happen in your area. Any disaster preparedness plan should have three parts: what to do before, during, and after the disaster."
+Plants & Pollination,1,Giant Sequoias,Determine how much would the diameter of a tree increase each year when given specific circumstances.
+Plants & Pollination,2,Photosynthesis,How many molecules of each compound are needed to balance the photosynthesis equation?
+Plants & Pollination,3,Rootless Duckweed,Solve problems based on given scenarios.
+Plastics & Polymers,1,Book reports,Students complete book reports on related topics.
+Plastics & Polymers,2,Borate and glue,Students work with borate and glue materials.
+Plastics & Polymers,3,Polymer density,Students explore and calculate polymer density.
+Population Perspectives,1,Graphing Exponential Functions,Using a graphing calculator, students will graph systems of equations and compare them.
+Population Perspectives,2,Linear & Exponential,Using a graphing calculator, students will graph different functions and compare them.
+Population Perspectives,3,Population Statistics,Using a table of given statistics and projections for the U.S. population, students will analyze the table and answer questions about projected trends in U.S. population in the next half century.
+Projectile Motion,1,Book reports,Students complete book reports on related topics.
+Projectile Motion,2,Center of Gravity activity,Students explore center of gravity concepts through hands-on activities.
+Projectile Motion,3,Straw Rocket Fins,Students design and test fins for their straw rockets.
+Projectile Motion,4,Straw Rocket Launcher Experiment,Students conduct experiments with their straw rocket launcher.
+Properties of Math,1,Book reports,Students complete book reports on related topics.
+Properties of Math,2,Language translation,Students explore mathematical language and translation concepts.
+Properties of Math,3,Number line football,Students play an interactive game using number lines.
+Properties of Math,4,Paradoxes,Students explore mathematical paradoxes and logical puzzles.
+Plants & Pollination,1,Giant Sequoias,Determine how much would the diameter of a tree increase each year when given specific circumstances.
+Plants & Pollination,2,Photosynthesis,How many molecules of each compound are needed to balance the photosynthesis equation?
+Plants & Pollination,3,Rootless Duckweed,Solve problems based on given scenarios.Plastics & Polymers,1,Book reports,Students complete book reports on related topics.
+Plastics & Polymers,2,Borate and glue,Students work with borate and glue materials.
+Plastics & Polymers,3,Polymer density,Students explore and calculate polymer density.
+Rocks & Resources,1,Book reports,Students complete book reports on related topics.
+Rocks & Resources,2,Green heroes,Students research and learn about environmental heroes.
+Rocks & Resources,3,Copper Ore,Students explore copper ore and its uses.
+Rocks & Resources,4,Microchip Resource Use,Students investigate the resources used in microchip manufacturing.
+Soils,1,Career Research,Research related career fields and write a profile of the one that most interests you.
+Statistical Analysis,1,Book reports,Students complete book reports on related topics.
+Supply & Demand,1,Balsa and Styrofoam Gliders,Set up a system of equations to solve a given problem and determine how many of each item was sold during the year.
+Supply & Demand,2,Four-Dimensional System of Equations,Use substitution to solve for each variable and determine how many of each model of paper airplane was sold.
+Supply & Demand,3,Maximum Profit,Use a piece of graph paper or the graphic calculator to: Create a supply and demand chart for the plastic model airplane. Determine the equilibrium point of the supply and demand. Find the point on the demand line where the maximum profit can be made.
+The Universe,1,Book report,Choose one of the books related to the module to write a report about.
+Unsolved Mysteries,1,Blood Types,Students will determine what percent of students have the blood type AB based on a given scenario.
+Unsolved Mysteries,2,DNA Samples,Students will determine how many grams of sugar are in the sample when given a scenario.
+Unsolved Mysteries,3,Graphing Functions,Using a sheet of grid paper, students graph the functions displayed on-screen.
+Unsolved Mysteries,4,Scaled Drawing,Students will create a final scaled drawing of a crime scene. Students will create a scaled drawing of a fictional crime scene.

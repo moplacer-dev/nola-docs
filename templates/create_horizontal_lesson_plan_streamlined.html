@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Create Streamlined Horizontal Lesson Plan - NOLA.docs{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">🚀 Create Streamlined Horizontal Lesson Plan</h1>
+            <p class="text-lg text-gray-600">Generate database-driven horizontal lesson plans - simplified interface with pre-populated content</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_streamlined_horizontal_lesson_plan') }}" id="hlp-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Basic Information Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- School Name -->
+                    <div class="mb-6">
+                        {{ form.school_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.school_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.school_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.school_name.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teacher Name -->
+                    <div class="mb-6">
+                        {{ form.teacher_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.teacher_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.teacher_name.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.teacher_name.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- School Year -->
+                    <div class="mb-6">
+                        {{ form.school_year.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.school_year(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent") }}
+                        {% if form.school_year.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.school_year.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Selection Section -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Select Modules (up to 10)</h2>
+                    <div class="text-sm text-gray-500">
+                        <span id="selected-count">0</span> / 10 selected
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Choose from pre-populated Star Academy modules with complete session data:</p>
+                </div>
+
+                <!-- Loading indicator -->
+                <div id="modules-loading" class="text-center py-8">
+                    <div class="text-gray-500">Loading available modules...</div>
+                </div>
+
+                <!-- Module selection container -->
+                <div id="modules-container" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="modules-grid">
+                        <!-- Modules will be loaded here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Hidden field for form submission -->
+                <div class="hidden">
+                    {{ form.selected_modules(id="selected_modules_hidden") }}
+                </div>
+                
+                {% if form.selected_modules.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.selected_modules.errors[0] }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-8">
+                {{ form.submit(class="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200 font-medium text-lg", id="submit-btn", disabled=true) }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modulesContainer = document.getElementById('modules-container');
+    const modulesLoading = document.getElementById('modules-loading');
+    const modulesGrid = document.getElementById('modules-grid');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const submitBtn = document.getElementById('submit-btn');
+    const hiddenField = document.getElementById('selected_modules_hidden');
+    
+    let selectedModules = [];
+    const maxModules = 10;
+
+    function updateUI() {
+        selectedCountSpan.textContent = selectedModules.length;
+        submitBtn.disabled = selectedModules.length === 0;
+        
+        // Update hidden field
+        hiddenField.innerHTML = '';
+        selectedModules.forEach(moduleId => {
+            const option = document.createElement('option');
+            option.value = moduleId;
+            option.selected = true;
+            hiddenField.appendChild(option);
+        });
+
+        // Update checkbox states
+        const checkboxes = document.querySelectorAll('.module-checkbox');
+        checkboxes.forEach(checkbox => {
+            const moduleId = parseInt(checkbox.dataset.moduleId);
+            const card = checkbox.closest('.module-card');
+            
+            if (selectedModules.includes(moduleId)) {
+                checkbox.checked = true;
+                card.classList.add('ring-2', 'ring-purple-500', 'bg-purple-50');
+            } else {
+                checkbox.checked = false;
+                card.classList.remove('ring-2', 'ring-purple-500', 'bg-purple-50');
+            }
+            
+            // Disable checkbox if max reached and not already selected
+            checkbox.disabled = selectedModules.length >= maxModules && !selectedModules.includes(moduleId);
+        });
+    }
+
+    function toggleModule(moduleId) {
+        const index = selectedModules.indexOf(moduleId);
+        
+        if (index > -1) {
+            // Remove from selection
+            selectedModules.splice(index, 1);
+        } else {
+            // Add to selection if under limit
+            if (selectedModules.length < maxModules) {
+                selectedModules.push(moduleId);
+            }
+        }
+        
+        updateUI();
+    }
+
+    // Load modules from API
+    fetch('/api/lesson-plan-modules')
+        .then(response => response.json())
+        .then(data => {
+            modulesLoading.classList.add('hidden');
+            
+            if (data.modules && data.modules.length > 0) {
+                data.modules.forEach(module => {
+                    const moduleCard = document.createElement('div');
+                    moduleCard.className = 'module-card p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-purple-400 transition-colors';
+                    
+                    moduleCard.innerHTML = `
+                        <div class="flex items-start">
+                            <input type="checkbox" 
+                                   class="module-checkbox mt-1 mr-3" 
+                                   data-module-id="${module.id}">
+                            <div class="flex-1">
+                                <h3 class="font-medium text-gray-900 mb-1">${module.name}</h3>
+                                <p class="text-sm text-gray-600">
+                                    ${module.subject || 'Subject not specified'} 
+                                    ${module.grade_level ? '| Grade ' + module.grade_level : ''}
+                                </p>
+                                <p class="text-xs text-purple-600 mt-1">
+                                    ${module.session_count} sessions available
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add click handler
+                    moduleCard.addEventListener('click', function() {
+                        toggleModule(module.id);
+                    });
+                    
+                    modulesGrid.appendChild(moduleCard);
+                });
+                
+                modulesContainer.classList.remove('hidden');
+                updateUI();
+            } else {
+                modulesLoading.innerHTML = '<div class="text-red-500">No modules available. Please import module data first.</div>';
+                modulesLoading.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading modules:', error);
+            modulesLoading.innerHTML = '<div class="text-red-500">Error loading modules. Please try again.</div>';
+        });
+});
+</script>
+{% endblock %}

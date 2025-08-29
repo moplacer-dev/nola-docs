@@ -102,6 +102,73 @@ class FormDraft(db.Model):
     def __repr__(self):
         return f'<FormDraft {self.title} v{self.version}>'
 
+
+class LessonPlanModule(db.Model):
+    """Streamlined lesson plan modules - pre-populated with all session and enrichment data"""
+    __tablename__ = 'lesson_plan_modules'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, index=True, unique=True)  # "Weather v1.1", "Weights and Measures"
+    subject = db.Column(db.String(50), nullable=True, index=True)  # "Science", "Math" - can be set later
+    grade_level = db.Column(db.Integer, nullable=True, index=True)  # 7, 8, or NULL for multi-grade
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    sessions = db.relationship('LessonPlanSession', backref='module', lazy='dynamic',
+                              cascade='all, delete-orphan',
+                              order_by='LessonPlanSession.session_number')
+    enrichments = db.relationship('LessonPlanEnrichment', backref='module', lazy='dynamic',
+                                 cascade='all, delete-orphan',
+                                 order_by='LessonPlanEnrichment.enrichment_number')
+
+    def __repr__(self):
+        return f'<LessonPlanModule {self.name}>'
+
+
+class LessonPlanSession(db.Model):
+    """Pre-populated session data - maps directly to CSV columns"""
+    __tablename__ = 'lesson_plan_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('lesson_plan_modules.id'), nullable=False, index=True)
+    session_number = db.Column(db.Integer, nullable=False)  # 1-7
+    focus = db.Column(db.Text)  # "Layers of the Atmosphere; Weather Measurement"
+    objectives = db.Column(db.Text)  # Bullet point objectives 
+    materials = db.Column(db.Text)  # "Weather Monitor"
+    teacher_preparations = db.Column(db.Text)  # "Ensure the Weather Station has been operational..."
+    performance_assessment_questions = db.Column(db.Text)  # Assessment questions
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('module_id', 'session_number', name='uq_module_session'),
+        db.Index('ix_module_sessions', 'module_id', 'session_number'),
+    )
+
+    def __repr__(self):
+        return f'<LessonPlanSession Module:{self.module_id} Session:{self.session_number}>'
+
+
+class LessonPlanEnrichment(db.Model):
+    """Pre-populated enrichment activities - maps directly to CSV columns"""
+    __tablename__ = 'lesson_plan_enrichments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('lesson_plan_modules.id'), nullable=False, index=True)
+    enrichment_number = db.Column(db.Integer, nullable=False)  # 1, 2, 3, etc.
+    title = db.Column(db.String(500))  # "Dew Point Calculation"
+    description = db.Column(db.Text)  # Full activity description
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('module_id', 'enrichment_number', name='uq_module_enrichment'),
+        db.Index('ix_module_enrichments', 'module_id', 'enrichment_number'),
+    )
+
+    def __repr__(self):
+        return f'<LessonPlanEnrichment Module:{self.module_id} #{self.enrichment_number}>'
+
 class GeneratedDocument(db.Model):
     """Track generated documents with download capabilities"""
     __tablename__ = 'generated_documents'
