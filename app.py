@@ -7701,7 +7701,11 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
     template_path = 'templates/docx_templates/hlp_master_template.docx'
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Horizontal_Lesson_Plan_{school_name.replace(' ', '_')}_{timestamp}.docx"
-    output_path = os.path.join('generated_docs', filename)
+    
+    # Create output directory
+    output_dir = 'generated_docs'
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, filename)
 
     doc = DocxTemplate(template_path)
     doc.render(context)
