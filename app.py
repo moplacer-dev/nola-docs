@@ -439,9 +439,9 @@ def create_hlp_table_subdoc(doc, selected_modules):
     
     print(f"DEBUG HLP: Found max {max_sessions} sessions across all modules")
     
-    # Row structure: HORIZONTAL LESSON PLAN header + Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session
+    # Row structure: HORIZONTAL LESSON PLAN header + Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session + 1 final Enrichments row
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
-    num_rows = 1 + (len(row_labels) * max_sessions)  # +1 for HORIZONTAL LESSON PLAN header
+    num_rows = 1 + (len(row_labels) * max_sessions) + 1  # +1 for HORIZONTAL LESSON PLAN header, +1 for final Enrichments row
     
     print(f"DEBUG HLP: Creating HLP table with {num_rows} rows and {num_cols} cols")
     table = subdoc.add_table(rows=num_rows, cols=num_cols)
@@ -584,6 +584,30 @@ def create_hlp_table_subdoc(doc, selected_modules):
                     data_text = 'N/A'  # Module doesn't have this session
                 
                 set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
+    
+    # Add final Enrichments row at the bottom
+    enrichments_row_index = num_rows - 1  # Last row
+    enrichments_row = table.rows[enrichments_row_index]
+    
+    # Label column for enrichments
+    set_cell_text(enrichments_row.cells[0], 'Enrichments', 'Rockwell', 8, bold=True)
+    shade_cell_grey(enrichments_row.cells[0])
+    
+    # Enrichments data for each module
+    for module_idx, module in enumerate(modules, 1):
+        enrichments = module.enrichments.all()
+        if enrichments:
+            enrichment_texts = []
+            for enrichment in enrichments:
+                enrichment_text = f"{enrichment.enrichment_number}. {enrichment.title}"
+                if enrichment.description:
+                    enrichment_text += f": {enrichment.description}"
+                enrichment_texts.append(enrichment_text)
+            data_text = '\n\n'.join(enrichment_texts)
+        else:
+            data_text = 'N/A'
+        
+        set_cell_text(enrichments_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
     
     print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
     print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
