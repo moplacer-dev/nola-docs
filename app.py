@@ -439,9 +439,9 @@ def create_hlp_table_subdoc(doc, selected_modules):
     
     print(f"DEBUG HLP: Found max {max_sessions} sessions across all modules")
     
-    # Row structure: HORIZONTAL LESSON PLAN header + Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session + 1 final Enrichments row
+    # Row structure: HORIZONTAL LESSON PLAN header + Module/Section header + Focus + Goals + Material List + Teacher Prep + PBA rows for each session + Module/Section for Enrichments + Activities (enrichments data)
     row_labels = ['Module:\nSection', 'Focus', 'Goals', 'Material\nList', 'Teacher\nPrep', 'PBA']
-    num_rows = 1 + (len(row_labels) * max_sessions) + 1  # +1 for HORIZONTAL LESSON PLAN header, +1 for final Enrichments row
+    num_rows = 1 + (len(row_labels) * max_sessions) + 2  # +1 for HORIZONTAL LESSON PLAN header, +2 for final Module:Section + Activities rows
     
     print(f"DEBUG HLP: Creating HLP table with {num_rows} rows and {num_cols} cols")
     table = subdoc.add_table(rows=num_rows, cols=num_cols)
@@ -585,13 +585,24 @@ def create_hlp_table_subdoc(doc, selected_modules):
                 
                 set_cell_text(current_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
     
-    # Add final Enrichments row at the bottom
-    enrichments_row_index = num_rows - 1  # Last row
-    enrichments_row = table.rows[enrichments_row_index]
+    # Add final enrichments section: Module:Section row + Activities row
+    enrichments_section_row_index = num_rows - 2  # Second to last row
+    enrichments_activities_row_index = num_rows - 1  # Last row
     
-    # Label column for enrichments
-    set_cell_text(enrichments_row.cells[0], 'Enrichments', 'Rockwell', 8, bold=True)
-    shade_cell_grey(enrichments_row.cells[0])
+    # Module:Section row for Enrichments
+    enrichments_section_row = table.rows[enrichments_section_row_index]
+    set_cell_text(enrichments_section_row.cells[0], 'Module:\nSection', 'Rockwell', 8, bold=True)
+    shade_cell_grey(enrichments_section_row.cells[0])
+    
+    for module_idx, module in enumerate(modules, 1):
+        module_header = f"{module.name}:\nEnrichments"
+        set_cell_text(enrichments_section_row.cells[module_idx], module_header, 'Rockwell', 10, bold=True)
+        shade_cell_grey(enrichments_section_row.cells[module_idx])
+    
+    # Activities row (actual enrichments data)
+    enrichments_activities_row = table.rows[enrichments_activities_row_index]
+    set_cell_text(enrichments_activities_row.cells[0], 'Activities', 'Rockwell', 8, bold=True)
+    shade_cell_grey(enrichments_activities_row.cells[0])
     
     # Enrichments data for each module
     for module_idx, module in enumerate(modules, 1):
@@ -607,7 +618,7 @@ def create_hlp_table_subdoc(doc, selected_modules):
         else:
             data_text = 'N/A'
         
-        set_cell_text(enrichments_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
+        set_cell_text(enrichments_activities_row.cells[module_idx], data_text, 'Times New Roman', 8, center=True)
     
     print(f"DEBUG HLP: Table creation completed successfully, returning subdoc")
     print(f"DEBUG HLP: Final subdoc type: {type(subdoc)}")
