@@ -413,6 +413,23 @@ def create_hlp_table_subdoc(doc, selected_modules):
     from docxtpl import Subdoc  # Add missing import like correlation reports
     from models import LessonPlanModule, LessonPlanSession, LessonPlanEnrichment
     
+    def format_text_consistently(text):
+        """Apply consistent formatting to text data for HLP display"""
+        if not text or text == 'N/A':
+            return text
+        
+        # Split by common separators to handle lists better
+        parts = []
+        for part in text.split(';'):
+            # Strip whitespace and capitalize first letter of each part
+            part = part.strip()
+            if part:
+                # Capitalize first letter while preserving other capitalization
+                part = part[0].upper() + part[1:] if len(part) > 1 else part.upper()
+                parts.append(part)
+        
+        return '; '.join(parts)
+    
     print(f"DEBUG HLP: Starting subdoc creation for {len(selected_modules)} module IDs: {selected_modules}")
     
     # Create subdoc from the DocxTemplate instance
@@ -551,7 +568,7 @@ def create_hlp_table_subdoc(doc, selected_modules):
         
         for i, module in enumerate(modules, 1):
             module_header = f"{module.name}:\nSession {session_num}"
-            set_cell_text(session_header_row.cells[i], module_header, 'Rockwell', 10, bold=True)
+            set_cell_text(session_header_row.cells[i], module_header, 'Rockwell', 9, bold=True)
             shade_cell_grey(session_header_row.cells[i])
         
         # Session data rows (Focus, Goals, Materials, Teacher Prep, PBA)
@@ -569,9 +586,9 @@ def create_hlp_table_subdoc(doc, selected_modules):
                 
                 if session:
                     if label == 'Focus':
-                        data_text = session.focus or 'N/A'
+                        data_text = format_text_consistently(session.focus or 'N/A')
                     elif label == 'Goals':
-                        data_text = session.objectives or 'N/A'
+                        data_text = format_text_consistently(session.objectives or 'N/A')
                     elif label == 'Material\nList':
                         data_text = session.materials or 'N/A'
                     elif label == 'Teacher\nPrep':
@@ -596,7 +613,7 @@ def create_hlp_table_subdoc(doc, selected_modules):
     
     for module_idx, module in enumerate(modules, 1):
         module_header = f"{module.name}:\nEnrichments"
-        set_cell_text(enrichments_section_row.cells[module_idx], module_header, 'Rockwell', 10, bold=True)
+        set_cell_text(enrichments_section_row.cells[module_idx], module_header, 'Rockwell', 9, bold=True)
         shade_cell_grey(enrichments_section_row.cells[module_idx])
     
     # Activities row (actual enrichments data)
@@ -610,9 +627,11 @@ def create_hlp_table_subdoc(doc, selected_modules):
         if enrichments:
             enrichment_texts = []
             for enrichment in enrichments:
-                enrichment_text = f"{enrichment.enrichment_number}. {enrichment.title}"
+                formatted_title = format_text_consistently(enrichment.title or '')
+                enrichment_text = f"{enrichment.enrichment_number}. {formatted_title}"
                 if enrichment.description:
-                    enrichment_text += f": {enrichment.description}"
+                    formatted_description = format_text_consistently(enrichment.description)
+                    enrichment_text += f": {formatted_description}"
                 enrichment_texts.append(enrichment_text)
             data_text = '\n\n'.join(enrichment_texts)
         else:
