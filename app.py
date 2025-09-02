@@ -1658,6 +1658,11 @@ class StreamlinedHorizontalLessonPlanForm(FlaskForm):
                              validators=[DataRequired(), Length(min=1, max=20)],
                              default='2025-2026')
 
+    # Subject field for user input
+    subject = StringField('Subject',
+                         validators=[DataRequired(), Length(min=1, max=50)],
+                         render_kw={"placeholder": "e.g., Math, Science, etc."})
+
     # Module selection (similar to correlation report)
     selected_modules = SelectMultipleField('Selected Modules (up to 10)',
                                           validators=[DataRequired()],
@@ -7714,7 +7719,7 @@ def get_lesson_plan_modules_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, school_year, module_ids):
+def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, school_year, subject, module_ids):
     """Generate horizontal lesson plan document from database-driven modules"""
     import tempfile
     import shutil
@@ -7753,7 +7758,7 @@ def generate_streamlined_horizontal_lesson_plan(school_name, teacher_name, schoo
             'teacher': {
                 'name': teacher_name
             },
-            'subject': 'Science',  # Default subject, could be made dynamic later
+            'subject': subject,
             'modules': modules,
             # Template expects {{ hlp.table }} so provide exactly that structure:
             'hlp': {'table': hlp_table_subdoc}
@@ -7792,10 +7797,11 @@ def create_streamlined_horizontal_lesson_plan():
         school_name = request.form.get('school_name')
         teacher_name = request.form.get('teacher_name')
         school_year = request.form.get('school_year', '2025-2026')
+        subject = request.form.get('subject')
         selected_modules = request.form.getlist('selected_modules')
 
         # Basic validation
-        if not school_name or not teacher_name or not selected_modules:
+        if not school_name or not teacher_name or not subject or not selected_modules:
             flash('Please fill in all fields and select at least one module.', 'error')
         elif len(selected_modules) > 10:
             flash('Please select no more than 10 modules.', 'error')
@@ -7806,6 +7812,7 @@ def create_streamlined_horizontal_lesson_plan():
                     school_name=school_name,
                     teacher_name=teacher_name,
                     school_year=school_year,
+                    subject=subject,
                     module_ids=[int(mid) for mid in selected_modules]
                 )
 
