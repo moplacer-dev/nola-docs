@@ -74,7 +74,7 @@
             <!-- Session Focus Section -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Session Focus</h2>
-                <p class="text-sm text-gray-600 mb-4">Enter the main focus for each session (1-7). Use title case (e.g., "Speed, Velocity, & Acceleration").</p>
+                <p class="text-sm text-gray-600 mb-4">Note: Use title case (e.g., "Speed, Velocity, & Acceleration").</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% for i in range(1, 8) %}
@@ -93,7 +93,7 @@
             {% for session_num in range(1, 8) %}
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Session {{ session_num }}</h2>
-                
+                <p class="text-sm text-gray-600 mb-4">Note: Use sentence case (e.g., "Explore the properties of motion.").</p>
                 <!-- Goals -->
                 <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-3">Session Goals</h3>
@@ -110,6 +110,7 @@
                 <!-- Vocabulary -->
                 <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-3">Session Vocabulary</h3>
+                    <p class="text-sm text-gray-600 mb-3">Note: Use lowercase unless the term is a proper noun.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {% for vocab_num in range(1, 6) %}
                             {% set field = form['s' ~ session_num ~ '_vocab' ~ vocab_num] %}
@@ -123,7 +124,7 @@
                 <!-- Assessments -->
                 <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-3">Performance Based Assessments</h3>
-                    <p class="text-sm text-gray-600 mb-3">Enter up to 4 assessments for this session (optional).</p>
+                    <p class="text-sm text-gray-600 mb-3">Note: Use sentence case (e.g., "Students will define velocity and use it in a sentence.").</p>
                     <div class="space-y-3">
                         {% for assessment_num in range(1, 5) %}
                             {% set field = form['s' ~ session_num ~ '_assessment' ~ assessment_num] %}

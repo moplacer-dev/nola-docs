@@ -94,18 +94,18 @@
             <!-- RCA Questions Section -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-6">RCA Questions</h2>
-                <p class="text-sm text-gray-600 mb-8">Enter one question for each section: Research, Challenge, and Application.</p>
+                <p class="text-sm text-gray-600 mb-8">Using sentence case, enter one question for each section: Research, Challenge, and Application. For answer choices, capitalize the first letter of the first word unless it is a proper noun or equation.</p>
                 
                 <!-- Research Question (Question 1) -->
                 <div class="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 class="text-lg font-semibold text-blue-900 mb-4">🔍 Research Question</h3>
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">Research Question</h3>
                     <div class="question-entry">
                         {% set research_form = form.questions[0] %}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
                             {{ research_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
-                                placeholder="Enter research-related question",
-                                data_autosave="true",
+                            placeholder="Use sentence case for all questions.",
+                            data_autosave="true",
                                 data_question_index="0",
                                 data_field_type="question_text") }}
                             {% if research_form.question_text.errors %}
@@ -117,6 +117,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
                                 {{ research_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Capitalize the first letter of the first word",
                                     data_autosave="true",
                                     data_question_index="0",
                                     data_field_type="choice_a") }}
@@ -124,6 +125,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
                                 {{ research_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Unless it is a proper noun or equation",
                                     data_autosave="true",
                                     data_question_index="0",
                                     data_field_type="choice_b") }}
@@ -131,6 +133,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
                                 {{ research_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Use sentence case for statements.",
                                     data_autosave="true",
                                     data_question_index="0",
                                     data_field_type="choice_c") }}
@@ -138,6 +141,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
                                 {{ research_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="e.g., First law, Issac Newton, etc.",
                                     data_autosave="true",
                                     data_question_index="0",
                                     data_field_type="choice_d") }}
@@ -148,9 +152,9 @@
 
                 <!-- Image Upload Section -->
                 <div class="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🖼️ Optional Image</h3>
-                    <p class="text-sm text-gray-600 mb-4">Add an image that students will reference for all three questions (e.g., diagram, chart, or graph).</p>
-                    
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Optional Image</h3>
+                    <p class="text-sm text-gray-600 mb-4">Add an image that students will reference for the Challenge question (e.g., diagram, chart, or graph). Once generated, the image will need to be manually formatted on the worksheet.</p>
+                    <p class="text-sm text-gray-600 mb-4">Note: Images are not saved in the database, so they will not be available for future use.</p>
                     <div class="mb-4">
                         {{ form.image_file.label(class="block text-sm font-medium text-gray-700 mb-2") }}
                         {{ form.image_file(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", accept=".jpg,.jpeg,.png,.gif") }}
@@ -163,13 +167,13 @@
 
                 <!-- Challenge Question (Question 2) -->
                 <div class="mb-8 p-6 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <h3 class="text-lg font-semibold text-yellow-900 mb-4">🎯 Challenge Question</h3>
+                    <h3 class="text-lg font-semibold text-yellow-900 mb-4">Challenge Question</h3>
                     <div class="question-entry">
                         {% set challenge_form = form.questions[1] %}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
                             {{ challenge_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
-                                placeholder="Enter challenge-related question",
+                                placeholder="Use sentence case for all questions.",
                                 data_autosave="true",
                                 data_question_index="1",
                                 data_field_type="question_text") }}
@@ -182,6 +186,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
                                 {{ challenge_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Capitalize the first letter of the first word",
                                     data_autosave="true",
                                     data_question_index="1",
                                     data_field_type="choice_a") }}
@@ -189,6 +194,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
                                 {{ challenge_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                placeholder="Unless it is a proper noun or equation",
                                     data_autosave="true",
                                     data_question_index="1",
                                     data_field_type="choice_b") }}
@@ -196,6 +202,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
                                 {{ challenge_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Use sentence case for statements.",
                                     data_autosave="true",
                                     data_question_index="1",
                                     data_field_type="choice_c") }}
@@ -203,6 +210,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
                                 {{ challenge_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="e.g., The temperature will increase.",
                                     data_autosave="true",
                                     data_question_index="1",
                                     data_field_type="choice_d") }}
@@ -213,13 +221,13 @@
 
                 <!-- Application Question (Question 3) -->
                 <div class="mb-8 p-6 bg-green-50 rounded-lg border border-green-200">
-                    <h3 class="text-lg font-semibold text-green-900 mb-4">⚡ Application Question</h3>
+                    <h3 class="text-lg font-semibold text-green-900 mb-4">Application Question</h3>
                     <div class="question-entry">
                         {% set application_form = form.questions[2] %}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Question</label>
                             {{ application_form.question_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
-                                placeholder="Enter application-related question",
+                                placeholder="Use sentence case for all questions.",
                                 data_autosave="true",
                                 data_question_index="2",
                                 data_field_type="question_text") }}
@@ -232,6 +240,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice A</label>
                                 {{ application_form.choice_a(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Capitalize the first letter of the first word",
                                     data_autosave="true",
                                     data_question_index="2",
                                     data_field_type="choice_a") }}
@@ -239,6 +248,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice B</label>
                                 {{ application_form.choice_b(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Unless it is a proper noun or equation",
                                     data_autosave="true",
                                     data_question_index="2",
                                     data_field_type="choice_b") }}
@@ -246,6 +256,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice C</label>
                                 {{ application_form.choice_c(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="Use sentence case for statements.",
                                     data_autosave="true",
                                     data_question_index="2",
                                     data_field_type="choice_c") }}
@@ -253,6 +264,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Choice D</label>
                                 {{ application_form.choice_d(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+                                    placeholder="e.g., x + y = z",
                                     data_autosave="true",
                                     data_question_index="2",
                                     data_field_type="choice_d") }}
