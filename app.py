@@ -3207,7 +3207,7 @@ def generate_generic_worksheet(form):
             if i % 2 == 0:  # Regular text
                 if part.strip():
                     run = paragraph.add_run(part)
-                    run.font.name = 'Segoe UI'
+                    run.font.name = 'Times New Roman'
                     run.font.size = Pt(11)
             else:  # Equation part
                 try:
@@ -3295,9 +3295,9 @@ def generate_generic_worksheet(form):
                     if result != "processed":
                         p.add_run(inst_text)
                     
-                    # Apply instructions formatting: Segoe UI 11pt Italic
+                    # Apply instructions formatting: Times New Roman 11pt Italic
                     for run in p.runs:
-                        run.font.name = 'Segoe UI'
+                        run.font.name = 'Times New Roman'
                         run.font.size = Pt(11)
                         run.font.italic = True
                     p.paragraph_format.space_after = Pt(6)
@@ -3311,9 +3311,9 @@ def generate_generic_worksheet(form):
                     if result != "processed":
                         p.add_run(para_text)
                     
-                    # Apply body text formatting: Segoe UI 11pt Regular
+                    # Apply body text formatting: Times New Roman 11pt Regular
                     for run in p.runs:
-                        run.font.name = 'Segoe UI'
+                        run.font.name = 'Times New Roman'
                         run.font.size = Pt(11)
                     p.paragraph_format.space_after = Pt(6)
             
@@ -3333,8 +3333,8 @@ def generate_generic_worksheet(form):
                 if table_title:
                     p = subdoc.add_paragraph(table_title)
                     for run in p.runs:
-                        run.font.name = 'Segoe UI'
-                        run.font.size = Pt(12)
+                        run.font.name = 'Times New Roman'
+                        run.font.size = Pt(11)
                         run.font.bold = True
                     p.paragraph_format.space_after = Pt(6)
                 
@@ -3356,7 +3356,7 @@ def generate_generic_worksheet(form):
                         # Format cell content
                         for paragraph in cell.paragraphs:
                             for run in paragraph.runs:
-                                run.font.name = 'Segoe UI'
+                                run.font.name = 'Times New Roman'
                                 run.font.size = Pt(11)
                                 # Make header row bold
                                 if row_idx == 0:
@@ -3406,24 +3406,24 @@ def generate_generic_worksheet(form):
                             result = process_equations_in_text(full_text, p)
                             if result != "processed":
                                 run = p.add_run(full_text)
-                                run.font.name = 'Segoe UI'
+                                run.font.name = 'Times New Roman'
                                 run.font.size = Pt(11)
                             
                             # Add answer space based on style
                             if answer_style == 'line' and not show_answers:
                                 answer_p = cell.add_paragraph()
                                 answer_run = answer_p.add_run("   _____________")
-                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.name = 'Times New Roman'
                                 answer_run.font.size = Pt(11)
                             elif answer_style == 'box' and not show_answers:
                                 answer_p = cell.add_paragraph()
                                 answer_run = answer_p.add_run("   □")
-                                answer_run.font.name = 'Segoe UI'
-                                answer_run.font.size = Pt(14)
+                                answer_run.font.name = 'Times New Roman'
+                                answer_run.font.size = Pt(11)
                             elif answer_style == 'equals' and not show_answers:
                                 answer_p = cell.add_paragraph()
                                 answer_run = answer_p.add_run("   = _______")
-                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.name = 'Times New Roman'
                                 answer_run.font.size = Pt(11)
                             elif show_answers and answer_text:
                                 # Show the actual answer for answer keys
@@ -3432,7 +3432,7 @@ def generate_generic_worksheet(form):
                                     answer_run = answer_p.add_run(f"   = {answer_text}")
                                 else:
                                     answer_run = answer_p.add_run(f"   {answer_text}")
-                                answer_run.font.name = 'Segoe UI'
+                                answer_run.font.name = 'Times New Roman'
                                 answer_run.font.size = Pt(11)
                                 answer_run.font.bold = True  # Bold answers in answer keys
                             
@@ -3457,9 +3457,9 @@ def generate_generic_worksheet(form):
                     else:
                         p = subdoc.add_paragraph(f"{question_counter}. {question_text}")
                     
-                    # Apply question formatting: Segoe UI 11pt Regular
+                    # Apply question formatting: Times New Roman 11pt Regular
                     for run in p.runs:
-                        run.font.name = 'Segoe UI'
+                        run.font.name = 'Times New Roman'
                         run.font.size = Pt(11)
                     p.paragraph_format.space_after = Pt(6)
                     
@@ -3513,7 +3513,7 @@ def generate_generic_worksheet(form):
                                 for paragraph in letter_cell.paragraphs:
                                     paragraph.paragraph_format.space_before = Pt(6)
                                     for run in paragraph.runs:
-                                        run.font.name = 'Segoe UI'
+                                        run.font.name = 'Times New Roman'
                                         run.font.size = Pt(11)
                                         run.font.bold = False
                                 
@@ -3523,7 +3523,7 @@ def generate_generic_worksheet(form):
                                 for paragraph in text_cell.paragraphs:
                                     paragraph.paragraph_format.space_before = Pt(6)
                                     for run in paragraph.runs:
-                                        run.font.name = 'Segoe UI'
+                                        run.font.name = 'Times New Roman'
                                         run.font.size = Pt(11)
                         
                         # Add spacing after the table
