@@ -334,3 +334,36 @@ class ModuleStandardMapping(db.Model):
     
     def __repr__(self):
         return f'<Mapping Module:{self.module_id} -> Standard:{self.standard_id}>'
+
+# IPL (Individual Pacing List) Models
+class IplModule(db.Model):
+    """IPL modules - 28 total modules like 'Module: Astronomy'"""
+    __tablename__ = 'ipl_modules'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)  # "Module: Astronomy"
+    subject = db.Column(db.String(50), nullable=True)
+    grade_level = db.Column(db.Integer, nullable=True)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    entries = db.relationship('IplEntry', backref='module', cascade='all, delete-orphan', order_by='IplEntry.order_index')
+    
+    def __repr__(self):
+        return f'<IplModule {self.name}>'
+
+class IplEntry(db.Model):
+    """Individual IPL entries within a module"""
+    __tablename__ = 'ipl_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('ipl_modules.id'), nullable=False)
+    unit_name = db.Column(db.String(200), nullable=True)  # "Real Number Systems", "Equations" (can be null for continued rows)
+    ipl_title = db.Column(db.String(200), nullable=True)  # "Ordering Numbers", "Scientific Notation 1" (can be null for continued rows)
+    goal_text = db.Column(db.Text, nullable=True)  # "Order numbers using the number line."
+    order_index = db.Column(db.Integer, default=0)  # To maintain original order
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<IplEntry {self.unit_name or "continued"}: {self.ipl_title or "continued"}>'

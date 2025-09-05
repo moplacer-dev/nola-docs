@@ -50,7 +50,7 @@ app.config['IS_PRODUCTION'] = os.environ.get('FLASK_ENV') == 'production' or 're
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize database and migrations
-from models import db, User, FormDraft, GeneratedDocument, TemplateFile, ActivityLog, State, Standard, Module, ModuleStandardMapping
+from models import db, User, FormDraft, GeneratedDocument, TemplateFile, ActivityLog, State, Standard, Module, ModuleStandardMapping, IplModule, IplEntry
 db.init_app(app)
 migrate = Migrate(app, db)
 
@@ -938,13 +938,13 @@ class FamilyBriefingForm(FlaskForm):
     
     submit = SubmitField('Generate Family Briefing')
 
-# ===== STUDENT MODULE WORKBOOK FORMS =====
+# ===== STUDENT LOGBOOK FORMS =====
 
 class StudentModuleWorkbookForm(FlaskForm):
     # Module Information
-    module_name = StringField('Module Name', 
+    module_name = StringField('Module Acronym', 
                             validators=[DataRequired(), Length(min=1, max=100)],
-                            render_kw={"placeholder": "e.g., APHY, Environmental Science, Biology"})
+                            render_kw={"placeholder": "e.g., APHY, ENSC, BIOE"})
     
     # Session Focus (7 sessions)
     focus_s1 = TextAreaField('Session 1 Focus', validators=[Optional(), Length(max=500)])
@@ -1053,7 +1053,7 @@ class StudentModuleWorkbookForm(FlaskForm):
     s7_assessment3 = TextAreaField('Session 7 Assessment 3', validators=[Optional(), Length(max=500)])
     s7_assessment4 = TextAreaField('Session 7 Assessment 4', validators=[Optional(), Length(max=500)])
     
-    submit = SubmitField('Generate Student Module Workbook')
+    submit = SubmitField('Generate Student Logbook')
 
 # ===== RCA WORKSHEET FORMS =====
 
@@ -1728,6 +1728,19 @@ class StreamlinedHorizontalLessonPlanForm(FlaskForm):
         """Ensure max 10 modules selected"""
         if len(field.data) > 10:
             raise ValidationError('Please select no more than 10 modules.')
+
+class IplReportForm(FlaskForm):
+    """IPL (Individual Pacing List) Report Form"""
+    
+    module_acronym = StringField('Module Acronym', 
+                                validators=[DataRequired(), Length(min=1, max=20)],
+                                render_kw={"placeholder": "e.g., ASTR, BIOE, CHEM"})
+    
+    selected_modules = SelectMultipleField('Selected Modules',
+                                          validators=[DataRequired()],
+                                          coerce=int)
+    
+    submit = SubmitField('Generate Module IPL List')
 
 @app.route('/dashboard')
 @login_required
@@ -3677,22 +3690,22 @@ def generate_family_briefing(form):
             pass  # Ignore cleanup errors
 
 def generate_student_module_workbook(form):
-    """Generate a student module workbook using docxtpl"""
+    """Generate a student logbook using docxtpl"""
     # Use a master template that never gets touched
     master_template_path = 'templates/docx_templates/student_module_workbook_master.docx'
     working_template_path = 'templates/docx_templates/student_module_workbook.docx'
     
-    print(f"Looking for student module workbook master template at: {master_template_path}")
+    print(f"Looking for student logbook master template at: {master_template_path}")
     
     # Check if master template exists
     if not os.path.exists(master_template_path):
-        raise FileNotFoundError("Student Module Workbook master DOCX template not found. Please create the master template first.")
+        raise FileNotFoundError("Student Logbook master DOCX template not found. Please create the master template first.")
     
     # Always copy from master to working template before processing
-    print("Copying fresh student module workbook template from master...")
+    print("Copying fresh student logbook template from master...")
     shutil.copy2(master_template_path, working_template_path)
     
-    print("Loading student module workbook working template...")
+    print("Loading student logbook working template...")
     
     # Create a temporary copy of the working template
     with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
@@ -3752,7 +3765,7 @@ def generate_student_module_workbook(form):
                 'assessments': assessments  # Each session now has its own assessments
             }
         
-        print(f"Student module workbook context data: {context}")
+        print(f"Student logbook context data: {context}")
         
         # Render the document
         doc.render(context)
@@ -3766,13 +3779,13 @@ def generate_student_module_workbook(form):
         if form.module_name.data:
             module_name_safe = escape_xml(form.module_name.data).replace(' ', '_').replace('/', '_').replace('\\', '_')
         
-        filename = f"{module_name_safe}_Student_Workbook.docx"
+        filename = f"{module_name_safe}_Student_Logbook.docx"
         output_path = os.path.join(output_dir, filename)
         
-        print(f"Saving student module workbook document to: {output_path}")
+        print(f"Saving student logbook document to: {output_path}")
         doc.save(output_path)
         
-        print("Student module workbook document saved successfully!")
+        print("Student logbook document saved successfully!")
         return output_path
         
     finally:
@@ -7005,7 +7018,7 @@ def delete_familybriefing_draft(draft_id):
     
     return redirect(url_for('drafts'))
 
-# ===== STUDENT MODULE WORKBOOK ROUTES =====
+# ===== STUDENT LOGBOOK ROUTES =====
 
 @app.route('/create-studentmoduleworkbook', methods=['GET', 'POST'])
 @login_required
@@ -7013,21 +7026,21 @@ def create_studentmoduleworkbook():
     form = StudentModuleWorkbookForm()
     
     if request.method == 'POST':
-        print("Student Module Workbook form submitted!")
+        print("Student Logbook form submitted!")
         print(f"Form data: {request.form}")
         print(f"Form valid: {form.validate_on_submit()}")
         if form.errors:
             print(f"Form errors: {form.errors}")
     
     if form.validate_on_submit():
-        print("Student Module Workbook form validation passed!")
+        print("Student Logbook form validation passed!")
         # Generate the document
         try:
-            print("Attempting to generate student module workbook...")
+            print("Attempting to generate student logbook...")
             doc_path = generate_student_module_workbook(form)
             filename = os.path.basename(doc_path)
             
-            print(f"Student module workbook generated at: {doc_path}")
+            print(f"Student logbook generated at: {doc_path}")
             
             # Save document info to database
             doc_record = GeneratedDocument(
@@ -7041,10 +7054,10 @@ def create_studentmoduleworkbook():
             db.session.add(doc_record)
             db.session.commit()
             
-            flash('Student Module Workbook generated successfully!', 'success')
+            flash('Student Logbook generated successfully!', 'success')
             return redirect(url_for('my_documents'))
         except Exception as e:
-            print(f"Error generating student module workbook: {e}")
+            print(f"Error generating student logbook: {e}")
             flash(f'Error generating document: {str(e)}', 'error')
     
     return render_template('create_studentmoduleworkbook.html', form=form)
@@ -7052,7 +7065,7 @@ def create_studentmoduleworkbook():
 @app.route('/autosave-studentmoduleworkbook-draft', methods=['POST'])
 @login_required
 def autosave_studentmoduleworkbook_draft():
-    """AJAX endpoint for autosaving student module workbook draft"""
+    """AJAX endpoint for autosaving student logbook draft"""
     try:
         # Get JSON data from the request
         data = request.get_json()
@@ -7095,11 +7108,11 @@ def autosave_studentmoduleworkbook_draft():
         
         # Create new draft
         # Generate title from first non-empty focus
-        title = 'Student Module Workbook Draft'
+        title = 'Student Logbook Draft'
         for i in range(1, 8):
             focus_text = data.get(f'focus_s{i}', '').strip()
             if focus_text:
-                title = f'Student Module Workbook - Session {i}: {focus_text[:30]}...' if len(focus_text) > 30 else f'Student Module Workbook - Session {i}: {focus_text}'
+                title = f'Student Logbook - Session {i}: {focus_text[:30]}...' if len(focus_text) > 30 else f'Student Logbook - Session {i}: {focus_text}'
                 break
         
         draft = FormDraft(
@@ -7125,7 +7138,7 @@ def autosave_studentmoduleworkbook_draft():
 @app.route('/load-studentmoduleworkbook-draft/<int:draft_id>')
 @login_required
 def load_studentmoduleworkbook_draft(draft_id):
-    """Load student module workbook draft"""
+    """Load student logbook draft"""
     draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
     
     if not draft:
@@ -7157,14 +7170,14 @@ def load_studentmoduleworkbook_draft(draft_id):
         return render_template('create_studentmoduleworkbook.html', form=form, draft_id=draft.id)
         
     except Exception as e:
-        print(f"Error loading student module workbook draft: {e}")
+        print(f"Error loading student logbook draft: {e}")
         flash('Error loading draft', 'error')
         return redirect(url_for('create_studentmoduleworkbook'))
 
 @app.route('/delete-studentmoduleworkbook-draft/<int:draft_id>', methods=['POST'])
 @login_required
 def delete_studentmoduleworkbook_draft(draft_id):
-    """Delete student module workbook draft"""
+    """Delete student logbook draft"""
     draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
     
     if not draft:
@@ -8671,6 +8684,386 @@ def test_correlation_table(grade, subject, num_modules):
         
     except Exception as e:
         return f"Error: {str(e)}", 500
+
+# IPL (Individual Pacing List) Routes
+@app.route('/create-ipl-report', methods=['GET', 'POST'])
+@login_required
+def create_ipl_report():
+    form = IplReportForm()
+    
+    if request.method == 'POST':
+        # Get form data manually to handle dynamic module selection
+        module_acronym = request.form.get('module_acronym')
+        selected_modules = request.form.getlist('selected_modules')
+        
+        # Basic validation
+        if not module_acronym or not selected_modules:
+            flash('Please fill in the module acronym and select at least one module.', 'error')
+        else:
+            try:
+                # Generate the document
+                doc_path = generate_ipl_report_document(
+                    module_acronym,
+                    selected_modules
+                )
+                
+                # Store in database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='ipl_report',
+                    filename=os.path.basename(doc_path),
+                    file_path=doc_path,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+                
+                flash('Module IPL List generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+                
+            except Exception as e:
+                print(f"Error generating Module IPL List: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Error generating document: {str(e)}', 'error')
+    
+    return render_template('create_ipl_report.html', form=form)
+
+@app.route('/api/ipl-modules')
+@login_required
+def get_ipl_modules_api():
+    """API endpoint to get all IPL modules for form"""
+    try:
+        modules = IplModule.query.filter_by(active=True).order_by(IplModule.name).all()
+        module_data = []
+        
+        for module in modules:
+            module_data.append({
+                'id': module.id,
+                'name': module.name
+            })
+        
+        return {'modules': module_data}
+        
+    except Exception as e:
+        print(f"Error loading IPL modules: {e}")
+        return {'error': 'Failed to load modules'}, 500
+
+def create_ipl_table_subdoc(doc, selected_modules):
+    """Generate a formatted IPL table subdoc matching the expected format"""
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.oxml.shared import OxmlElement, qn
+    from docxtpl import Subdoc
+    
+    print(f"DEBUG IPL TABLE: Starting subdoc creation for {len(selected_modules)} modules")
+    
+    # Create subdoc from the DocxTemplate instance
+    subdoc = doc.new_subdoc()
+    print(f"DEBUG IPL TABLE: Created subdoc: {type(subdoc)}")
+    
+    # Get all entries for selected modules, ordered properly
+    all_entries = []
+    for module in selected_modules:
+        entries = IplEntry.query.filter_by(module_id=module.id).order_by(IplEntry.order_index).all()
+        
+        # Add module header entry first
+        module_header_entry = type('obj', (object,), {
+            'module_name': module.name,
+            'unit_name': None,
+            'ipl_title': None,
+            'goal_text': None,
+            'is_module_header': True
+        })()
+        all_entries.append(module_header_entry)
+        
+        # Add all entries for this module
+        all_entries.extend(entries)
+        print(f"DEBUG IPL TABLE: Module {module.name} has {len(entries)} entries")
+    
+    if not all_entries:
+        print("DEBUG IPL TABLE: No entries found, adding error paragraph")
+        p = subdoc.add_paragraph("No IPL entries found.")
+        return subdoc
+    
+    # Helper function to set cell text with advanced formatting
+    def set_cell_text(cell, text, font_name='Arial', font_size=10, bold=False, italic=False, center=False, left=False, font_color=None):
+        if text is None:
+            text = ""
+        cell.text = str(text)
+        
+        # Set vertical alignment to center
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.font.name = font_name
+                run.font.size = Pt(font_size)
+                run.font.bold = bold
+                run.font.italic = italic
+                if font_color:
+                    run.font.color.rgb = font_color
+                    
+            if center:
+                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            elif left:
+                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    
+    # Helper function to shade a cell with specific color
+    def shade_cell(cell, color_hex):
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), color_hex)
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Helper function to merge cells
+    def merge_cells(cell1, cell2):
+        """Merge cell2 into cell1"""
+        cell1.merge(cell2)
+    
+    # Process data and create structured rows (skip module headers since they're in document header)
+    structured_rows = []
+    
+    # Add column header once at the beginning
+    structured_rows.append({
+        'type': 'column_header'
+    })
+    
+    for entry in all_entries:
+        if hasattr(entry, 'is_module_header') and entry.is_module_header:
+            # Skip module header since it's already in document header
+            continue
+        else:
+            structured_rows.append({
+                'type': 'data',
+                'unit': entry.unit_name,
+                'ipl': entry.ipl_title, 
+                'goal': entry.goal_text
+            })
+    
+    # Group data by Unit, then by IPL within each unit
+    grouped_data = []
+    i = 0
+    while i < len(structured_rows):
+        row = structured_rows[i]
+        
+        if row['type'] != 'data':
+            grouped_data.append(row)
+            i += 1
+        else:
+            # Group consecutive rows with same unit
+            unit_group = []
+            current_unit = row['unit']
+            
+            while i < len(structured_rows) and structured_rows[i]['type'] == 'data':
+                current_row = structured_rows[i]
+                if current_row['unit'] == current_unit or not current_row['unit']:
+                    unit_group.append(current_row)
+                    i += 1
+                else:
+                    # Different unit, start new group
+                    break
+            
+            # Now group within the unit by IPL
+            ipl_groups = []
+            j = 0
+            while j < len(unit_group):
+                current_ipl = unit_group[j]['ipl']
+                ipl_rows = []
+                goals_for_ipl = []
+                
+                # Collect all rows for this IPL (including those with empty IPL that belong to previous IPL)
+                while j < len(unit_group):
+                    row_data = unit_group[j]
+                    if row_data['ipl'] == current_ipl or (not row_data['ipl'] and current_ipl):
+                        ipl_rows.append(row_data)
+                        if row_data['goal']:
+                            goals_for_ipl.append(row_data['goal'])
+                        j += 1
+                    elif row_data['ipl'] and row_data['ipl'] != current_ipl:
+                        # Different IPL, start new group
+                        break
+                    else:
+                        j += 1
+                
+                if current_ipl or goals_for_ipl:  # Only add if we have an IPL or goals
+                    ipl_groups.append({
+                        'ipl': current_ipl,
+                        'goals': goals_for_ipl
+                    })
+            
+            grouped_data.append({
+                'type': 'unit_group', 
+                'unit': current_unit,
+                'ipl_groups': ipl_groups
+            })
+    
+    # Calculate the actual number of rows needed after processing the data structure
+    total_rows_needed = 0
+    
+    # Count rows from grouped_data structure
+    for group in grouped_data:
+        if group['type'] == 'column_header':
+            total_rows_needed += 1  # Column header
+        elif group['type'] == 'unit_group':
+            total_rows_needed += len(group['ipl_groups'])  # One row per IPL
+    
+    # Create table with 3 columns: IPL Units, IPLs, Goals
+    num_cols = 3
+    num_rows = total_rows_needed
+    
+    print(f"DEBUG IPL TABLE: Creating table with {num_rows} rows and {num_cols} cols")
+    table = subdoc.add_table(rows=num_rows, cols=num_cols)
+    table.style = 'Table Grid'
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    
+    # Set cell margins: 0.1" top/bottom, 0.08" left/right
+    for row in table.rows:
+        for cell in row.cells:
+            # Set cell margins using table cell properties
+            tc = cell._element
+            tcPr = tc.get_or_add_tcPr()
+            
+            # Create margins element
+            tcMar = OxmlElement('w:tcMar')
+            
+            # Top margin - 0.08" = 115 twips (1" = 1440 twips)
+            top = OxmlElement('w:top')
+            top.set(qn('w:w'), '115')
+            top.set(qn('w:type'), 'dxa')
+            tcMar.append(top)
+            
+            # Bottom margin - 0.08" = 115 twips  
+            bottom = OxmlElement('w:bottom')
+            bottom.set(qn('w:w'), '115')
+            bottom.set(qn('w:type'), 'dxa')
+            tcMar.append(bottom)
+            
+            # Left margin - 0.08" = 115 twips
+            left = OxmlElement('w:left')
+            left.set(qn('w:w'), '115')
+            left.set(qn('w:type'), 'dxa')
+            tcMar.append(left)
+            
+            # Right margin - 0.08" = 115 twips
+            right = OxmlElement('w:right')
+            right.set(qn('w:w'), '115')
+            right.set(qn('w:type'), 'dxa')
+            tcMar.append(right)
+            
+            # Add margins to cell properties
+            tcPr.append(tcMar)
+    
+    # Now populate the table with proper merging
+    row_idx = 0
+    
+    for group in grouped_data:
+        if group['type'] == 'column_header':
+            # Column header row
+            header_row = table.rows[row_idx]
+            set_cell_text(header_row.cells[0], 'IPL Unit', 'Rockwell', 12, bold=True, center=True)
+            set_cell_text(header_row.cells[1], 'IPLs', 'Rockwell', 12, bold=True, center=True)
+            set_cell_text(header_row.cells[2], 'Goals', 'Rockwell', 12, bold=True, center=True)
+            
+            # Shade column headers
+            for cell in header_row.cells:
+                shade_cell(cell, 'F2F2F2')
+                
+            row_idx += 1
+            
+        elif group['type'] == 'unit_group':
+            # Data rows with merging for IPL Units - one row per IPL with combined goals
+            ipl_groups = group['ipl_groups']
+            unit_start_row = row_idx
+            total_ipls_for_unit = len(ipl_groups)
+            
+            for ipl_idx, ipl_group in enumerate(ipl_groups):
+                data_row = table.rows[row_idx]
+                
+                # Unit name: only in first row of entire unit group
+                if ipl_idx == 0 and group['unit']:
+                    set_cell_text(data_row.cells[0], group['unit'], 'Rockwell', 11, bold=True, center=True)
+                else:
+                    set_cell_text(data_row.cells[0], '', 'Rockwell', 11)
+                
+                # IPL name
+                set_cell_text(data_row.cells[1], ipl_group['ipl'] or '', 'Times New Roman', 10.5, italic=True, center=True)
+                
+                # Combined goals: join all goals with line breaks
+                combined_goals = '\n'.join(ipl_group['goals']) if ipl_group['goals'] else ''
+                set_cell_text(data_row.cells[2], combined_goals, 'Times New Roman', 10, center=True)
+                
+                row_idx += 1
+            
+            # Merge Unit cells if multiple IPLs for this unit
+            if total_ipls_for_unit > 1 and group['unit']:
+                first_unit_cell = table.rows[unit_start_row].cells[0]
+                for merge_row_idx in range(unit_start_row + 1, row_idx):
+                    merge_cells(first_unit_cell, table.rows[merge_row_idx].cells[0])
+    
+    # Set column widths to match the image proportions
+    table.columns[0].width = Inches(1.8)  # IPL Units
+    table.columns[1].width = Inches(2.2)  # IPLs  
+    table.columns[2].width = Inches(3.5)  # Goals (widest)
+    
+    print(f"DEBUG IPL TABLE: Table creation completed successfully, returning subdoc")
+    return subdoc
+
+def generate_ipl_report_document(module_acronym, selected_module_ids):
+    """Generate Module IPL List document using subdoc approach"""
+    print(f"DEBUG IPL: Generating report for modules: {selected_module_ids}")
+    
+    # Get selected modules
+    modules = IplModule.query.filter(IplModule.id.in_([int(mid) for mid in selected_module_ids])).all()
+    
+    if not modules:
+        raise ValueError("No valid modules found for selected IDs")
+    
+    print(f"DEBUG IPL: Found {len(modules)} modules")
+    
+    # Template handling - follow correlation report pattern
+    template_path = 'templates/docx_templates/ipl_template_master.docx'
+    
+    # Create temporary copy
+    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
+        shutil.copy2(template_path, temp_file.name)
+        temp_template_path = temp_file.name
+    
+    try:
+        # Create DocxTemplate instance
+        doc = DocxTemplate(temp_template_path)
+        
+        # Generate IPL table subdoc
+        print(f"DEBUG IPL: About to create subdoc for modules: {[m.name for m in modules]}")
+        ipl_table_subdoc = create_ipl_table_subdoc(doc, modules)
+        print(f"DEBUG IPL: Received subdoc: {type(ipl_table_subdoc)}")
+        
+        # Create context for template
+        context = {
+            'module_acronym': module_acronym,
+            'modules': modules,
+            'ipl': {'table': ipl_table_subdoc}
+        }
+        
+        print(f"DEBUG IPL: Context keys: {list(context.keys())}")
+        
+        # Render and save
+        doc.render(context)
+        
+        # Create final output path
+        filename = f"{module_acronym}_IPL_List.docx"
+        output_dir = 'generated_docs'
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, filename)
+        
+        doc.save(output_path)
+        
+        return output_path
+        
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_template_path):
+            os.unlink(temp_template_path)
 
 if __name__ == '__main__':
     # Create default admin if none exists (for development/initial setup)
