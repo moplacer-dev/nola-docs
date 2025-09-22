@@ -3164,6 +3164,26 @@ def generate_generic_worksheet(form):
                     result += latex_to_omml_content(after)
                 return result
             
+            # Handle common mathematical symbols
+            symbol_map = {
+                '\\\\times': '×',
+                '\\\\cdot': '·',
+                '\\\\div': '÷',
+                '\\\\neq': '≠',
+                '\\\\pm': '±',
+                '\\\\mp': '∓',
+                '\\\\leq': '≤',
+                '\\\\geq': '≥',
+                '\\\\approx': '≈',
+                '\\\\equiv': '≡',
+                '\\\\propto': '∝',
+                '\\\\infty': '∞',
+                '\\\\circ': '°',
+                '\\\\%': '%'
+            }
+            for latex_symbol, unicode_char in symbol_map.items():
+                text = re.sub(latex_symbol, unicode_char, text)
+
             # Handle common Greek letters
             greek_map = {
                 'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
@@ -3171,7 +3191,7 @@ def generate_generic_worksheet(form):
             }
             for latex_name, unicode_char in greek_map.items():
                 text = re.sub(f'\\\\{latex_name}\\b', unicode_char, text)
-            
+
             # Return as text run if no special formatting found
             return create_text_run(text)
         
