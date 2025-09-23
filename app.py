@@ -3282,11 +3282,21 @@ def generate_generic_worksheet(form):
         subdoc = doc.new_subdoc()
         
         question_counter = 1
-        
+
+        # Create mapping from enumerate index to actual field index
+        def get_actual_field_index(enum_index):
+            """Find the actual field index from request form data for a given enumerate index"""
+            field_type_keys = [key for key in request.form.keys() if key.endswith('-field_type')]
+            field_type_keys.sort(key=lambda x: int(x.split('-')[1]))  # Sort by index
+            if enum_index < len(field_type_keys):
+                return int(field_type_keys[enum_index].split('-')[1])
+            return enum_index  # Fallback to enumerate index
+
         for i, field_data in enumerate(form.dynamic_fields.data):
             field_type = field_data.get('field_type')
-            
-            print(f"Processing field {i}: type = {field_type}")
+            actual_index = get_actual_field_index(i)
+
+            print(f"Processing field {i}: type = {field_type} (actual index: {actual_index})")
             
             if field_type == 'section_header':
                 title = (field_data.get('section_title') or '').strip()
@@ -3342,7 +3352,7 @@ def generate_generic_worksheet(form):
                 # doesn't know about our dynamic table structure
                 
                 # Extract table configuration from raw form data
-                field_prefix = f'dynamic_fields-{i}-'
+                field_prefix = f'dynamic_fields-{actual_index}-'
                 table_title = (request.form.get(f'{field_prefix}table_title') or '').strip()
                 table_rows = int(request.form.get(f'{field_prefix}table_rows', 3))
                 table_cols = int(request.form.get(f'{field_prefix}table_cols', 3))
@@ -3387,7 +3397,7 @@ def generate_generic_worksheet(form):
             
             elif field_type == 'multi_column_problems':
                 # For multi-column problems, access raw request data
-                field_prefix = f'dynamic_fields-{i}-'
+                field_prefix = f'dynamic_fields-{actual_index}-'
                 problem_rows = int(request.form.get(f'{field_prefix}problem_rows', 3))
                 problem_cols = int(request.form.get(f'{field_prefix}problem_cols', 2))
                 start_number = int(request.form.get(f'{field_prefix}start_number', 1))
