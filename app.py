@@ -5902,6 +5902,7 @@ def autosave_generic_draft():
         # Prepare form data for JSON storage
         form_data = {
             'module_acronym': data.get('module_acronym', ''),
+            'worksheet_title': data.get('worksheet_title', ''),
             'dynamic_fields': data.get('dynamic_fields', [])
         }
         
@@ -5914,19 +5915,40 @@ def autosave_generic_draft():
                 draft.form_data = form_data
                 draft.updated_at = datetime.utcnow()
                 # Update title based on form data
-                if form_data['module_acronym']:
-                    draft.title = f"Generic Worksheet - {form_data['module_acronym']}"
-                    draft.module_acronym = form_data['module_acronym']
+                worksheet_title = form_data.get('worksheet_title', '').strip()
+                module_acronym = form_data.get('module_acronym', '').strip()
+
+                if worksheet_title and module_acronym:
+                    draft.title = f"{worksheet_title} - {module_acronym}"
+                elif worksheet_title:
+                    draft.title = worksheet_title
+                elif module_acronym:
+                    draft.title = f"Generic Worksheet - {module_acronym}"
+                else:
+                    draft.title = "Generic Worksheet - Untitled"
+
+                draft.module_acronym = module_acronym
             else:
                 return jsonify({'success': False, 'error': 'Draft not found'})
         else:
             # Create new draft
-            title = f"Generic Worksheet - {form_data['module_acronym']}" if form_data['module_acronym'] else "Generic Worksheet - Untitled"
+            worksheet_title = form_data.get('worksheet_title', '').strip()
+            module_acronym = form_data.get('module_acronym', '').strip()
+
+            if worksheet_title and module_acronym:
+                title = f"{worksheet_title} - {module_acronym}"
+            elif worksheet_title:
+                title = worksheet_title
+            elif module_acronym:
+                title = f"Generic Worksheet - {module_acronym}"
+            else:
+                title = "Generic Worksheet - Untitled"
+
             draft = FormDraft(
                 user_id=current_user.id,
                 form_type='generic',
                 title=title,
-                module_acronym=form_data['module_acronym'],
+                module_acronym=module_acronym,
                 form_data=form_data
             )
             db.session.add(draft)
