@@ -11,7 +11,7 @@
                 <h1 class="text-3xl font-bold text-gray-900">My Drafts</h1>
                 <p class="text-gray-600 mt-2">Manage all your saved document drafts</p>
             </div>
-            <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+            <a href="/" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors">
                 + Create New Document
             </a>
         </div>
@@ -37,10 +37,12 @@
                                         {% elif draft.form_type == 'pba' %}bg-purple-100 text-purple-800
                                         {% elif draft.form_type == 'generic' %}bg-orange-100 text-orange-800
                                         {% elif draft.form_type == 'familybriefing' %}bg-indigo-100 text-indigo-800
+                                        {% elif draft.form_type == 'familybriefing_v2' %}bg-lime-100 text-lime-800
                                         {% elif draft.form_type == 'rca' %}bg-pink-100 text-pink-800
                                         {% elif draft.form_type == 'moduleactivity' %}bg-teal-100 text-teal-800
                                         {% elif draft.form_type == 'moduleguide' %}bg-yellow-100 text-yellow-800
                                         {% elif draft.form_type == 'moduleGuide' %}bg-yellow-100 text-yellow-800
+                                        {% elif draft.form_type == 'moduleguide_v2' %}bg-yellow-100 text-yellow-800
                                         {% elif draft.form_type == 'moduleAnswerKey' %}bg-red-100 text-red-800
                                         {% elif draft.form_type == 'module_answer_key2' %}bg-pink-100 text-pink-800
                                         {% elif draft.form_type == 'moduleActivitySheet' %}bg-blue-100 text-blue-800
@@ -52,73 +54,81 @@
                                     </span>
                                 </div>
                                 <div class="mt-2 flex items-center space-x-6 text-sm text-gray-500">
-                                    <span>📝 Module: {{ draft.module_acronym or 'Not specified' }}</span>
-                                    <span>💾 Saved: {{ draft.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
-                                    <span>📄 Type: {{ draft.document_type_display }}</span>
+                                    <span>Module: {{ draft.module_acronym or 'Not specified' }}</span>
+                                    <span>Saved: {{ draft.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                    <span>Type: {{ draft.document_type_display }}</span>
                                     {% if draft.form_type == 'vocabulary' and draft.form_data.words %}
-                                        <span>📊 Words: {{ draft.form_data.words|length }}</span>
+                                        <span> Words: {{ draft.form_data.words|length }}</span>
                                     {% endif %}
                                     {% if draft.form_type == 'test' and draft.form_data.questions %}
-                                        <span>📊 Questions: {{ draft.form_data.questions|length }}</span>
-                                        <span>📋 Type: {{ 'Pre-Test' if draft.form_data.test_type == 'pre' else 'Post-Test' }}</span>
+                                        <span> Questions: {{ draft.form_data.questions|length }}</span>
+                                        <span> Type: {{ 'Pre-Test' if draft.form_data.test_type == 'pre' else 'Post-Test' }}</span>
                                     {% endif %}
                                     {% if draft.form_type == 'pba' and draft.form_data.assessments %}
-                                        <span>📊 Assessments: {{ draft.form_data.assessments|length }}</span>
+                                        <span> Assessments: {{ draft.form_data.assessments|length }}</span>
                                         {% if draft.form_data.session_number %}
-                                            <span>📋 Session: {{ draft.form_data.session_number }}</span>
+                                            <span> Session: {{ draft.form_data.session_number }}</span>
                                         {% endif %}
                                     {% endif %}
                                     {% if draft.form_type == 'familybriefing' and draft.form_data.activities %}
-                                        <span>📊 Activities: {{ draft.form_data.activities|length }}</span>
+                                        <span> Activities: {{ draft.form_data.activities|length }}</span>
+                                    {% endif %}
+                                    {% if draft.form_type == 'familybriefing_v2' %}
+                                        {% if draft.form_data.session_focus %}
+                                            <span> Sessions: {{ draft.form_data.session_focus|length }}</span>
+                                        {% endif %}
+                                        {% if draft.form_data.key_concepts %}
+                                            <span> Concepts: {{ draft.form_data.key_concepts|length }}</span>
+                                        {% endif %}
                                     {% endif %}
                                     {% if draft.form_type == 'rca' and draft.form_data.questions %}
-                                        <span>📊 Questions: {{ draft.form_data.questions|length }}</span>
+                                        <span> Questions: {{ draft.form_data.questions|length }}</span>
                                     {% endif %}
                                     {% if draft.form_type == 'generic' and draft.form_data.dynamic_fields %}
-                                        <span>📊 Fields: {{ draft.form_data.dynamic_fields|length }}</span>
+                                        <span> Fields: {{ draft.form_data.dynamic_fields|length }}</span>
                                     {% endif %}
                                     {% if draft.form_type == 'moduleactivity' and draft.form_data.sessions %}
-                                        <span>📊 Sessions: {{ draft.form_data.sessions|length }}</span>
+                                        <span> Sessions: {{ draft.form_data.sessions|length }}</span>
                                     {% endif %}
                                     {% if draft.form_type == 'moduleguide' and draft.form_data.sessions %}
-                                        <span>📊 Sessions: {{ draft.form_data.sessions|length }}</span>
+                                        <span> Sessions: {{ draft.form_data.sessions|length }}</span>
                                         {% if draft.form_data.vocab_terms %}
-                                            <span>📝 Vocab: {{ draft.form_data.vocab_terms|length }}</span>
+                                            <span> Vocab: {{ draft.form_data.vocab_terms|length }}</span>
                                         {% endif %}
                                         {% if draft.form_data.standards %}
-                                            <span>📋 Standards: {{ draft.form_data.standards|length }}</span>
+                                            <span> Standards: {{ draft.form_data.standards|length }}</span>
                                         {% endif %}
                                     {% endif %}
                                     {% if draft.form_type == 'moduleanswerkey' %}
                                         {% if draft.form_data.pretest_questions %}
-                                            <span>📝 Pre-Test: {{ draft.form_data.pretest_questions|length }} questions</span>
+                                            <span> Pre-Test: {{ draft.form_data.pretest_questions|length }} questions</span>
                                         {% endif %}
                                         {% if draft.form_data.rca_sessions %}
-                                            <span>🔍 RCA Sessions: {{ draft.form_data.rca_sessions|length }}</span>
+                                            <span> RCA Sessions: {{ draft.form_data.rca_sessions|length }}</span>
                                         {% endif %}
                                         {% if draft.form_data.posttest_questions %}
-                                            <span>📝 Post-Test: {{ draft.form_data.posttest_questions|length }} questions</span>
+                                            <span> Post-Test: {{ draft.form_data.posttest_questions|length }} questions</span>
                                         {% endif %}
                                         {% if draft.form_data.vocabulary %}
-                                            <span>📚 Vocab: {{ draft.form_data.vocabulary|length }} terms</span>
+                                            <span> Vocab: {{ draft.form_data.vocabulary|length }} terms</span>
                                         {% endif %}
                                     {% endif %}
                                     {% if draft.form_type == 'horizontal_lesson_plan' %}
                                         {% if draft.form_data.modules %}
-                                            <span>📚 Modules: {{ draft.form_data.modules|length }}</span>
+                                            <span> Modules: {{ draft.form_data.modules|length }}</span>
                                         {% endif %}
                                         {% if draft.form_data.school_name %}
-                                            <span>🏫 School: {{ draft.form_data.school_name }}</span>
+                                            <span> School: {{ draft.form_data.school_name }}</span>
                                         {% endif %}
                                         {% if draft.form_data.teacher_name %}
-                                            <span>👩‍🏫 Teacher: {{ draft.form_data.teacher_name }}</span>
+                                            <span> Teacher: {{ draft.form_data.teacher_name }}</span>
                                         {% endif %}
                                     {% endif %}
                                     {% if draft.form_type == 'studentmoduleworkbook' %}
-                                        <span>📚 Sessions: 7</span>
+                                        <span> Sessions: 7</span>
                                         {% set filled_sessions = [draft.form_data.get('focus_s1'), draft.form_data.get('focus_s2'), draft.form_data.get('focus_s3'), draft.form_data.get('focus_s4'), draft.form_data.get('focus_s5'), draft.form_data.get('focus_s6'), draft.form_data.get('focus_s7')] | select | list | length %}
                                         {% if filled_sessions > 0 %}
-                                            <span>✅ Completed: {{ filled_sessions }}/7 sessions</span>
+                                            <span> Completed: {{ filled_sessions }}/7 sessions</span>
                                         {% endif %}
                                     {% endif %}
                                 </div>
@@ -128,170 +138,196 @@
                                 {% if draft.form_type == 'vocabulary' %}
                                     <a href="/load-vocabulary-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-vocabulary-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'test' %}
                                     <a href="/load-test-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-test-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'pba' %}
                                     <a href="/load-pba-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-pba-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'familybriefing' %}
-                                    <a href="/load-familybriefing-draft/{{ draft.id }}" 
+                                    <a href="/load-familybriefing-draft/{{ draft.id }}"
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
-                                    <form method="POST" action="/delete-familybriefing-draft/{{ draft.id }}" 
+                                    <form method="POST" action="/delete-familybriefing-draft/{{ draft.id }}"
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" 
+                                        <button type="submit"
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
+                                        </button>
+                                    </form>
+                                {% elif draft.form_type == 'familybriefing_v2' %}
+                                    <a href="/load-familybriefing-v2-draft/{{ draft.id }}"
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="/delete-familybriefing-v2-draft/{{ draft.id }}"
+                                          class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit"
+                                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'rca' %}
                                     <a href="/load-rca-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-rca-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'generic' %}
                                     <a href="/load-generic-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-generic-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'moduleactivity' %}
                                     <a href="/load-moduleactivity-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-moduleactivity-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'moduleguide' %}
-                                    <a href="/load-moduleguide-draft/{{ draft.id }}" 
+                                    <a href="/load-moduleguide-draft/{{ draft.id }}"
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
-                                    <form method="POST" action="/delete-moduleguide-draft/{{ draft.id }}" 
+                                    <form method="POST" action="/delete-moduleguide-draft/{{ draft.id }}"
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" 
+                                        <button type="submit"
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
+                                        </button>
+                                    </form>
+                                {% elif draft.form_type == 'moduleguide_v2' %}
+                                    <a href="/load-moduleguide-v2-draft/{{ draft.id }}"
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="/delete-moduleguide-v2-draft/{{ draft.id }}"
+                                          class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit"
+                                                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'moduleanswerkey' %}
                                     <a href="/load-moduleanswerkey-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-moduleanswerkey-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'module_answer_key2' %}
                                     <a href="/load-module-answer-key2-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-module-answer-key2-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'horizontal_lesson_plan' %}
                                     <a href="/load-horizontal-lesson-plan-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-horizontal-lesson-plan-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'curriculum_design_build' %}
                                     <a href="/create-curriculum-design-build?draft_id={{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% elif draft.form_type == 'studentmoduleworkbook' %}
                                     <a href="/load-studentmoduleworkbook-draft/{{ draft.id }}" 
                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                        📝 Edit
+                                        Edit
                                     </a>
                                     <form method="POST" action="/delete-studentmoduleworkbook-draft/{{ draft.id }}" 
                                           class="inline" onsubmit="return confirm('Are you sure you want to delete this draft?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" 
                                                 class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                            🗑️ Delete
+                                            Delete
                                         </button>
                                     </form>
                                 {% else %}
@@ -316,13 +352,6 @@
                                 </div>
                             </div>
 
-                        {% elif draft.form_data %}
-                            <!-- Generic preview for other document types -->
-                            <div class="mt-3 p-3 bg-gray-50 rounded-md">
-                                <p class="text-sm text-gray-600">
-                                    Draft contains form data for {{ draft.document_type_display }}
-                                </p>
-                            </div>
                         {% endif %}
                     </div>
                 {% endfor %}

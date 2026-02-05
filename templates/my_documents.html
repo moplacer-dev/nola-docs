@@ -34,19 +34,19 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center space-x-6 text-sm text-gray-500">
-                                    <span>📝 Module: {{ doc.module_acronym or 'Not specified' }}</span>
-                                    <span>📅 Created: {{ doc.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
-                                    <span>📏 Size: {{ doc.file_size_human }}</span>
-                                    <span>📥 Downloads: {{ doc.download_count }}</span>
+                                    <span>Module: {{ doc.module_acronym or 'Not specified' }}</span>
+                                    <span>Created: {{ doc.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                    <span>Size: {{ doc.file_size_human }}</span>
+                                    <span>Downloads: {{ doc.download_count }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-3">
-                                <a href="/download/{{ doc.id }}" 
+                                <a href="/download/{{ doc.id }}"
                                    class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                    📥 Download
+                                    Download
                                 </a>
-                                {% if doc.source_draft %}
-                                    <a href="/load-vocabulary-draft/{{ doc.source_draft.id }}" 
+                                {% if doc.source_draft and doc.document_type == 'vocabulary' %}
+                                    <a href="/load-vocabulary-draft/{{ doc.source_draft.id }}"
                                        class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors text-sm">
                                         ✏️ Edit
                                     </a>
@@ -54,9 +54,9 @@
                                 <form method="POST" action="/delete-document/{{ doc.id }}" 
                                       class="inline" onsubmit="return confirm('Are you sure you want to remove this document? This cannot be undone.')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" 
+                                    <button type="submit"
                                             class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm">
-                                        🗑️ Remove
+                                        Remove
                                     </button>
                                 </form>
                             </div>

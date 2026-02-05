@@ -6,9 +6,11 @@ from wtforms.validators import DataRequired, Length, Optional, ValidationError
 from docxtpl import DocxTemplate, RichText, InlineImage
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_BREAK
 from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.enum.section import WD_SECTION
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from werkzeug.utils import secure_filename
 from flask_wtf.file import FileField, FileAllowed
 import os
@@ -17,6 +19,7 @@ import tempfile
 from datetime import datetime
 import PyPDF2
 import re
+import json
 
 # Add database and authentication imports
 from flask_sqlalchemy import SQLAlchemy
@@ -938,121 +941,49 @@ class FamilyBriefingForm(FlaskForm):
     
     submit = SubmitField('Generate Family Briefing')
 
+# ===== FAMILY BRIEFING V2 FORMS =====
+
+class KeyConceptFormV2(FlaskForm):
+    """Key Concept entry form for Family Briefing V2"""
+    class Meta:
+        csrf = False  # Disable CSRF for nested forms
+
+    concept = StringField('Concept', validators=[Optional(), Length(max=300)])
+    explanation = TextAreaField('Explanation', validators=[Optional(), Length(max=800)])
+    question = TextAreaField('Question', validators=[Optional(), Length(max=500)])
+
+
+class FamilyBriefingV2Form(FlaskForm):
+    """Family Briefing V2 with dynamic arrays and JSON import support"""
+    module_name = StringField('Module Name', validators=[Optional(), Length(max=100)])
+    module_acronym = StringField('Module Acronym', validators=[DataRequired(), Length(max=20)])
+    grade_level = StringField('Grade Level', validators=[Optional(), Length(max=20)])
+
+    # Parent Letter
+    parent_letter = TextAreaField('Parent Letter', validators=[Optional(), Length(max=3000)])
+
+    # Learning Objectives - dynamic array
+    learning_objectives = FieldList(
+        TextAreaField('Learning Objective', validators=[Optional(), Length(max=500)]),
+        min_entries=1,
+        max_entries=10
+    )
+
+    # Key Concepts - array with question field
+    key_concepts = FieldList(FormField(KeyConceptFormV2), min_entries=1, max_entries=10)
+
+    submit = SubmitField('Generate Family Briefing V2')
+
+
 # ===== STUDENT LOGBOOK FORMS =====
 
-class StudentModuleWorkbookForm(FlaskForm):
-    # Module Information
-    module_name = StringField('Module Acronym', 
-                            validators=[DataRequired(), Length(min=1, max=100)],
-                            render_kw={"placeholder": "e.g., APHY, ENSC, BIOE"})
-    
-    # Session Focus (7 sessions)
-    focus_s1 = TextAreaField('Session 1 Focus', validators=[Optional(), Length(max=500)])
-    focus_s2 = TextAreaField('Session 2 Focus', validators=[Optional(), Length(max=500)])
-    focus_s3 = TextAreaField('Session 3 Focus', validators=[Optional(), Length(max=500)])
-    focus_s4 = TextAreaField('Session 4 Focus', validators=[Optional(), Length(max=500)])
-    focus_s5 = TextAreaField('Session 5 Focus', validators=[Optional(), Length(max=500)])
-    focus_s6 = TextAreaField('Session 6 Focus', validators=[Optional(), Length(max=500)])
-    focus_s7 = TextAreaField('Session 7 Focus', validators=[Optional(), Length(max=500)])
-    
-    # Session 1 Goals, Vocabulary, and Assessments
-    s1_goal1 = StringField('Session 1 Goal 1', validators=[Optional(), Length(max=300)])
-    s1_goal2 = StringField('Session 1 Goal 2', validators=[Optional(), Length(max=300)])
-    s1_goal3 = StringField('Session 1 Goal 3', validators=[Optional(), Length(max=300)])
-    s1_vocab1 = StringField('Session 1 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s1_vocab2 = StringField('Session 1 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s1_vocab3 = StringField('Session 1 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s1_vocab4 = StringField('Session 1 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s1_vocab5 = StringField('Session 1 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s1_assessment1 = TextAreaField('Session 1 Assessment 1', validators=[Optional(), Length(max=500)])
-    s1_assessment2 = TextAreaField('Session 1 Assessment 2', validators=[Optional(), Length(max=500)])
-    s1_assessment3 = TextAreaField('Session 1 Assessment 3', validators=[Optional(), Length(max=500)])
-    s1_assessment4 = TextAreaField('Session 1 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 2 Goals, Vocabulary, and Assessments
-    s2_goal1 = StringField('Session 2 Goal 1', validators=[Optional(), Length(max=300)])
-    s2_goal2 = StringField('Session 2 Goal 2', validators=[Optional(), Length(max=300)])
-    s2_goal3 = StringField('Session 2 Goal 3', validators=[Optional(), Length(max=300)])
-    s2_vocab1 = StringField('Session 2 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s2_vocab2 = StringField('Session 2 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s2_vocab3 = StringField('Session 2 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s2_vocab4 = StringField('Session 2 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s2_vocab5 = StringField('Session 2 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s2_assessment1 = TextAreaField('Session 2 Assessment 1', validators=[Optional(), Length(max=500)])
-    s2_assessment2 = TextAreaField('Session 2 Assessment 2', validators=[Optional(), Length(max=500)])
-    s2_assessment3 = TextAreaField('Session 2 Assessment 3', validators=[Optional(), Length(max=500)])
-    s2_assessment4 = TextAreaField('Session 2 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 3 Goals, Vocabulary, and Assessments
-    s3_goal1 = StringField('Session 3 Goal 1', validators=[Optional(), Length(max=300)])
-    s3_goal2 = StringField('Session 3 Goal 2', validators=[Optional(), Length(max=300)])
-    s3_goal3 = StringField('Session 3 Goal 3', validators=[Optional(), Length(max=300)])
-    s3_vocab1 = StringField('Session 3 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s3_vocab2 = StringField('Session 3 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s3_vocab3 = StringField('Session 3 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s3_vocab4 = StringField('Session 3 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s3_vocab5 = StringField('Session 3 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s3_assessment1 = TextAreaField('Session 3 Assessment 1', validators=[Optional(), Length(max=500)])
-    s3_assessment2 = TextAreaField('Session 3 Assessment 2', validators=[Optional(), Length(max=500)])
-    s3_assessment3 = TextAreaField('Session 3 Assessment 3', validators=[Optional(), Length(max=500)])
-    s3_assessment4 = TextAreaField('Session 3 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 4 Goals, Vocabulary, and Assessments
-    s4_goal1 = StringField('Session 4 Goal 1', validators=[Optional(), Length(max=300)])
-    s4_goal2 = StringField('Session 4 Goal 2', validators=[Optional(), Length(max=300)])
-    s4_goal3 = StringField('Session 4 Goal 3', validators=[Optional(), Length(max=300)])
-    s4_vocab1 = StringField('Session 4 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s4_vocab2 = StringField('Session 4 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s4_vocab3 = StringField('Session 4 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s4_vocab4 = StringField('Session 4 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s4_vocab5 = StringField('Session 4 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s4_assessment1 = TextAreaField('Session 4 Assessment 1', validators=[Optional(), Length(max=500)])
-    s4_assessment2 = TextAreaField('Session 4 Assessment 2', validators=[Optional(), Length(max=500)])
-    s4_assessment3 = TextAreaField('Session 4 Assessment 3', validators=[Optional(), Length(max=500)])
-    s4_assessment4 = TextAreaField('Session 4 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 5 Goals, Vocabulary, and Assessments
-    s5_goal1 = StringField('Session 5 Goal 1', validators=[Optional(), Length(max=300)])
-    s5_goal2 = StringField('Session 5 Goal 2', validators=[Optional(), Length(max=300)])
-    s5_goal3 = StringField('Session 5 Goal 3', validators=[Optional(), Length(max=300)])
-    s5_vocab1 = StringField('Session 5 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s5_vocab2 = StringField('Session 5 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s5_vocab3 = StringField('Session 5 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s5_vocab4 = StringField('Session 5 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s5_vocab5 = StringField('Session 5 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s5_assessment1 = TextAreaField('Session 5 Assessment 1', validators=[Optional(), Length(max=500)])
-    s5_assessment2 = TextAreaField('Session 5 Assessment 2', validators=[Optional(), Length(max=500)])
-    s5_assessment3 = TextAreaField('Session 5 Assessment 3', validators=[Optional(), Length(max=500)])
-    s5_assessment4 = TextAreaField('Session 5 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 6 Goals, Vocabulary, and Assessments
-    s6_goal1 = StringField('Session 6 Goal 1', validators=[Optional(), Length(max=300)])
-    s6_goal2 = StringField('Session 6 Goal 2', validators=[Optional(), Length(max=300)])
-    s6_goal3 = StringField('Session 6 Goal 3', validators=[Optional(), Length(max=300)])
-    s6_vocab1 = StringField('Session 6 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s6_vocab2 = StringField('Session 6 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s6_vocab3 = StringField('Session 6 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s6_vocab4 = StringField('Session 6 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s6_vocab5 = StringField('Session 6 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s6_assessment1 = TextAreaField('Session 6 Assessment 1', validators=[Optional(), Length(max=500)])
-    s6_assessment2 = TextAreaField('Session 6 Assessment 2', validators=[Optional(), Length(max=500)])
-    s6_assessment3 = TextAreaField('Session 6 Assessment 3', validators=[Optional(), Length(max=500)])
-    s6_assessment4 = TextAreaField('Session 6 Assessment 4', validators=[Optional(), Length(max=500)])
-    
-    # Session 7 Goals, Vocabulary, and Assessments
-    s7_goal1 = StringField('Session 7 Goal 1', validators=[Optional(), Length(max=300)])
-    s7_goal2 = StringField('Session 7 Goal 2', validators=[Optional(), Length(max=300)])
-    s7_goal3 = StringField('Session 7 Goal 3', validators=[Optional(), Length(max=300)])
-    s7_vocab1 = StringField('Session 7 Vocabulary 1', validators=[Optional(), Length(max=100)])
-    s7_vocab2 = StringField('Session 7 Vocabulary 2', validators=[Optional(), Length(max=100)])
-    s7_vocab3 = StringField('Session 7 Vocabulary 3', validators=[Optional(), Length(max=100)])
-    s7_vocab4 = StringField('Session 7 Vocabulary 4', validators=[Optional(), Length(max=100)])
-    s7_vocab5 = StringField('Session 7 Vocabulary 5', validators=[Optional(), Length(max=100)])
-    s7_assessment1 = TextAreaField('Session 7 Assessment 1', validators=[Optional(), Length(max=500)])
-    s7_assessment2 = TextAreaField('Session 7 Assessment 2', validators=[Optional(), Length(max=500)])
-    s7_assessment3 = TextAreaField('Session 7 Assessment 3', validators=[Optional(), Length(max=500)])
-    s7_assessment4 = TextAreaField('Session 7 Assessment 4', validators=[Optional(), Length(max=500)])
-    
+class StudentLogbookV2Form(FlaskForm):
+    module_name = StringField('Module Acronym',
+                              validators=[DataRequired(), Length(min=1, max=100)],
+                              render_kw={"placeholder": "e.g., APHY, ENSC, BIOE"})
+    module_title = StringField('Module Title',
+                               validators=[Optional(), Length(max=200)],
+                               render_kw={"placeholder": "e.g., Automotive Physics, Environmental Science"})
     submit = SubmitField('Generate Student Logbook')
 
 # ===== RCA WORKSHEET FORMS =====
@@ -1237,6 +1168,182 @@ class ModuleGuideForm(FlaskForm):
         has_standards = any(standard_data['standard'] for standard_data in field.data if standard_data.get('standard'))
         if not has_standards:
             raise ValidationError('Please enter at least one standard.')
+
+# ===== MODULE GUIDE V2 FORMS (JSON Import) =====
+
+# Standards per session (V2)
+class SessionStandardFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    code = StringField('Standard Code', validators=[Optional(), Length(max=50)])
+    standard_type = StringField('Type', validators=[Optional(), Length(max=20)])  # NGSS, CCSS
+    description = TextAreaField('Description', validators=[Optional(), Length(max=500)])
+    how_it_shows_up = TextAreaField('How It Shows Up', validators=[Optional(), Length(max=1000)])
+
+# Materials per session (V2)
+class SessionMaterialFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    item = StringField('Item', validators=[Optional(), Length(max=200)])
+    quantity = StringField('Quantity', validators=[Optional(), Length(max=100)])
+    group = StringField('Group', validators=[Optional(), Length(max=100)])
+
+# Safety items per session (V2)
+class SessionSafetyItemFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    item = StringField('Item', validators=[Optional(), Length(max=100)])
+    # Warnings stored as newline-separated text, converted to/from array
+    warnings = TextAreaField('Warnings', validators=[Optional()])
+
+# Vocabulary per session (V2)
+class SessionVocabFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    term = StringField('Term', validators=[Optional(), Length(max=100)])
+    definition = TextAreaField('Definition', validators=[Optional(), Length(max=500)])
+    slides = StringField('Slides', validators=[Optional(), Length(max=50)])  # e.g., "3, 4, 5"
+
+# Career spotlight per session (V2)
+class SessionCareerFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    name = StringField('Name', validators=[Optional(), Length(max=100)])
+    title = StringField('Title', validators=[Optional(), Length(max=100)])
+    connection = TextAreaField('Connection', validators=[Optional(), Length(max=500)])
+
+# Complete session form (V2)
+class SessionFormV2(FlaskForm):
+    class Meta:
+        csrf = False
+
+    number = IntegerField('Session Number', validators=[Optional()])
+    title = StringField('Session Title', validators=[Optional(), Length(max=200)])
+    introduction = TextAreaField('Introduction', validators=[Optional(), Length(max=2000)])
+
+    # Assembly/Maintenance (stored as newline-separated text)
+    advance_prep = TextAreaField('Advance Prep', validators=[Optional()])
+    station_setup = TextAreaField('Station Setup', validators=[Optional()])
+    equipment_notes = TextAreaField('Equipment Notes', validators=[Optional()])
+    cleanup = TextAreaField('Cleanup', validators=[Optional()])
+
+    # Goals & Standards
+    learning_goals = TextAreaField('Learning Goals', validators=[Optional()])
+    standards = FieldList(FormField(SessionStandardFormV2), min_entries=1, max_entries=8)
+
+    # Materials
+    materials = FieldList(FormField(SessionMaterialFormV2), min_entries=1, max_entries=30)
+
+    # Safety
+    general_safety_rules = TextAreaField('General Safety Rules', validators=[Optional()])
+    safety_items = FieldList(FormField(SessionSafetyItemFormV2), min_entries=1, max_entries=10)
+
+    # Vocabulary
+    vocabulary = FieldList(FormField(SessionVocabFormV2), min_entries=1, max_entries=20)
+
+    # Career
+    career = FormField(SessionCareerFormV2)
+
+    # Teacher Tips/Assessment (stored as newline-separated text)
+    teacher_tips = TextAreaField('Teacher Tips', validators=[Optional()])
+    look_fors = TextAreaField('Look Fors', validators=[Optional()])
+    questions_prompts = TextAreaField('Discussion Questions', validators=[Optional()])
+
+
+# ===== MODULE GUIDE V2 ANSWER KEY FORMS =====
+
+class RCPQuestionFormV2(FlaskForm):
+    """Single RCP question (Recall, Connect, or Predict)"""
+    class Meta:
+        csrf = False
+
+    question = TextAreaField('Question', validators=[Optional()])
+    choice_a = StringField('Choice A', validators=[Optional()])
+    choice_b = StringField('Choice B', validators=[Optional()])
+    choice_c = StringField('Choice C', validators=[Optional()])
+    choice_d = StringField('Choice D', validators=[Optional()])
+    choice_e = StringField('Choice E', validators=[Optional()])  # Some have 5 choices
+    correct_answer = StringField('Correct Answer', validators=[Optional()])
+
+
+class RCPSessionFormV2(FlaskForm):
+    """RCP questions for a single session"""
+    class Meta:
+        csrf = False
+
+    session_number = IntegerField('Session Number', validators=[Optional()])
+    recall = FormField(RCPQuestionFormV2)
+    connect = FormField(RCPQuestionFormV2)
+    predict = FormField(RCPQuestionFormV2)
+
+
+class TestQuestionFormV2(FlaskForm):
+    """Pre-test or Post-test question (handles all 3 types: single_select, multi_select, two_part)"""
+    class Meta:
+        csrf = False
+
+    question_number = IntegerField('Question Number', validators=[Optional()])
+    question_type = StringField('Type', validators=[Optional()])  # single_select, multi_select, two_part
+
+    # Standard stem (for single/multi select)
+    stem = TextAreaField('Question Stem', validators=[Optional()])
+
+    # Two-part stems
+    stem_part_a = TextAreaField('Part A Stem', validators=[Optional()])
+    stem_part_b = TextAreaField('Part B Stem', validators=[Optional()])
+
+    # Standard choices (A-F for flexibility)
+    choice_a = StringField('Choice A', validators=[Optional()])
+    choice_b = StringField('Choice B', validators=[Optional()])
+    choice_c = StringField('Choice C', validators=[Optional()])
+    choice_d = StringField('Choice D', validators=[Optional()])
+    choice_e = StringField('Choice E', validators=[Optional()])
+    choice_f = StringField('Choice F', validators=[Optional()])
+
+    # Two-part choices (Part A)
+    part_a_choice_a = StringField('Part A - Choice A', validators=[Optional()])
+    part_a_choice_b = StringField('Part A - Choice B', validators=[Optional()])
+    part_a_choice_c = StringField('Part A - Choice C', validators=[Optional()])
+    part_a_choice_d = StringField('Part A - Choice D', validators=[Optional()])
+    part_a_choice_e = StringField('Part A - Choice E', validators=[Optional()])
+    part_a_choice_f = StringField('Part A - Choice F', validators=[Optional()])
+
+    # Two-part choices (Part B)
+    part_b_choice_a = StringField('Part B - Choice A', validators=[Optional()])
+    part_b_choice_b = StringField('Part B - Choice B', validators=[Optional()])
+    part_b_choice_c = StringField('Part B - Choice C', validators=[Optional()])
+    part_b_choice_d = StringField('Part B - Choice D', validators=[Optional()])
+    part_b_choice_e = StringField('Part B - Choice E', validators=[Optional()])
+    part_b_choice_f = StringField('Part B - Choice F', validators=[Optional()])
+
+    # Correct answers (comma-separated for multi-select)
+    correct_labels = StringField('Correct Answer(s)', validators=[Optional()])
+    part_a_correct = StringField('Part A Correct', validators=[Optional()])
+    part_b_correct = StringField('Part B Correct', validators=[Optional()])
+
+
+# Main Module Guide V2 form
+class ModuleGuideV2Form(FlaskForm):
+    module_name = StringField('Module Name', validators=[Optional(), Length(max=100)])
+    module_acronym = StringField('Module Acronym', validators=[DataRequired(), Length(max=20)])
+    grade_level = StringField('Grade Level', validators=[Optional(), Length(max=20)])
+    module_type = StringField('Module Type', validators=[Optional(), Length(max=50)])
+
+    # Dynamic sessions (count determined by JSON)
+    sessions = FieldList(FormField(SessionFormV2), min_entries=1, max_entries=10)
+
+    # Answer Key sections
+    pretest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=10)
+    posttest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=10)
+    rcp_sessions = FieldList(FormField(RCPSessionFormV2), min_entries=0, max_entries=6)
+
+    submit = SubmitField('Generate Module Guide')
+
 
 # ===== MODULE ANSWER KEY FORMS =====
 
@@ -3719,111 +3826,1403 @@ def generate_family_briefing(form):
         except:
             pass  # Ignore cleanup errors
 
-def generate_student_module_workbook(form):
-    """Generate a student logbook using docxtpl"""
-    # Use a master template that never gets touched
-    master_template_path = 'templates/docx_templates/student_module_workbook_master.docx'
-    working_template_path = 'templates/docx_templates/student_module_workbook.docx'
-    
-    print(f"Looking for student logbook master template at: {master_template_path}")
-    
-    # Check if master template exists
-    if not os.path.exists(master_template_path):
-        raise FileNotFoundError("Student Logbook master DOCX template not found. Please create the master template first.")
-    
-    # Always copy from master to working template before processing
-    print("Copying fresh student logbook template from master...")
-    shutil.copy2(master_template_path, working_template_path)
-    
-    print("Loading student logbook working template...")
-    
-    # Create a temporary copy of the working template
-    with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_file:
-        shutil.copy2(working_template_path, temp_file.name)
-        temp_template_path = temp_file.name
-    
-    try:
-        # Load the temporary template
-        doc = DocxTemplate(temp_template_path)
-        
-        # Build the context dictionary based on your template structure
-        context = {
-            # Module information
-            'module_name': escape_xml(form.module_name.data) if form.module_name.data else '',
-            
-            # Session focus
-            'focus': {
-                's1': escape_xml(form.focus_s1.data) if form.focus_s1.data else '',
-                's2': escape_xml(form.focus_s2.data) if form.focus_s2.data else '',
-                's3': escape_xml(form.focus_s3.data) if form.focus_s3.data else '',
-                's4': escape_xml(form.focus_s4.data) if form.focus_s4.data else '',
-                's5': escape_xml(form.focus_s5.data) if form.focus_s5.data else '',
-                's6': escape_xml(form.focus_s6.data) if form.focus_s6.data else '',
-                's7': escape_xml(form.focus_s7.data) if form.focus_s7.data else '',
-            }
-        }
-        
-        # Add session data matching your template structure
-        for s in range(1, 8):
-            # Collect goals (filter out empty ones)
-            goals = []
-            for g in range(1, 4):
-                goal_data = getattr(form, f's{s}_goal{g}').data
-                if goal_data and goal_data.strip():
-                    goals.append(escape_xml(goal_data))
-            
-            # Collect vocabulary (filter out empty ones)
-            vocabulary = []
-            for v in range(1, 6):
-                vocab_data = getattr(form, f's{s}_vocab{v}').data
-                if vocab_data and vocab_data.strip():
-                    vocabulary.append(escape_xml(vocab_data))
-            
-            # Collect assessments for this specific session (filter out empty ones)
-            assessments = []
-            for a in range(1, 5):
-                assessment_data = getattr(form, f's{s}_assessment{a}').data
-                if assessment_data and assessment_data.strip():
-                    assessments.append(escape_xml(assessment_data))
-            
-            # Add both naming patterns to match your template
-            context[f'session{s}'] = {
-                'goals': goals,
-                'vocabulary': vocabulary
-            }
-            context[f's{s}'] = {
-                'assessments': assessments  # Each session now has its own assessments
-            }
-        
-        print(f"Student logbook context data: {context}")
-        
-        # Render the document
-        doc.render(context)
-        
-        # Save the document
-        output_dir = 'generated_docs'
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Generate filename based on module name
-        module_name_safe = 'Module'
-        if form.module_name.data:
-            module_name_safe = escape_xml(form.module_name.data).replace(' ', '_').replace('/', '_').replace('\\', '_')
-        
-        filename = f"{module_name_safe}_Student_Logbook.docx"
-        output_path = os.path.join(output_dir, filename)
-        
-        print(f"Saving student logbook document to: {output_path}")
-        doc.save(output_path)
-        
-        print("Student logbook document saved successfully!")
-        return output_path
-        
-    finally:
-        # Clean up the temporary file
-        try:
-            os.unlink(temp_template_path)
-        except:
-            pass  # Ignore cleanup errors
+
+def generate_family_briefing_v2(form):
+    """Generate a Family Briefing V2 using python-docx directly with Star Academy branding.
+
+    Modern, readable design for parent-facing documents (1-2 pages).
+    Features improved typography, spacing, and visual hierarchy.
+
+    Args:
+        form: WTForms form object with Family Briefing V2 data
+    Returns:
+        output_path: Path to the generated .docx file
+    """
+    from docx import Document
+    from docx.shared import Pt, Inches, RGBColor, Twips
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_LINE_SPACING
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT as WD_ALIGN_VERTICAL
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    # Brand constants
+    FONT_BODY = 'Roboto'
+    FONT_HEADER = 'Segoe UI'
+    DARK_BLUE = RGBColor(0x1D, 0x27, 0x57)
+    RED_ACCENT = RGBColor(0xE8, 0x1D, 0x2C)
+    BLACK = RGBColor(0x30, 0x30, 0x30)  # #303030
+    WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+    GRAY = RGBColor(0x70, 0x73, 0x73)  # #707373
+    LABEL_GRAY = RGBColor(0x30, 0x30, 0x30)  # #303030 for labels
+    LIGHT_GRAY = RGBColor(0xF2, 0xF2, 0xF2)
+    CARD_BG = 'FAFBFC'  # Very subtle gray card background
+    CARD_BORDER = 'E5E7EB'  # Card border color
+    CONCEPT_BORDER = 'E0E4E8'  # Concept card border
+
+    # ---- Helper Functions ----
+    def set_cell_shading(cell, color_hex):
+        """Set background shading on a table cell."""
+        shading = OxmlElement('w:shd')
+        shading.set(qn('w:fill'), color_hex)
+        shading.set(qn('w:val'), 'clear')
+        cell._tc.get_or_add_tcPr().append(shading)
+
+    def set_cell_borders(cell, top=None, bottom=None, left=None, right=None):
+        """Set borders on a table cell. Each border is a dict with sz, val, color."""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        # Remove existing borders
+        for existing in tcPr.findall(qn('w:tcBorders')):
+            tcPr.remove(existing)
+        tcBorders = OxmlElement('w:tcBorders')
+        for edge, border in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            if border:
+                el = OxmlElement(f'w:{edge}')
+                el.set(qn('w:val'), border.get('val', 'single'))
+                el.set(qn('w:sz'), str(border.get('sz', 4)))
+                el.set(qn('w:space'), '0')
+                el.set(qn('w:color'), border.get('color', '000000'))
+                tcBorders.append(el)
+            else:
+                # Set nil border
+                el = OxmlElement(f'w:{edge}')
+                el.set(qn('w:val'), 'nil')
+                tcBorders.append(el)
+        tcPr.append(tcBorders)
+
+    def remove_table_borders(table):
+        """Remove all borders from a table."""
+        tbl = table._tbl
+        tblPr = tbl.tblPr
+        if tblPr is None:
+            tblPr = OxmlElement('w:tblPr')
+            tbl.insert(0, tblPr)
+        # Remove existing borders
+        for child in list(tblPr):
+            if child.tag == qn('w:tblBorders'):
+                tblPr.remove(child)
+        tblBorders = OxmlElement('w:tblBorders')
+        for side in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+            border = OxmlElement(f'w:{side}')
+            border.set(qn('w:val'), 'nil')
+            tblBorders.append(border)
+        tblPr.append(tblBorders)
+
+    def set_cell_margins(cell, top=0, bottom=0, left=0, right=0):
+        """Set cell margins/padding."""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        tcMar = OxmlElement('w:tcMar')
+        for side, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            mar = OxmlElement(f'w:{side}')
+            mar.set(qn('w:w'), str(val))
+            mar.set(qn('w:type'), 'dxa')
+            tcMar.append(mar)
+        tcPr.append(tcMar)
+
+    def style_card_cell(cell, bg_color=CARD_BG, top_border_color='1D2757', top_border_sz=36):
+        """Style a cell as a card with background, thick top border, thin side/bottom borders."""
+        set_cell_shading(cell, bg_color)
+        set_cell_borders(
+            cell,
+            top={'sz': top_border_sz, 'color': top_border_color, 'val': 'single'},
+            bottom={'sz': 4, 'color': 'CCCCCC', 'val': 'single'},
+            left={'sz': 4, 'color': 'CCCCCC', 'val': 'single'},
+            right={'sz': 4, 'color': 'CCCCCC', 'val': 'single'}
+        )
+        set_cell_margins(cell, top=60, bottom=60, left=100, right=100)
+
+    def add_card_header(cell, text, is_first=True):
+        """Add a card section header (navy bold text, no border bar)."""
+        if is_first and cell.paragraphs:
+            p = cell.paragraphs[0]
+            p.clear()
+        else:
+            p = cell.add_paragraph()
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.line_spacing = 1.0
+        run = p.add_run(text)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        return p
+
+    def add_card_bullet(cell, text):
+        """Add a compact bullet point inside a card."""
+        p = cell.add_paragraph()
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(2)
+        p.paragraph_format.line_spacing = 1.0
+        p.paragraph_format.left_indent = Pt(10)
+        run = p.add_run('\u2022 ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(9)
+        run.font.color.rgb = DARK_BLUE
+        run = p.add_run(text)
+        run.font.name = FONT_BODY
+        run.font.size = Pt(9)
+        run.font.color.rgb = BLACK
+        return p
+
+    def add_paragraph_left_accent(p, color_hex='E81D2C', width='8'):
+        """Add a colored left accent bar on a paragraph."""
+        pPr = p._p.get_or_add_pPr()
+        pBdr = OxmlElement('w:pBdr')
+        left = OxmlElement('w:left')
+        left.set(qn('w:val'), 'single')
+        left.set(qn('w:sz'), str(width))
+        left.set(qn('w:space'), '4')
+        left.set(qn('w:color'), color_hex)
+        pBdr.append(left)
+        pPr.append(pBdr)
+
+    # Create new document
+    doc = Document()
+
+    # Set default paragraph style
+    style = doc.styles['Normal']
+    style.font.name = FONT_BODY
+    style.font.size = Pt(10)
+    style.font.color.rgb = BLACK
+    style.paragraph_format.space_after = Pt(0)
+    style.paragraph_format.line_spacing = 1.15
+
+    # Set margins (allowing document to extend to 2 pages for better readability)
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.65)
+        section.right_margin = Inches(0.65)
+
+    # Get form data
+    module_name = form.module_name.data or 'Module'
+    module_acronym = form.module_acronym.data or ''
+    grade_level = form.grade_level.data or ''
+
+    # ===== HEADER (Minimal Blocks Layout) =====
+    header_table = doc.add_table(rows=1, cols=3)
+    header_table.autofit = False
+    remove_table_borders(header_table)
+    # Set table indent to 0 to align with page margins
+    header_tblPr = header_table._tbl.tblPr
+    header_tblInd = OxmlElement('w:tblInd')
+    header_tblInd.set(qn('w:w'), '0')
+    header_tblInd.set(qn('w:type'), 'dxa')
+    header_tblPr.append(header_tblInd)
+
+    # Set column widths: Logo | Module Info | Family Briefing (total 7.2" to match content width)
+    header_table.columns[0].width = Inches(1.5)
+    header_table.columns[1].width = Inches(3.9)
+    header_table.columns[2].width = Inches(1.8)
+
+    # Left cell: Logo
+    logo_cell = header_table.rows[0].cells[0]
+    logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    logo_cell.width = Inches(1.6)
+    set_cell_margins(logo_cell, top=60, bottom=60, left=0, right=0)
+    p = logo_cell.paragraphs[0]
+    p.paragraph_format.space_after = Pt(0)
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+
+    # Add logo (1.4" width)
+    logo_path = os.path.join('static', 'images', 'logo_red_gray.png')
+    if os.path.exists(logo_path):
+        run = p.add_run()
+        run.add_picture(logo_path, width=Inches(1.4))
+
+    # Middle cell: Module name and Grade level (left-aligned)
+    module_cell = header_table.rows[0].cells[1]
+    module_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    module_cell.width = Inches(4.0)
+    set_cell_margins(module_cell, top=60, bottom=60, left=80, right=0)
+
+    p = module_cell.paragraphs[0]
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    p.paragraph_format.space_after = Pt(0)
+    run = p.add_run(module_name)
+    run.font.name = FONT_HEADER
+    run.font.size = Pt(22)
+    run.font.bold = True
+    run.font.color.rgb = DARK_BLUE
+
+    # Right cell: "Family Briefing" (right-aligned)
+    fb_cell = header_table.rows[0].cells[2]
+    fb_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    fb_cell.width = Inches(1.8)
+    set_cell_margins(fb_cell, top=60, bottom=60, left=0, right=0)
+
+    p = fb_cell.paragraphs[0]
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+    p.paragraph_format.space_after = Pt(0)
+    run = p.add_run('Family Briefing')
+    run.font.name = FONT_HEADER
+    run.font.size = Pt(14)
+    run.font.bold = True
+    run.font.color.rgb = RED_ACCENT
+
+    # Add 4pt navy bottom border to all header cells
+    for cell in header_table.rows[0].cells:
+        set_cell_borders(cell, bottom={'sz': 32, 'color': '1D2757', 'val': 'single'})
+
+    # ===== PARENT LETTER (Intro) =====
+    parent_letter = form.parent_letter.data
+    if parent_letter and parent_letter.strip():
+        # Split by newlines to preserve paragraph breaks
+        paragraphs = [p.strip() for p in parent_letter.strip().split('\n') if p.strip()]
+
+        # Show all paragraphs
+        for i, para_text in enumerate(paragraphs):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(10) if i == 0 else Pt(6)
+            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.line_spacing = 1.15
+            run = p.add_run(para_text)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = BLACK
+    else:
+        # Small spacer if no letter
+        spacer = doc.add_paragraph()
+        spacer.paragraph_format.space_before = Pt(8)
+        spacer.paragraph_format.space_after = Pt(0)
+
+    # ===== LEARNING GOALS =====
+    # Get data
+    objectives = [entry.data for entry in form.learning_objectives if entry.data and entry.data.strip()]
+
+    # Single-column table spanning full width for Learning Goals
+    goals_card = doc.add_table(rows=1, cols=1)
+    goals_card.autofit = False
+    goals_card.alignment = WD_TABLE_ALIGNMENT.LEFT
+    # Set table indent to 0 to align with Key Concepts below
+    tblPr = goals_card._tbl.tblPr
+    tblInd = OxmlElement('w:tblInd')
+    tblInd.set(qn('w:w'), '0')
+    tblInd.set(qn('w:type'), 'dxa')
+    tblPr.append(tblInd)
+    remove_table_borders(goals_card)
+
+    # Set column width to span full text width (8.5" - 1.3" margins = 7.2")
+    goals_card.columns[0].width = Inches(7.2)
+
+    # ----- LEARNING GOALS -----
+    goals_cell = goals_card.rows[0].cells[0]
+    goals_cell.width = goals_card.columns[0].width
+    goals_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+    set_cell_margins(goals_cell, top=120, bottom=120, left=0, right=0)
+
+    # Section header
+    p = goals_cell.paragraphs[0]
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after = Pt(10)
+    run = p.add_run('Learning Goals')
+    run.font.name = FONT_HEADER
+    run.font.size = Pt(13)
+    run.font.bold = True
+    run.font.color.rgb = DARK_BLUE
+    run.font.underline = False
+
+    # Objectives list
+    if objectives:
+        for obj in objectives:
+            p = goals_cell.add_paragraph()
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.line_spacing = 1.15
+            p.paragraph_format.left_indent = Pt(8)
+            run = p.add_run('\u2022 ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = DARK_BLUE
+            run = p.add_run(obj)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = BLACK
+    else:
+        p = goals_cell.add_paragraph()
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(2)
+        run = p.add_run('Learning objectives will be covered in this module.')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.color.rgb = GRAY
+        run.font.italic = True
+
+    # ===== KEY CONCEPTS (3-Column Card Grid) =====
+    key_concepts_data = []
+    for kc in form.key_concepts:
+        if kc.form.concept.data and kc.form.concept.data.strip():
+            key_concepts_data.append({
+                'concept': kc.form.concept.data,
+                'explanation': kc.form.explanation.data or '',
+                'question': kc.form.question.data or ''
+            })
+
+    if key_concepts_data:
+        # Single-column table spanning full width for Key Concepts (matches Learning Goals structure)
+        concepts_card = doc.add_table(rows=1, cols=1)
+        concepts_card.autofit = False
+        concepts_card.alignment = WD_TABLE_ALIGNMENT.LEFT
+        # Set table indent to 0 to align with Learning Goals above
+        tblPr_concepts = concepts_card._tbl.tblPr
+        tblInd_concepts = OxmlElement('w:tblInd')
+        tblInd_concepts.set(qn('w:w'), '0')
+        tblInd_concepts.set(qn('w:type'), 'dxa')
+        tblPr_concepts.append(tblInd_concepts)
+        remove_table_borders(concepts_card)
+
+        # Set column width to span full text width (same as Learning Goals)
+        concepts_card.columns[0].width = Inches(7.2)
+
+        concepts_cell = concepts_card.rows[0].cells[0]
+        concepts_cell.width = concepts_card.columns[0].width
+        concepts_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+        set_cell_margins(concepts_cell, top=120, bottom=120, left=0, right=0)
+
+        # Section header
+        p = concepts_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(10)
+        run = p.add_run('Key Concepts')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(13)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # List each concept vertically
+        for i, concept_data in enumerate(key_concepts_data):
+            # Concept name (bold, dark gray)
+            p = concepts_cell.add_paragraph()
+            p.paragraph_format.space_before = Pt(6) if i == 0 else Pt(12)
+            p.paragraph_format.space_after = Pt(3)
+            run = p.add_run(concept_data['concept'])
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run.font.color.rgb = LABEL_GRAY
+            run.font.underline = False
+
+            # Explanation (no label)
+            if concept_data['explanation']:
+                p2 = concepts_cell.add_paragraph()
+                p2.paragraph_format.space_before = Pt(0)
+                p2.paragraph_format.space_after = Pt(2)
+                p2.paragraph_format.line_spacing = 1.15
+                run = p2.add_run(concept_data['explanation'])
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.color.rgb = BLACK
+
+            # "Question:" label + question (navy blue, indented for visual distinction)
+            if concept_data['question']:
+                p3 = concepts_cell.add_paragraph()
+                p3.paragraph_format.space_before = Pt(8)
+                p3.paragraph_format.space_after = Pt(0)
+                p3.paragraph_format.line_spacing = 1.15
+                p3.paragraph_format.left_indent = Pt(6)
+                run = p3.add_run('Question: ')
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.bold = True
+                run.font.color.rgb = DARK_BLUE
+                run = p3.add_run(concept_data['question'])
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.italic = True
+                run.font.color.rgb = DARK_BLUE
+
+    # ===== FOOTER =====
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(16)
+    p.paragraph_format.space_after = Pt(0)
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = p.add_run('Star Academy is a product of NOLA Education, LLC. | www.StarAcademyProgram.com')
+    run.font.name = FONT_BODY
+    run.font.size = Pt(8)
+    run.font.italic = True
+    run.font.color.rgb = GRAY
+
+    # Save document
+    output_dir = 'generated_docs'
+    os.makedirs(output_dir, exist_ok=True)
+
+    safe_name = module_acronym if module_acronym else module_name.replace(' ', '_')
+    filename = f"Family_Briefing_{safe_name}_v2.docx"
+    output_path = os.path.join(output_dir, filename)
+
+    print(f"Saving Family Briefing V2 document to: {output_path}")
+    doc.save(output_path)
+
+    print("Family Briefing V2 document saved successfully!")
+    return output_path
+
+
+def generate_student_logbook_v2(module_name, sessions, module_title=None):
+    """Generate a student logbook v2 using python-docx directly.
+
+    Args:
+        module_name: Module acronym string (e.g. 'APHY')
+        sessions: List of session dicts from the JSON form data
+        module_title: Full module title string (e.g. 'Automotive Physics')
+    Returns:
+        output_path: Path to the generated .docx file
+    """
+    FONT_BODY = 'Roboto'
+    FONT_HEADER = 'Segoe UI'
+    DARK_BLUE = RGBColor(0x1D, 0x27, 0x57)
+    BLACK = RGBColor(0x30, 0x30, 0x2F)
+    WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+    GRAY = RGBColor(0x70, 0x73, 0x73)
+    LIGHT_GRAY = RGBColor(0xF2, 0xF2, 0xF2)
+    TABLE_HEADER_BG = RGBColor(0x1D, 0x27, 0x57)
+
+    def set_cell_shading(cell, color_hex):
+        """Set background shading on a table cell."""
+        shading = OxmlElement('w:shd')
+        shading.set(qn('w:fill'), color_hex)
+        shading.set(qn('w:val'), 'clear')
+        cell._tc.get_or_add_tcPr().append(shading)
+
+    def add_page_break(doc):
+        """Add a page break to the document."""
+        p = doc.add_paragraph()
+        run = p.add_run()
+        run.add_break(WD_BREAK.PAGE)
+
+    def set_cell_borders(cell, top=None, bottom=None, left=None, right=None):
+        """Set borders on a table cell. Each border is a dict with sz, val, color."""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        tcBorders = OxmlElement('w:tcBorders')
+        for edge, border in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            if border:
+                el = OxmlElement(f'w:{edge}')
+                el.set(qn('w:val'), border.get('val', 'single'))
+                el.set(qn('w:sz'), str(border.get('sz', 4)))
+                el.set(qn('w:color'), border.get('color', '000000'))
+                el.set(qn('w:space'), '0')
+                tcBorders.append(el)
+        tcPr.append(tcBorders)
+
+    def add_paragraph_left_border(p, color_hex, width='24'):
+        """Add a colored left accent bar on any paragraph."""
+        pPr = p._p.get_or_add_pPr()
+        pBdr = OxmlElement('w:pBdr')
+        left = OxmlElement('w:left')
+        left.set(qn('w:val'), 'single')
+        left.set(qn('w:sz'), str(width))
+        left.set(qn('w:space'), '4')
+        left.set(qn('w:color'), color_hex)
+        pBdr.append(left)
+        pPr.append(pBdr)
+
+    def add_paragraph_bottom_border(p, color_hex, width='18'):
+        """Add a thick bottom rule on any paragraph."""
+        pPr = p._p.get_or_add_pPr()
+        pBdr = OxmlElement('w:pBdr')
+        bottom = OxmlElement('w:bottom')
+        bottom.set(qn('w:val'), 'single')
+        bottom.set(qn('w:sz'), str(width))
+        bottom.set(qn('w:space'), '1')
+        bottom.set(qn('w:color'), color_hex)
+        pBdr.append(bottom)
+        pPr.append(pBdr)
+
+    def set_table_borders_color(table, color_hex):
+        """Set all table grid borders to a specified color (soften from black)."""
+        tbl = table._tbl
+        tblPr = tbl.tblPr
+        if tblPr is None:
+            tblPr = OxmlElement('w:tblPr')
+            tbl.insert(0, tblPr)
+        # Remove existing borders element
+        for child in tblPr:
+            if child.tag == qn('w:tblBorders'):
+                tblPr.remove(child)
+                break
+        tblBorders = OxmlElement('w:tblBorders')
+        for side in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+            border = OxmlElement(f'w:{side}')
+            border.set(qn('w:val'), 'single')
+            border.set(qn('w:sz'), '4')
+            border.set(qn('w:space'), '0')
+            border.set(qn('w:color'), color_hex)
+            tblBorders.append(border)
+        tblPr.append(tblBorders)
+
+    def prevent_row_split(row):
+        """Prevent a table row from splitting across pages."""
+        tr = row._tr
+        trPr = tr.get_or_add_trPr()
+        cantSplit = OxmlElement('w:cantSplit')
+        trPr.append(cantSplit)
+
+    def keep_table_together(table):
+        """Prevent all rows in a table from splitting across pages."""
+        for row in table.rows:
+            prevent_row_split(row)
+
+    def add_writing_lines(doc, count=4):
+        """Add blank writing lines that span the full page width."""
+        for _ in range(count):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(16)
+            p.paragraph_format.space_after = Pt(0)
+            # Use paragraph bottom border for full-width line
+            pPr = p._p.get_or_add_pPr()
+            pBdr = OxmlElement('w:pBdr')
+            bottom = OxmlElement('w:bottom')
+            bottom.set(qn('w:val'), 'single')
+            bottom.set(qn('w:sz'), '4')
+            bottom.set(qn('w:space'), '1')
+            bottom.set(qn('w:color'), 'CCCCCC')
+            pBdr.append(bottom)
+            pPr.append(pBdr)
+
+    # ---- Cover Page ----
+    def build_cover_page(doc, module_name, module_title=None):
+        """Build the cover page with Star Academy branding."""
+        RED_ACCENT = RGBColor(0xE8, 0x1D, 0x2C)
+
+        # --- Color logo at top ---
+        logo_path = os.path.join('static', 'images', 'logo_red_gray.png')
+        if os.path.exists(logo_path):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+            run = p.add_run()
+            run.add_picture(logo_path, width=Inches(2.5))
+
+        # Spacer — reserve space for cover image (add manually in Word)
+        for _ in range(10):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+
+        # --- Module title (dark blue text, left-aligned, 28pt) ---
+        display_title = module_title.strip().upper() if module_title and module_title.strip() else module_name.upper()
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(0)
+        run = p.add_run(display_title)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(28)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # --- Red "Student Logbook" bar ---
+        bar_table = doc.add_table(rows=1, cols=1)
+        bar_table.style = 'Table Grid'
+        cell = bar_table.rows[0].cells[0]
+        cell.text = ''
+        set_cell_shading(cell, 'E81D2C')
+        set_cell_borders(cell,
+            top={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            bottom={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            left={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            right={'val': 'single', 'sz': 0, 'color': 'E81D2C'})
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Student Logbook')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(16)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+        # Spacer
+        for _ in range(3):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+
+        # Clean name field with bottom-border line
+        p = doc.add_paragraph()
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(0)
+        run = p.add_run('Name:  ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(14)
+        run.font.color.rgb = BLACK
+        # Add a run with spaces that will have a bottom border
+        run = p.add_run('                                                        ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(14)
+        # Underline the blank space for the name line
+        run.font.underline = True
+        run.font.color.rgb = BLACK
+
+        # Spacer
+        for _ in range(6):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+
+        # Footer
+        p = doc.add_paragraph()
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        run = p.add_run('Star Academy is a product of NOLA Education, LLC. To learn more, visit www.StarAcademyProgram.com.')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(9)
+        run.font.color.rgb = GRAY
+
+    # ---- Checklist Page ----
+    def build_checklist_page(doc, sessions):
+        """Build the checklist/progress tracking page."""
+        # Title with underline
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(12)
+        p.paragraph_format.space_after = Pt(2)
+        run = p.add_run('Checklist')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(24)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        run.font.underline = True
+
+        # Subtitle
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(2)
+        p.paragraph_format.space_after = Pt(12)
+        run = p.add_run('Track your progress as you work through the Module.')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        run.font.color.rgb = GRAY
+
+        def add_checklist_item(doc, item_text, indent=True):
+            """Add a single checklist item with checkbox and score area."""
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(2)
+            if indent:
+                p.paragraph_format.left_indent = Pt(18)
+            # Checkbox (Unicode ballot box)
+            run = p.add_run('\u2610  ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(12)
+            # Item text
+            run = p.add_run(item_text)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            # Score area
+            run = p.add_run('  _____/_____')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = GRAY
+
+        # Sessions 1-7
+        for session in sessions:
+            session_num = session.get('session_number', 1)
+            title = session.get('title', '')
+            checklist_items = session.get('checklist_items', [])
+
+            # Session header
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(10)
+            p.paragraph_format.space_after = Pt(4)
+            header_text = f'Session {session_num}'
+            if title and title.strip():
+                header_text += f': {title}'
+            run = p.add_run(header_text)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(12)
+            run.font.bold = True
+            run.font.color.rgb = BLACK
+
+            # Automatic assessment item based on session number
+            if session_num == 1:
+                add_checklist_item(doc, 'Pre-Test')
+            elif session_num == 7:
+                add_checklist_item(doc, 'Robo-Review')
+            else:
+                add_checklist_item(doc, 'RCP')
+
+            # Custom checklist items
+            for item in checklist_items:
+                if item and item.strip():
+                    add_checklist_item(doc, item)
+
+        # Post-Test (after all sessions)
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(14)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Final Assessment')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = BLACK
+        add_checklist_item(doc, 'Post-Test')
+
+        # Total line
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(16)
+        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.left_indent = Pt(18)
+        run = p.add_run('Total:  ')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        run = p.add_run('_____/_____')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(12)
+
+    # ---- Session Header ----
+    def add_session_header(doc, session_num, title, focus):
+        """Add session title and focus question."""
+        # Session number + title with thick brand-blue bottom border
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(f'Session {session_num}')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(18)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        if title and title.strip():
+            run = p.add_run(f': {title}')
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(18)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+        # Add thick brand-blue accent rule under session title
+        add_paragraph_bottom_border(p, '1D2757', '18')
+
+        # Essential Question in tinted container
+        if focus and focus.strip():
+            eq_table = doc.add_table(rows=1, cols=1)
+            eq_table.style = 'Table Grid'
+            eq_cell = eq_table.rows[0].cells[0]
+            eq_cell.text = ''
+            set_cell_shading(eq_cell, 'E8EDF3')
+            set_cell_borders(eq_cell,
+                top={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                bottom={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                left={'val': 'single', 'sz': 18, 'color': '1D2757'},
+                right={'val': 'single', 'sz': 2, 'color': 'E8EDF3'})
+            p = eq_cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(6)
+            run = p.add_run('Essential Question: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+            run = p.add_run(focus)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.italic = True
+            # Spacer after EQ box
+            sp = doc.add_paragraph()
+            sp.paragraph_format.space_before = Pt(2)
+            sp.paragraph_format.space_after = Pt(2)
+
+    # ---- Content Block Helpers ----
+    def add_partner_talk(doc, num, slide_ref, content):
+        """Add a Partner Talk block."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(2)
+        add_paragraph_left_border(p, '2E7D32', '18')
+        run = p.add_run(f'{num}. ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        run.font.bold = True
+        run = p.add_run('[Partner Talk] ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0x2E, 0x7D, 0x32)
+        if slide_ref and slide_ref.strip():
+            run = p.add_run(f'({slide_ref}) ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = GRAY
+        run = p.add_run(content or '')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        add_writing_lines(doc, 3)
+
+    def add_activity_observation(doc, num, slide_ref, content):
+        """Add an Activity Observation block."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(2)
+        add_paragraph_left_border(p, '1565C0', '18')
+        run = p.add_run(f'{num}. ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        run.font.bold = True
+        run = p.add_run('[Activity Observation] ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0x15, 0x65, 0xC0)
+        if slide_ref and slide_ref.strip():
+            run = p.add_run(f'({slide_ref}) ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = GRAY
+        run = p.add_run(content or '')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        add_writing_lines(doc, 3)
+
+    def add_custom_prompt(doc, num, label, content):
+        """Add a Custom Prompt block."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(2)
+        add_paragraph_left_border(p, '6A1B9A', '18')
+        run = p.add_run(f'{num}. ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        run.font.bold = True
+        if label and label.strip():
+            run = p.add_run(f'[{label}] ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = RGBColor(0x6A, 0x1B, 0x9A)
+        run = p.add_run(content or '')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        add_writing_lines(doc, 3)
+
+    def add_noticing_patterns(doc, num, slide_ref, content):
+        """Add a Noticing Patterns block."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(2)
+        add_paragraph_left_border(p, '00695C', '18')
+        run = p.add_run(f'{num}. ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        run.font.bold = True
+        run = p.add_run('[Noticing Patterns] ')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0x00, 0x69, 0x5C)
+        if slide_ref and slide_ref.strip():
+            run = p.add_run(f'({slide_ref}) ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = GRAY
+        run = p.add_run(content or '')
+        run.font.name = FONT_BODY
+        run.font.size = Pt(11)
+        add_writing_lines(doc, 3)
+
+    def add_section_header_block(doc, text):
+        """Add a bold section header/divider."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(12)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(text or '')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+    def add_custom_table(doc, title, columns, rows):
+        """Add a custom table with headers and rows."""
+        if not columns:
+            return
+        # Table title
+        if title and title.strip():
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(10)
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.keep_with_next = True  # Keep title with table
+            run = p.add_run(title)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(12)
+            run.font.bold = True
+
+        num_cols = len(columns)
+        num_rows = len(rows) if rows else 1
+        table = doc.add_table(rows=1 + num_rows, cols=num_cols)
+        table.style = 'Table Grid'
+        set_table_borders_color(table, '707373')
+
+        # Header row — set height so it's not squished
+        hdr_tr = table.rows[0]._tr
+        hdr_trPr = hdr_tr.get_or_add_trPr()
+        hdr_trHeight = OxmlElement('w:trHeight')
+        hdr_trHeight.set(qn('w:val'), '460')
+        hdr_trHeight.set(qn('w:hRule'), 'atLeast')
+        hdr_trPr.append(hdr_trHeight)
+
+        for i, col_text in enumerate(columns):
+            cell = table.rows[0].cells[i]
+            cell.text = ''
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            run = p.add_run(col_text or '')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = WHITE
+            set_cell_shading(cell, '1D2757')
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Data rows — set minimum height for writing space
+        for r_idx, row_data in enumerate(rows or [{}]):
+            row_label = row_data.get('label', '')
+            cells_data = row_data.get('cells', [])
+            row = table.rows[1 + r_idx]
+            tr = row._tr
+            trPr = tr.get_or_add_trPr()
+            trHeight = OxmlElement('w:trHeight')
+            trHeight.set(qn('w:val'), '820')
+            trHeight.set(qn('w:hRule'), 'atLeast')
+            trPr.append(trHeight)
+            for c_idx in range(num_cols):
+                cell = row.cells[c_idx]
+                cell.text = ''
+                p = cell.paragraphs[0]
+                if c_idx == 0 and row_label:
+                    run = p.add_run(row_label)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(10)
+                    run.font.bold = True
+                elif c_idx > 0 and (c_idx - 1) < len(cells_data):
+                    cell_val = cells_data[c_idx - 1] if cells_data[c_idx - 1] else ''
+                    run = p.add_run(cell_val)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(10)
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                # Alternate row shading
+                if r_idx % 2 == 1:
+                    set_cell_shading(cell, 'F2F2F2')
+
+        # Space after table
+        p = doc.add_paragraph()
+        p.paragraph_format.space_after = Pt(4)
+
+    # ---- End-of-session sections ----
+    def add_vocabulary_table(doc, terms):
+        """Add a 2-column vocabulary table (Term | Definition / Example)."""
+        if not terms:
+            return
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(12)
+        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.keep_with_next = True  # Keep header with table
+        add_paragraph_left_border(p, '1D2757', '24')
+        run = p.add_run('Vocabulary')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        table = doc.add_table(rows=1 + len(terms), cols=2)
+        table.style = 'Table Grid'
+        set_table_borders_color(table, '707373')
+
+        # Set column widths — narrow Term, wide Definition/Example
+        table.columns[0].width = Inches(1.0)
+        table.columns[1].width = Inches(5.9)
+
+        # Header — set row height so it's not squished
+        hdr_tr = table.rows[0]._tr
+        hdr_trPr = hdr_tr.get_or_add_trPr()
+        hdr_trHeight = OxmlElement('w:trHeight')
+        hdr_trHeight.set(qn('w:val'), '460')
+        hdr_trHeight.set(qn('w:hRule'), 'atLeast')
+        hdr_trPr.append(hdr_trHeight)
+
+        col_widths = [Inches(1.0), Inches(5.9)]
+        headers = ['Term', 'Definition / Example']
+        for i, h in enumerate(headers):
+            cell = table.rows[0].cells[i]
+            cell.width = col_widths[i]
+            cell.text = ''
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            run = p.add_run(h)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = WHITE
+            set_cell_shading(cell, '1D2757')
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Term rows — taller for writing space
+        for idx, term in enumerate(terms):
+            row = table.rows[1 + idx]
+            # Set minimum row height so students have room to write
+            tr = row._tr
+            trPr = tr.get_or_add_trPr()
+            trHeight = OxmlElement('w:trHeight')
+            trHeight.set(qn('w:val'), '820')
+            trHeight.set(qn('w:hRule'), 'atLeast')
+            trPr.append(trHeight)
+
+            # Term cell — centered
+            cell = row.cells[0]
+            cell.width = Inches(1.0)
+            cell.text = ''
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            run = p.add_run(term or '')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+            # Definition/Example cell left blank for student writing
+            cell = row.cells[1]
+            cell.width = Inches(5.9)
+            cell.text = ''
+            p = cell.paragraphs[0]
+            p.add_run('')
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+            if idx % 2 == 1:
+                for c in range(2):
+                    set_cell_shading(row.cells[c], 'F2F2F2')
+
+        p = doc.add_paragraph()
+        p.paragraph_format.space_after = Pt(4)
+
+    def add_notes_section(doc):
+        """Add a Notes section in a bordered container with brand-blue top accent."""
+        notes_table = doc.add_table(rows=1, cols=1)
+        notes_table.style = 'Table Grid'
+        keep_table_together(notes_table)
+        notes_cell = notes_table.rows[0].cells[0]
+        notes_cell.text = ''
+        set_cell_borders(notes_cell,
+            top={'val': 'single', 'sz': 24, 'color': '1D2757'},
+            bottom={'val': 'single', 'sz': 4, 'color': '707373'},
+            left={'val': 'single', 'sz': 4, 'color': '707373'},
+            right={'val': 'single', 'sz': 4, 'color': '707373'})
+        # Notes heading inside container
+        p = notes_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Notes')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        # Writing lines inside container
+        for _ in range(8):
+            lp = notes_cell.add_paragraph()
+            lp.paragraph_format.space_before = Pt(16)
+            lp.paragraph_format.space_after = Pt(0)
+            lpPr = lp._p.get_or_add_pPr()
+            lpBdr = OxmlElement('w:pBdr')
+            lb = OxmlElement('w:bottom')
+            lb.set(qn('w:val'), 'single')
+            lb.set(qn('w:sz'), '4')
+            lb.set(qn('w:space'), '1')
+            lb.set(qn('w:color'), 'CCCCCC')
+            lpBdr.append(lb)
+            lpPr.append(lpBdr)
+        # Spacer after container
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_reflection_section(doc, reflection_prompt):
+        """Add a Reflection section in a bordered container with brand-blue top accent."""
+        reflection_table = doc.add_table(rows=1, cols=1)
+        reflection_table.style = 'Table Grid'
+        keep_table_together(reflection_table)
+        reflection_cell = reflection_table.rows[0].cells[0]
+        reflection_cell.text = ''
+        set_cell_borders(reflection_cell,
+            top={'val': 'single', 'sz': 24, 'color': '1D2757'},
+            bottom={'val': 'single', 'sz': 4, 'color': '707373'},
+            left={'val': 'single', 'sz': 4, 'color': '707373'},
+            right={'val': 'single', 'sz': 4, 'color': '707373'})
+        # Reflection heading inside container
+        p = reflection_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Reflection')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        # Reflection prompt line
+        if reflection_prompt and reflection_prompt.strip():
+            qp = reflection_cell.add_paragraph()
+            qp.paragraph_format.space_before = Pt(2)
+            qp.paragraph_format.space_after = Pt(8)
+            run = qp.add_run(reflection_prompt)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.italic = True
+        # Writing lines inside container
+        for _ in range(8):
+            lp = reflection_cell.add_paragraph()
+            lp.paragraph_format.space_before = Pt(16)
+            lp.paragraph_format.space_after = Pt(0)
+            lpPr = lp._p.get_or_add_pPr()
+            lpBdr = OxmlElement('w:pBdr')
+            lb = OxmlElement('w:bottom')
+            lb.set(qn('w:val'), 'single')
+            lb.set(qn('w:sz'), '4')
+            lb.set(qn('w:space'), '1')
+            lb.set(qn('w:color'), 'CCCCCC')
+            lpBdr.append(lb)
+            lpPr.append(lpBdr)
+        # Spacer after container
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_cer_section(doc, prompts):
+        """Add CER (Claim/Evidence/Reasoning) section with styled header."""
+        prompts = prompts or {}
+        cer_question = prompts.get('question', '')
+        has_question = cer_question and cer_question.strip()
+
+        # Styled header table
+        num_rows = 2 if has_question else 1
+        cer_header = doc.add_table(rows=num_rows, cols=1)
+        cer_header.style = 'Table Grid'
+        keep_table_together(cer_header)
+
+        # Title row — brand blue background
+        cell = cer_header.rows[0].cells[0]
+        cell.text = ''
+        set_cell_shading(cell, '1D2757')
+        set_cell_borders(cell,
+            top={'val': 'single', 'sz': 0, 'color': '1D2757'},
+            bottom={'val': 'single', 'sz': 0, 'color': '1D2757'},
+            left={'val': 'single', 'sz': 0, 'color': '1D2757'},
+            right={'val': 'single', 'sz': 0, 'color': '1D2757'})
+        p = cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run('CLAIM  \u00b7  EVIDENCE  \u00b7  REASONING')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+        # Question row — light background
+        if has_question:
+            cell = cer_header.rows[1].cells[0]
+            cell.text = ''
+            set_cell_shading(cell, 'E8EDF3')
+            set_cell_borders(cell,
+                top={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                bottom={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                left={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                right={'val': 'single', 'sz': 2, 'color': 'E8EDF3'})
+            p = cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(6)
+            run = p.add_run('Question: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run = p.add_run(cer_question)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.italic = True
+
+        # Spacer
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(0)
+
+        # CER sections — each in a light background container with left accent
+        for part_label in ['Claim', 'Evidence', 'Reasoning']:
+            cer_box = doc.add_table(rows=1, cols=1)
+            cer_box.style = 'Table Grid'
+            keep_table_together(cer_box)
+            cer_cell = cer_box.rows[0].cells[0]
+            cer_cell.text = ''
+            set_cell_shading(cer_cell, 'F5F7FA')
+            set_cell_borders(cer_cell,
+                top={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                bottom={'val': 'single', 'sz': 2, 'color': 'E8EDF3'},
+                left={'val': 'single', 'sz': 18, 'color': '1D2757'},
+                right={'val': 'single', 'sz': 2, 'color': 'E8EDF3'})
+            p = cer_cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(2)
+            run = p.add_run(f'{part_label}: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(12)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+            prompt_text = prompts.get(part_label.lower(), '')
+            if prompt_text and prompt_text.strip():
+                run = p.add_run(prompt_text)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(11)
+                run.font.italic = True
+            # Writing lines inside container
+            line_count = 3 if part_label == 'Claim' else 4
+            for _ in range(line_count):
+                lp = cer_cell.add_paragraph()
+                lp.paragraph_format.space_before = Pt(16)
+                lp.paragraph_format.space_after = Pt(0)
+                lpPr = lp._p.get_or_add_pPr()
+                lpBdr = OxmlElement('w:pBdr')
+                lb = OxmlElement('w:bottom')
+                lb.set(qn('w:val'), 'single')
+                lb.set(qn('w:sz'), '4')
+                lb.set(qn('w:space'), '1')
+                lb.set(qn('w:color'), 'CCCCCC')
+                lpBdr.append(lb)
+                lpPr.append(lpBdr)
+            # Small spacer between CER boxes
+            sp = doc.add_paragraph()
+            sp.paragraph_format.space_before = Pt(2)
+            sp.paragraph_format.space_after = Pt(2)
+
+    # ==================== Build the document ====================
+    doc = Document()
+
+    # Set default font
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = FONT_BODY
+    font.size = Pt(11)
+
+    # Set narrow margins
+    for section in doc.sections:
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.8)
+        section.right_margin = Inches(0.8)
+
+    # Build cover page
+    build_cover_page(doc, module_name, module_title)
+
+    # Section break after cover page — suppresses header/footer on cover
+    content_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    content_section.top_margin = Inches(0.75)
+    content_section.bottom_margin = Inches(0.75)
+    content_section.left_margin = Inches(0.8)
+    content_section.right_margin = Inches(0.8)
+
+    # --- Running header: module name right-aligned, brand grey, thin blue rule ---
+    header = content_section.header
+    header.is_linked_to_previous = False
+    hp = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    hp.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+    hp.paragraph_format.space_after = Pt(2)
+    display_header_title = module_title.strip() if module_title and module_title.strip() else module_name
+    hrun = hp.add_run(display_header_title)
+    hrun.font.name = FONT_HEADER
+    hrun.font.size = Pt(8)
+    hrun.font.color.rgb = GRAY
+    add_paragraph_bottom_border(hp, '1D2757', '6')
+
+    # --- Running footer: centered page number, brand grey, 9pt ---
+    footer = content_section.footer
+    footer.is_linked_to_previous = False
+    fp = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    fp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    # PAGE field: begin
+    run_begin = fp.add_run()
+    run_begin.font.name = FONT_BODY
+    run_begin.font.size = Pt(9)
+    run_begin.font.color.rgb = GRAY
+    fldChar_begin = OxmlElement('w:fldChar')
+    fldChar_begin.set(qn('w:fldCharType'), 'begin')
+    run_begin._r.append(fldChar_begin)
+    # PAGE field: instrText
+    run_instr = fp.add_run()
+    run_instr.font.name = FONT_BODY
+    run_instr.font.size = Pt(9)
+    run_instr.font.color.rgb = GRAY
+    instrText = OxmlElement('w:instrText')
+    instrText.set(qn('xml:space'), 'preserve')
+    instrText.text = ' PAGE '
+    run_instr._r.append(instrText)
+    # PAGE field: end
+    run_end = fp.add_run()
+    run_end.font.name = FONT_BODY
+    run_end.font.size = Pt(9)
+    run_end.font.color.rgb = GRAY
+    fldChar_end = OxmlElement('w:fldChar')
+    fldChar_end.set(qn('w:fldCharType'), 'end')
+    run_end._r.append(fldChar_end)
+
+    # Build checklist page
+    build_checklist_page(doc, sessions)
+    add_page_break(doc)
+
+    # Build each session
+    for s_idx, session in enumerate(sessions):
+        session_num = session.get('session_number', s_idx + 1)
+        title = session.get('title', '')
+        focus = session.get('focus', '')
+        blocks = session.get('blocks', [])
+        vocabulary = session.get('vocabulary', [])
+        has_notes = session.get('has_notes', False)
+        has_reflection = session.get('has_reflection', False)
+        reflection_prompt = session.get('reflection_prompt', '')
+        has_cer = session.get('has_cer', False)
+        cer_prompts = session.get('cer_prompts', {})
+
+        # Session header
+        add_session_header(doc, session_num, title, focus)
+
+        # Content blocks
+        block_counter = 1
+        for block in blocks:
+            btype = block.get('type', '')
+            if btype == 'partner_talk':
+                add_partner_talk(doc, block_counter, block.get('slide_ref', ''), block.get('content', ''))
+                block_counter += 1
+            elif btype == 'activity_observation':
+                add_activity_observation(doc, block_counter, block.get('slide_ref', ''), block.get('content', ''))
+                block_counter += 1
+            elif btype == 'custom_prompt':
+                add_custom_prompt(doc, block_counter, block.get('label', ''), block.get('content', ''))
+                block_counter += 1
+            elif btype == 'noticing_patterns':
+                add_noticing_patterns(doc, block_counter, block.get('slide_ref', ''), block.get('content', ''))
+                block_counter += 1
+            elif btype == 'custom_table':
+                add_custom_table(doc, block.get('title', ''), block.get('columns', []), block.get('rows', []))
+            elif btype == 'section_header':
+                add_section_header_block(doc, block.get('content', ''))
+
+        # Vocabulary
+        vocab_terms = [t for t in vocabulary if t and t.strip()]
+        if vocab_terms:
+            add_vocabulary_table(doc, vocab_terms)
+
+        # Notes
+        if has_notes:
+            add_notes_section(doc)
+
+        # Reflection (uses custom reflection prompt)
+        if has_reflection:
+            add_reflection_section(doc, reflection_prompt)
+
+        # CER
+        if has_cer:
+            add_cer_section(doc, cer_prompts)
+
+        # Page break between sessions (not after the last one)
+        if s_idx < len(sessions) - 1:
+            add_page_break(doc)
+
+    # Save the document
+    output_dir = 'generated_docs'
+    os.makedirs(output_dir, exist_ok=True)
+
+    module_name_safe = module_name.replace(' ', '_').replace('/', '_').replace('\\', '_') if module_name else 'Module'
+    filename = f"{module_name_safe}_Student_Logbook.docx"
+    output_path = os.path.join(output_dir, filename)
+
+    print(f"Saving student logbook v2 to: {output_path}")
+    doc.save(output_path)
+    print("Student logbook v2 saved successfully!")
+
+    return output_path
 
 def generate_rca_worksheet(form):
     """Generate an RCA worksheet using docxtpl"""
@@ -4207,6 +5606,1403 @@ def generate_module_guide(form):
                 print(f"✓ Cleaned up temporary file: {temp_template_path}")
         except Exception as e:
             print(f"Warning: Could not clean up temporary file {temp_template_path}: {e}")
+
+def generate_module_guide_v2(form):
+    """Generate a Module Guide V2 using python-docx directly with Star Academy branding.
+
+    Args:
+        form: WTForms form object with module guide data
+    Returns:
+        output_path: Path to the generated .docx file
+    """
+    # Brand constants (matching Student Logbook V2)
+    FONT_BODY = 'Roboto'
+    FONT_HEADER = 'Segoe UI'
+    DARK_BLUE = RGBColor(0x1D, 0x27, 0x57)
+    RED_ACCENT = RGBColor(0xE8, 0x1D, 0x2C)
+    BLACK = RGBColor(0x30, 0x30, 0x2F)
+    WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+    GRAY = RGBColor(0x70, 0x73, 0x73)
+    LIGHT_GRAY = RGBColor(0xF2, 0xF2, 0xF2)
+
+    # ---- Helper Functions ----
+    def set_cell_shading(cell, color_hex):
+        """Set background shading on a table cell."""
+        shading = OxmlElement('w:shd')
+        shading.set(qn('w:fill'), color_hex)
+        shading.set(qn('w:val'), 'clear')
+        cell._tc.get_or_add_tcPr().append(shading)
+
+    def add_page_break(doc):
+        """Add a page break to the document."""
+        p = doc.add_paragraph()
+        run = p.add_run()
+        run.add_break(WD_BREAK.PAGE)
+
+    def set_cell_borders(cell, top=None, bottom=None, left=None, right=None):
+        """Set borders on a table cell. Each border is a dict with sz, val, color."""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        tcBorders = OxmlElement('w:tcBorders')
+        for edge, border in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            if border:
+                el = OxmlElement(f'w:{edge}')
+                el.set(qn('w:val'), border.get('val', 'single'))
+                el.set(qn('w:sz'), str(border.get('sz', 4)))
+                el.set(qn('w:color'), border.get('color', '000000'))
+                el.set(qn('w:space'), '0')
+                tcBorders.append(el)
+        tcPr.append(tcBorders)
+
+    def add_paragraph_left_border(p, color_hex, width='24'):
+        """Add a colored left accent bar on any paragraph."""
+        pPr = p._p.get_or_add_pPr()
+        pBdr = OxmlElement('w:pBdr')
+        left = OxmlElement('w:left')
+        left.set(qn('w:val'), 'single')
+        left.set(qn('w:sz'), str(width))
+        left.set(qn('w:space'), '4')
+        left.set(qn('w:color'), color_hex)
+        pBdr.append(left)
+        pPr.append(pBdr)
+
+    def add_paragraph_bottom_border(p, color_hex, width='18'):
+        """Add a thick bottom rule on any paragraph."""
+        pPr = p._p.get_or_add_pPr()
+        pBdr = OxmlElement('w:pBdr')
+        bottom = OxmlElement('w:bottom')
+        bottom.set(qn('w:val'), 'single')
+        bottom.set(qn('w:sz'), str(width))
+        bottom.set(qn('w:space'), '1')
+        bottom.set(qn('w:color'), color_hex)
+        pBdr.append(bottom)
+        pPr.append(pBdr)
+
+    def set_table_borders_color(table, color_hex):
+        """Set all table grid borders to a specified color."""
+        tbl = table._tbl
+        tblPr = tbl.tblPr
+        if tblPr is None:
+            tblPr = OxmlElement('w:tblPr')
+            tbl.insert(0, tblPr)
+        for child in tblPr:
+            if child.tag == qn('w:tblBorders'):
+                tblPr.remove(child)
+                break
+        tblBorders = OxmlElement('w:tblBorders')
+        for side in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+            border = OxmlElement(f'w:{side}')
+            border.set(qn('w:val'), 'single')
+            border.set(qn('w:sz'), '4')
+            border.set(qn('w:space'), '0')
+            border.set(qn('w:color'), color_hex)
+            tblBorders.append(border)
+        tblPr.append(tblBorders)
+
+    def prevent_row_split(row):
+        """Prevent a table row from splitting across pages."""
+        tr = row._tr
+        trPr = tr.get_or_add_trPr()
+        cantSplit = OxmlElement('w:cantSplit')
+        trPr.append(cantSplit)
+
+    def keep_table_together(table):
+        """Prevent all rows in a table from splitting across pages."""
+        for row in table.rows:
+            prevent_row_split(row)
+
+    def add_section_header(doc, text):
+        """Add a section header with left accent bar."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(14)
+        p.paragraph_format.space_after = Pt(6)
+        add_paragraph_left_border(p, '1D2757', '24')
+        run = p.add_run(text)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+    def add_subsection_header(doc, text):
+        """Add a smaller subsection header."""
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(10)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(text)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(11)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+    def add_bullet_list(doc, items):
+        """Add styled bullet points with tight spacing."""
+        from docx.enum.text import WD_LINE_SPACING
+        for item in items:
+            if item and item.strip():
+                p = doc.add_paragraph()
+                p.paragraph_format.space_before = Pt(0)
+                p.paragraph_format.space_after = Pt(0)
+                p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                p.paragraph_format.line_spacing = 1.15
+                p.paragraph_format.left_indent = Pt(18)
+                run = p.add_run('\u2022  ')
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.color.rgb = DARK_BLUE
+                run = p.add_run(item)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.color.rgb = BLACK
+
+    def add_materials_table(doc, materials):
+        """Add materials organized by group with 2-column tables."""
+        if not materials:
+            return
+
+        # Group materials by their group field, preserving order within groups
+        from collections import OrderedDict
+        grouped = OrderedDict()
+        ungrouped = []
+
+        for mat in materials:
+            group_name = mat.get('group', '').strip()
+            if group_name:
+                if group_name not in grouped:
+                    grouped[group_name] = []
+                grouped[group_name].append(mat)
+            else:
+                ungrouped.append(mat)
+
+        def add_group_table(group_materials):
+            """Helper to add a table for a group of materials."""
+            table = doc.add_table(rows=1 + len(group_materials), cols=2)
+            table.style = 'Table Grid'
+            set_table_borders_color(table, '707373')
+            keep_table_together(table)
+
+            # Header row
+            headers = ['Item', 'Quantity']
+            for i, header in enumerate(headers):
+                cell = table.rows[0].cells[i]
+                cell.text = ''
+                set_cell_shading(cell, '1D2757')
+                p = cell.paragraphs[0]
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                p.paragraph_format.space_before = Pt(4)
+                p.paragraph_format.space_after = Pt(4)
+                run = p.add_run(header)
+                run.font.name = FONT_HEADER
+                run.font.size = Pt(10)
+                run.font.bold = True
+                run.font.color.rgb = WHITE
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+            # Data rows
+            for idx, mat in enumerate(group_materials):
+                row = table.rows[1 + idx]
+                item_cell = row.cells[0]
+                qty_cell = row.cells[1]
+
+                item_cell.text = ''
+                item_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                p = item_cell.paragraphs[0]
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(3)
+                run = p.add_run(mat.get('item', ''))
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.color.rgb = BLACK
+
+                qty_cell.text = ''
+                qty_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                p = qty_cell.paragraphs[0]
+                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(3)
+                run = p.add_run(mat.get('quantity', ''))
+                run.font.name = FONT_BODY
+                run.font.size = Pt(10)
+                run.font.color.rgb = BLACK
+
+                # Alternating row shading
+                if idx % 2 == 1:
+                    set_cell_shading(item_cell, 'F2F2F2')
+                    set_cell_shading(qty_cell, 'F2F2F2')
+
+        # Render grouped materials first
+        for group_name, group_mats in grouped.items():
+            # Add group header paragraph
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_after = Pt(4)
+            run = p.add_run(group_name)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = RGBColor(0x1D, 0x27, 0x57)  # Dark blue
+
+            add_group_table(group_mats)
+
+        # Render ungrouped materials at the end (no header)
+        if ungrouped:
+            if grouped:
+                # Add small spacer if there were grouped materials before
+                sp = doc.add_paragraph()
+                sp.paragraph_format.space_before = Pt(4)
+            add_group_table(ungrouped)
+
+        # Spacer after all tables
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_standards_table(doc, standards):
+        """Add a 4-column standards table."""
+        if not standards:
+            return
+        table = doc.add_table(rows=1 + len(standards), cols=4)
+        table.style = 'Table Grid'
+        set_table_borders_color(table, '707373')
+        keep_table_together(table)
+
+        # Header row
+        headers = ['Code', 'Type', 'Description', 'How It Shows Up']
+        for i, header in enumerate(headers):
+            cell = table.rows[0].cells[i]
+            cell.text = ''
+            set_cell_shading(cell, '1D2757')
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(4)
+            run = p.add_run(header)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = WHITE
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Data rows
+        for idx, std in enumerate(standards):
+            row = table.rows[1 + idx]
+            values = [
+                std.get('code', ''),
+                std.get('type', ''),
+                std.get('description', ''),
+                std.get('how_it_shows_up', '')
+            ]
+            for col_idx, val in enumerate(values):
+                cell = row.cells[col_idx]
+                cell.text = ''
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                p = cell.paragraphs[0]
+                if col_idx < 2:  # Code and Type columns
+                    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(3)
+                run = p.add_run(val)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.color.rgb = BLACK
+
+            # Alternating row shading
+            if idx % 2 == 1:
+                for c in range(4):
+                    set_cell_shading(row.cells[c], 'F2F2F2')
+
+        # Spacer after table
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_vocabulary_table_v2(doc, vocabulary):
+        """Add a 3-column vocabulary table (term, definition, slides)."""
+        if not vocabulary:
+            return
+        table = doc.add_table(rows=1 + len(vocabulary), cols=3)
+        table.style = 'Table Grid'
+        set_table_borders_color(table, '707373')
+        keep_table_together(table)
+
+        # Header row
+        headers = ['Term', 'Definition', 'Slides']
+        for i, header in enumerate(headers):
+            cell = table.rows[0].cells[i]
+            cell.text = ''
+            set_cell_shading(cell, '1D2757')
+            p = cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(4)
+            run = p.add_run(header)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = WHITE
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Data rows
+        for idx, vocab in enumerate(vocabulary):
+            row = table.rows[1 + idx]
+            # Term
+            cell = row.cells[0]
+            cell.text = ''
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            p.paragraph_format.space_before = Pt(3)
+            p.paragraph_format.space_after = Pt(3)
+            run = p.add_run(vocab.get('term', ''))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = BLACK
+
+            # Definition
+            cell = row.cells[1]
+            cell.text = ''
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            p = cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(3)
+            p.paragraph_format.space_after = Pt(3)
+            run = p.add_run(vocab.get('definition', ''))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = BLACK
+
+            # Slides
+            cell = row.cells[2]
+            cell.text = ''
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            p = cell.paragraphs[0]
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            p.paragraph_format.space_before = Pt(3)
+            p.paragraph_format.space_after = Pt(3)
+            slides_val = vocab.get('slides', '')
+            # Handle list or string
+            if isinstance(slides_val, list):
+                slides_val = ', '.join(str(s) for s in slides_val)
+            run = p.add_run(str(slides_val))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = GRAY
+
+            # Alternating row shading
+            if idx % 2 == 1:
+                for c in range(3):
+                    set_cell_shading(row.cells[c], 'F2F2F2')
+
+        # Spacer after table
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_career_spotlight(doc, career):
+        """Add a styled career spotlight card."""
+        name = career.get('name', '')
+        title = career.get('title', '')
+        connection = career.get('connection', '')
+        if not name and not title and not connection:
+            return
+
+        # Create a bordered container
+        career_table = doc.add_table(rows=1, cols=1)
+        career_table.style = 'Table Grid'
+        keep_table_together(career_table)
+        cell = career_table.rows[0].cells[0]
+        cell.text = ''
+        set_cell_shading(cell, 'E8EDF3')
+        set_cell_borders(cell,
+            top={'val': 'single', 'sz': 18, 'color': '1D2757'},
+            bottom={'val': 'single', 'sz': 4, 'color': '707373'},
+            left={'val': 'single', 'sz': 4, 'color': '707373'},
+            right={'val': 'single', 'sz': 4, 'color': '707373'})
+
+        # Header
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(8)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Career Spotlight')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Name and Title
+        if name or title:
+            p = cell.add_paragraph()
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(2)
+            if name:
+                run = p.add_run(name)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(11)
+                run.font.bold = True
+                run.font.color.rgb = BLACK
+            if name and title:
+                run = p.add_run(' - ')
+                run.font.name = FONT_BODY
+                run.font.size = Pt(11)
+                run.font.color.rgb = BLACK
+            if title:
+                run = p.add_run(title)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(11)
+                run.font.italic = True
+                run.font.color.rgb = GRAY
+
+        # Connection
+        if connection:
+            p = cell.add_paragraph()
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(6)
+            run = p.add_run(connection)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.color.rgb = BLACK
+
+        # Spacer after card
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_after = Pt(4)
+
+    def add_safety_section(doc, general_rules, item_specific):
+        """Add safety section with general rules and item-specific warnings."""
+        from docx.enum.text import WD_LINE_SPACING
+        add_section_header(doc, 'Safety')
+
+        # General rules
+        if general_rules:
+            add_subsection_header(doc, 'General Safety Rules')
+            add_bullet_list(doc, general_rules)
+
+        # Item-specific warnings
+        if item_specific:
+            add_subsection_header(doc, 'Item-Specific Warnings')
+            for item_data in item_specific:
+                item_name = item_data.get('item', '')
+                warnings = item_data.get('warnings', [])
+                if item_name:
+                    # Item name header
+                    p = doc.add_paragraph()
+                    p.paragraph_format.space_before = Pt(6)
+                    p.paragraph_format.space_after = Pt(0)
+                    p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                    p.paragraph_format.line_spacing = 1.15
+                    p.paragraph_format.left_indent = Pt(12)
+                    run = p.add_run(f'\u26a0 {item_name}')
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(10)
+                    run.font.bold = True
+                    run.font.color.rgb = RGBColor(0xD4, 0x3F, 0x00)  # Orange warning color
+
+                    # Nested warnings
+                    for warning in warnings:
+                        if warning and warning.strip():
+                            p = doc.add_paragraph()
+                            p.paragraph_format.space_before = Pt(0)
+                            p.paragraph_format.space_after = Pt(0)
+                            p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                            p.paragraph_format.line_spacing = 1.15
+                            p.paragraph_format.left_indent = Pt(30)
+                            run = p.add_run('\u2022  ')
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = GRAY
+                            run = p.add_run(warning)
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = BLACK
+
+    def add_teacher_tips_section(doc, tips, look_fors, questions):
+        """Add teacher tips section with grouped bullet lists."""
+        add_section_header(doc, 'Teacher Tips & Assessment')
+
+        if tips:
+            add_subsection_header(doc, 'Teaching Tips')
+            add_bullet_list(doc, tips)
+
+        if look_fors:
+            add_subsection_header(doc, 'What to Look For')
+            add_bullet_list(doc, look_fors)
+
+        if questions:
+            add_subsection_header(doc, 'Questions & Prompts')
+            add_bullet_list(doc, questions)
+
+    # ---- Cover Page ----
+    def build_cover_page(doc, module):
+        """Build the cover page with Star Academy branding."""
+        # Logo at top
+        logo_path = os.path.join('static', 'images', 'logo_red_gray.png')
+        if os.path.exists(logo_path):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+            run = p.add_run()
+            run.add_picture(logo_path, width=Inches(2.5))
+
+        # Spacer for manual cover image
+        for _ in range(10):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+
+        # Module title (dark blue, 28pt, bold)
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(0)
+        title_text = module.get('name', 'Module').upper()
+        run = p.add_run(title_text)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(28)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Red "Module Guide" bar
+        bar_table = doc.add_table(rows=1, cols=1)
+        bar_table.style = 'Table Grid'
+        cell = bar_table.rows[0].cells[0]
+        cell.text = ''
+        set_cell_shading(cell, 'E81D2C')
+        set_cell_borders(cell,
+            top={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            bottom={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            left={'val': 'single', 'sz': 0, 'color': 'E81D2C'},
+            right={'val': 'single', 'sz': 0, 'color': 'E81D2C'})
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Module Guide')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(16)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+        # Module info
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(12)
+        p.paragraph_format.space_after = Pt(4)
+        grade = module.get('grade_level', '')
+        mod_type = module.get('type', '')
+        acronym = module.get('acronym', '')
+        info_parts = []
+        if acronym:
+            info_parts.append(acronym)
+        if grade:
+            info_parts.append(f'Grades {grade}')
+        if mod_type:
+            info_parts.append(mod_type.title())
+        info_text = '  |  '.join(info_parts)
+        run = p.add_run(info_text)
+        run.font.name = FONT_BODY
+        run.font.size = Pt(12)
+        run.font.color.rgb = GRAY
+
+        # Spacer
+        for _ in range(6):
+            p = doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(0)
+
+        # Footer
+        p = doc.add_paragraph()
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        run = p.add_run('Star Academy is a product of NOLA Education, LLC. To learn more, visit www.StarAcademyProgram.com.')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(9)
+        run.font.color.rgb = GRAY
+
+    # ---- Session Page ----
+    def build_session_page(doc, session, is_last=False):
+        """Build a complete session page with all sections."""
+        session_num = session.get('number', 1)
+        title = session.get('title', '')
+
+        # Session header with thick bottom border
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(f'Session {session_num}')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(18)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        if title and title.strip():
+            run = p.add_run(f': {title}')
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(18)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+        add_paragraph_bottom_border(p, '1D2757', '18')
+
+        # Introduction (italic)
+        intro = session.get('introduction', '')
+        if intro and intro.strip():
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_after = Pt(8)
+            run = p.add_run(intro)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(11)
+            run.font.italic = True
+            run.font.color.rgb = BLACK
+
+        # Assembly & Maintenance
+        advance_prep = session.get('advance_prep', [])
+        station_setup = session.get('station_setup', [])
+        equipment_notes = session.get('equipment_notes', [])
+        cleanup = session.get('cleanup', [])
+        if advance_prep or station_setup or equipment_notes or cleanup:
+            add_section_header(doc, 'Assembly & Maintenance')
+            if advance_prep:
+                add_subsection_header(doc, 'Advance Preparation')
+                add_bullet_list(doc, advance_prep)
+            if station_setup:
+                add_subsection_header(doc, 'Station Setup')
+                add_bullet_list(doc, station_setup)
+            if equipment_notes:
+                add_subsection_header(doc, 'Equipment Notes')
+                add_bullet_list(doc, equipment_notes)
+            if cleanup:
+                add_subsection_header(doc, 'Cleanup')
+                add_bullet_list(doc, cleanup)
+
+        # Learning Goals & Standards
+        learning_goals = session.get('learning_goals', [])
+        standards = session.get('standards', [])
+        if learning_goals or standards:
+            add_section_header(doc, 'Learning Goals & Standards')
+            if learning_goals:
+                add_subsection_header(doc, 'Learning Goals')
+                add_bullet_list(doc, learning_goals)
+            if standards:
+                add_subsection_header(doc, 'Standards')
+                add_standards_table(doc, standards)
+
+        # Materials
+        materials = session.get('materials', [])
+        if materials:
+            add_section_header(doc, 'Materials')
+            add_materials_table(doc, materials)
+
+        # Safety
+        general_safety = session.get('general_safety', [])
+        safety_items = session.get('safety_items', [])
+        if general_safety or safety_items:
+            add_safety_section(doc, general_safety, safety_items)
+
+        # Vocabulary
+        vocabulary = session.get('vocabulary', [])
+        if vocabulary:
+            add_section_header(doc, 'Vocabulary')
+            add_vocabulary_table_v2(doc, vocabulary)
+
+        # Career Spotlight
+        career = session.get('career', {})
+        if career and (career.get('name') or career.get('title') or career.get('connection')):
+            add_section_header(doc, 'Career Spotlight')
+            add_career_spotlight(doc, career)
+
+        # Teacher Tips
+        tips = session.get('tips', [])
+        look_fors = session.get('look_fors', [])
+        questions = session.get('questions', [])
+        if tips or look_fors or questions:
+            add_teacher_tips_section(doc, tips, look_fors, questions)
+
+        # Page break (not after last session)
+        if not is_last:
+            add_page_break(doc)
+
+    # ---- Main Document Assembly ----
+    print("Creating Module Guide V2 document with python-docx...")
+
+    doc = Document()
+
+    # Set default font (Roboto 11pt)
+    style = doc.styles['Normal']
+    style.font.name = FONT_BODY
+    style.font.size = Pt(11)
+
+    # Set narrow margins
+    for section in doc.sections:
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.8)
+        section.right_margin = Inches(0.8)
+
+    # Extract form data (keep existing pattern)
+    module = {
+        'name': form.module_name.data or '',
+        'acronym': form.module_acronym.data or '',
+        'grade_level': form.grade_level.data or '',
+        'type': form.module_type.data or ''
+    }
+
+    sessions = []
+    for session_entry in form.sessions:
+        sf = session_entry.form
+        session_data = {
+            'number': sf.number.data or 0,
+            'title': sf.title.data or '',
+            'introduction': sf.introduction.data or '',
+            'advance_prep': [x.strip() for x in (sf.advance_prep.data or '').split('\n') if x.strip()],
+            'station_setup': [x.strip() for x in (sf.station_setup.data or '').split('\n') if x.strip()],
+            'equipment_notes': [x.strip() for x in (sf.equipment_notes.data or '').split('\n') if x.strip()],
+            'cleanup': [x.strip() for x in (sf.cleanup.data or '').split('\n') if x.strip()],
+            'learning_goals': [x.strip() for x in (sf.learning_goals.data or '').split('\n') if x.strip()],
+            'standards': [
+                {
+                    'code': std.form.code.data or '',
+                    'type': std.form.standard_type.data or '',
+                    'description': std.form.description.data or '',
+                    'how_it_shows_up': std.form.how_it_shows_up.data or ''
+                }
+                for std in sf.standards if std.form.code.data
+            ],
+            'materials': [
+                {
+                    'item': m.form.item.data or '',
+                    'quantity': m.form.quantity.data or '',
+                    'group': m.form.group.data or ''
+                }
+                for m in sf.materials if m.form.item.data
+            ],
+            'general_safety': [x.strip() for x in (sf.general_safety_rules.data or '').split('\n') if x.strip()],
+            'safety_items': [
+                {
+                    'item': si.form.item.data or '',
+                    'warnings': [w.strip() for w in (si.form.warnings.data or '').split('\n') if w.strip()]
+                }
+                for si in sf.safety_items if si.form.item.data
+            ],
+            'vocabulary': [
+                {
+                    'term': v.form.term.data or '',
+                    'definition': v.form.definition.data or '',
+                    'slides': v.form.slides.data or ''
+                }
+                for v in sf.vocabulary if v.form.term.data
+            ],
+            'career': {
+                'name': sf.career.form.name.data or '',
+                'title': sf.career.form.title.data or '',
+                'connection': sf.career.form.connection.data or ''
+            },
+            'tips': [x.strip() for x in (sf.teacher_tips.data or '').split('\n') if x.strip()],
+            'look_fors': [x.strip() for x in (sf.look_fors.data or '').split('\n') if x.strip()],
+            'questions': [x.strip() for x in (sf.questions_prompts.data or '').split('\n') if x.strip()]
+        }
+        sessions.append(session_data)
+
+    print(f"Module Guide V2 data prepared:")
+    print(f"  Module: {module['acronym']}")
+    print(f"  Number of sessions: {len(sessions)}")
+
+    # Build cover page
+    build_cover_page(doc, module)
+
+    # Section break after cover page
+    content_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    content_section.top_margin = Inches(0.75)
+    content_section.bottom_margin = Inches(0.75)
+    content_section.left_margin = Inches(0.8)
+    content_section.right_margin = Inches(0.8)
+
+    # Running header
+    header = content_section.header
+    header.is_linked_to_previous = False
+    hp = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    hp.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+    hp.paragraph_format.space_after = Pt(2)
+    display_title = module['name'] if module['name'] else module['acronym']
+    hrun = hp.add_run(display_title)
+    hrun.font.name = FONT_HEADER
+    hrun.font.size = Pt(8)
+    hrun.font.color.rgb = GRAY
+    add_paragraph_bottom_border(hp, '1D2757', '6')
+
+    # Running footer with page number
+    footer = content_section.footer
+    footer.is_linked_to_previous = False
+    fp = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    fp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run_begin = fp.add_run()
+    run_begin.font.name = FONT_BODY
+    run_begin.font.size = Pt(9)
+    run_begin.font.color.rgb = GRAY
+    fldChar_begin = OxmlElement('w:fldChar')
+    fldChar_begin.set(qn('w:fldCharType'), 'begin')
+    run_begin._r.append(fldChar_begin)
+    run_instr = fp.add_run()
+    run_instr.font.name = FONT_BODY
+    run_instr.font.size = Pt(9)
+    run_instr.font.color.rgb = GRAY
+    instrText = OxmlElement('w:instrText')
+    instrText.set(qn('xml:space'), 'preserve')
+    instrText.text = ' PAGE '
+    run_instr._r.append(instrText)
+    run_end = fp.add_run()
+    run_end.font.name = FONT_BODY
+    run_end.font.size = Pt(9)
+    run_end.font.color.rgb = GRAY
+    fldChar_end = OxmlElement('w:fldChar')
+    fldChar_end.set(qn('w:fldCharType'), 'end')
+    run_end._r.append(fldChar_end)
+
+    # Build each session
+    for s_idx, session in enumerate(sessions):
+        is_last = (s_idx == len(sessions) - 1)
+        build_session_page(doc, session, is_last)
+
+    # Build Answer Key Appendix (if data exists)
+    pretest_data = extract_pretest_from_form_v2(form)
+    posttest_data = extract_posttest_from_form_v2(form)
+    rcp_data = extract_rcp_from_form_v2(form)
+
+    if pretest_data or posttest_data or rcp_data:
+        add_page_break(doc)
+        build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions,
+                                  FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                                  set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
+                                  keep_table_together, add_paragraph_bottom_border)
+
+    # Save the document
+    output_dir = 'generated_docs'
+    os.makedirs(output_dir, exist_ok=True)
+
+    module_acronym_safe = (form.module_acronym.data or 'Module').replace(' ', '_').replace('/', '_').replace('\\', '_')
+    filename = f"Module_Guide_V2_{module_acronym_safe}.docx"
+    output_path = os.path.join(output_dir, filename)
+
+    print(f"Saving Module Guide V2 document to: {output_path}")
+    doc.save(output_path)
+    print("Module Guide V2 document saved successfully!")
+
+    return output_path
+
+
+# ===== MODULE GUIDE V2 ANSWER KEY APPENDIX HELPERS =====
+
+def extract_pretest_from_form_v2(form):
+    """Extract pre-test questions from Module Guide V2 form"""
+    questions = []
+    for q_entry in form.pretest_questions:
+        qf = q_entry.form
+        q_type = qf.question_type.data or 'single_select'
+
+        if q_type == 'two_part':
+            # Two-part question
+            if qf.stem_part_a.data or qf.stem_part_b.data:
+                questions.append({
+                    'number': qf.question_number.data or len(questions) + 1,
+                    'type': 'two_part',
+                    'stem_part_a': qf.stem_part_a.data or '',
+                    'stem_part_b': qf.stem_part_b.data or '',
+                    'part_a_choices': [
+                        qf.part_a_choice_a.data or '',
+                        qf.part_a_choice_b.data or '',
+                        qf.part_a_choice_c.data or '',
+                        qf.part_a_choice_d.data or '',
+                        qf.part_a_choice_e.data or '',
+                        qf.part_a_choice_f.data or ''
+                    ],
+                    'part_b_choices': [
+                        qf.part_b_choice_a.data or '',
+                        qf.part_b_choice_b.data or '',
+                        qf.part_b_choice_c.data or '',
+                        qf.part_b_choice_d.data or '',
+                        qf.part_b_choice_e.data or '',
+                        qf.part_b_choice_f.data or ''
+                    ],
+                    'part_a_correct': qf.part_a_correct.data or '',
+                    'part_b_correct': qf.part_b_correct.data or ''
+                })
+        else:
+            # Single-select or multi-select
+            if qf.stem.data:
+                questions.append({
+                    'number': qf.question_number.data or len(questions) + 1,
+                    'type': q_type,
+                    'stem': qf.stem.data or '',
+                    'choices': [
+                        qf.choice_a.data or '',
+                        qf.choice_b.data or '',
+                        qf.choice_c.data or '',
+                        qf.choice_d.data or '',
+                        qf.choice_e.data or '',
+                        qf.choice_f.data or ''
+                    ],
+                    'correct_labels': qf.correct_labels.data or ''
+                })
+    return questions
+
+
+def extract_posttest_from_form_v2(form):
+    """Extract post-test questions from Module Guide V2 form"""
+    questions = []
+    for q_entry in form.posttest_questions:
+        qf = q_entry.form
+        q_type = qf.question_type.data or 'single_select'
+
+        if q_type == 'two_part':
+            if qf.stem_part_a.data or qf.stem_part_b.data:
+                questions.append({
+                    'number': qf.question_number.data or len(questions) + 1,
+                    'type': 'two_part',
+                    'stem_part_a': qf.stem_part_a.data or '',
+                    'stem_part_b': qf.stem_part_b.data or '',
+                    'part_a_choices': [
+                        qf.part_a_choice_a.data or '',
+                        qf.part_a_choice_b.data or '',
+                        qf.part_a_choice_c.data or '',
+                        qf.part_a_choice_d.data or '',
+                        qf.part_a_choice_e.data or '',
+                        qf.part_a_choice_f.data or ''
+                    ],
+                    'part_b_choices': [
+                        qf.part_b_choice_a.data or '',
+                        qf.part_b_choice_b.data or '',
+                        qf.part_b_choice_c.data or '',
+                        qf.part_b_choice_d.data or '',
+                        qf.part_b_choice_e.data or '',
+                        qf.part_b_choice_f.data or ''
+                    ],
+                    'part_a_correct': qf.part_a_correct.data or '',
+                    'part_b_correct': qf.part_b_correct.data or ''
+                })
+        else:
+            if qf.stem.data:
+                questions.append({
+                    'number': qf.question_number.data or len(questions) + 1,
+                    'type': q_type,
+                    'stem': qf.stem.data or '',
+                    'choices': [
+                        qf.choice_a.data or '',
+                        qf.choice_b.data or '',
+                        qf.choice_c.data or '',
+                        qf.choice_d.data or '',
+                        qf.choice_e.data or '',
+                        qf.choice_f.data or ''
+                    ],
+                    'correct_labels': qf.correct_labels.data or ''
+                })
+    return questions
+
+
+def extract_rcp_from_form_v2(form):
+    """Extract RCP questions from Module Guide V2 form"""
+    rcp_sessions = []
+    for rcp_entry in form.rcp_sessions:
+        sf = rcp_entry.form
+        session_num = sf.session_number.data or 0
+
+        recall = {
+            'question': sf.recall.form.question.data or '',
+            'choices': [
+                sf.recall.form.choice_a.data or '',
+                sf.recall.form.choice_b.data or '',
+                sf.recall.form.choice_c.data or '',
+                sf.recall.form.choice_d.data or '',
+                sf.recall.form.choice_e.data or ''
+            ],
+            'correct_answer': sf.recall.form.correct_answer.data or ''
+        }
+
+        connect = {
+            'question': sf.connect.form.question.data or '',
+            'choices': [
+                sf.connect.form.choice_a.data or '',
+                sf.connect.form.choice_b.data or '',
+                sf.connect.form.choice_c.data or '',
+                sf.connect.form.choice_d.data or '',
+                sf.connect.form.choice_e.data or ''
+            ],
+            'correct_answer': sf.connect.form.correct_answer.data or ''
+        }
+
+        predict = {
+            'question': sf.predict.form.question.data or '',
+            'choices': [
+                sf.predict.form.choice_a.data or '',
+                sf.predict.form.choice_b.data or '',
+                sf.predict.form.choice_c.data or '',
+                sf.predict.form.choice_d.data or '',
+                sf.predict.form.choice_e.data or ''
+            ],
+            'correct_answer': sf.predict.form.correct_answer.data or ''
+        }
+
+        # Only add if at least one question has content
+        if recall['question'] or connect['question'] or predict['question']:
+            rcp_sessions.append({
+                'session_number': session_num,
+                'recall': recall,
+                'connect': connect,
+                'predict': predict
+            })
+
+    return rcp_sessions
+
+
+def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions,
+                               FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                               set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
+                               keep_table_together, add_paragraph_bottom_border):
+    """Build the Answer Key appendix for Module Guide V2"""
+    from docx.shared import Pt, Inches
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+
+    # Appendix Title
+    title_p = doc.add_paragraph()
+    title_p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    title_p.paragraph_format.space_before = Pt(24)
+    title_p.paragraph_format.space_after = Pt(18)
+    run = title_p.add_run('APPENDIX: ANSWER KEY')
+    run.font.name = FONT_HEADER
+    run.font.size = Pt(18)
+    run.font.bold = True
+    run.font.color.rgb = DARK_BLUE
+    add_paragraph_bottom_border(title_p, 'E81D2C', '24')
+
+    # Pre-Test Section
+    if pretest_data:
+        add_section_header(doc, 'PRE-TEST ANSWER KEY')
+        build_test_answer_table(doc, pretest_data, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, LIGHT_GRAY,
+                                set_cell_shading, set_table_borders_color, keep_table_together)
+
+    # Post-Test Section
+    if posttest_data:
+        add_section_header(doc, 'POST-TEST ANSWER KEY')
+        build_test_answer_table(doc, posttest_data, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, LIGHT_GRAY,
+                                set_cell_shading, set_table_borders_color, keep_table_together)
+
+    # RCP Questions by Session
+    if rcp_data:
+        add_section_header(doc, 'RCP QUESTIONS BY SESSION')
+        for rcp_session in rcp_data:
+            session_num = rcp_session['session_number']
+            # Find session title from sessions list
+            session_title = ''
+            for s in sessions:
+                if s.get('number') == session_num:
+                    session_title = s.get('title', '')
+                    break
+
+            # Session header
+            session_header = f"Session {session_num}"
+            if session_title:
+                session_header += f": {session_title}"
+            add_subsection_header(doc, session_header)
+
+            build_rcp_session_block(doc, rcp_session, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                                    set_cell_shading, set_table_borders_color, keep_table_together)
+
+
+def add_choice_paragraph(cell, label, choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK):
+    """Add a formatted choice paragraph to a cell. Returns the paragraph."""
+    from docx.shared import Pt
+
+    p = cell.add_paragraph()
+    p.paragraph_format.space_before = Pt(1)
+    p.paragraph_format.space_after = Pt(1)
+    p.paragraph_format.left_indent = Pt(12)
+
+    # Add label (A., B., etc.)
+    run = p.add_run(f"{label}. ")
+    run.font.name = FONT_BODY
+    run.font.size = Pt(9)
+    if is_correct:
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+    else:
+        run.font.color.rgb = BLACK
+
+    # Add choice text
+    run = p.add_run(choice_text)
+    run.font.name = FONT_BODY
+    run.font.size = Pt(9)
+    if is_correct:
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+    else:
+        run.font.color.rgb = BLACK
+
+    return p
+
+
+def build_test_answer_table(doc, questions, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, LIGHT_GRAY,
+                            set_cell_shading, set_table_borders_color, keep_table_together):
+    """Build a table for pre-test or post-test answers with full questions and choices"""
+    from docx.shared import Pt, Inches
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+    # Create table with 3 columns: #, Question, Answer
+    table = doc.add_table(rows=1 + len(questions), cols=3)
+    table.style = 'Table Grid'
+    set_table_borders_color(table, '707373')
+    keep_table_together(table)
+
+    # Set column widths
+    for cell in table.columns[0].cells:
+        cell.width = Inches(0.5)
+    for cell in table.columns[1].cells:
+        cell.width = Inches(5.0)
+    for cell in table.columns[2].cells:
+        cell.width = Inches(1.0)
+
+    # Header row
+    headers = ['#', 'Question', 'Answer']
+    for i, header in enumerate(headers):
+        cell = table.rows[0].cells[i]
+        cell.text = ''
+        set_cell_shading(cell, '1D2757')
+        p = cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(header)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+    # Data rows
+    for idx, q in enumerate(questions):
+        row = table.rows[1 + idx]
+
+        # Number cell
+        num_cell = row.cells[0]
+        num_cell.text = ''
+        num_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        p = num_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+        run = p.add_run(str(q.get('number', idx + 1)))
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Question cell - now shows full question with all choices
+        q_cell = row.cells[1]
+        q_cell.text = ''
+        p = q_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(2)
+
+        if q.get('type') == 'two_part':
+            # Two-part question - Part A
+            run = p.add_run('Part A: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = BLACK
+            run = p.add_run(q.get('stem_part_a', ''))  # Full stem, no truncation
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Part A choices - use correct key name 'part_a_choices'
+            choices_a = q.get('part_a_choices', [])
+            part_a_correct = [c.strip().upper() for c in q.get('part_a_correct', '').split(',') if c.strip()]
+            labels_a = ['A', 'B', 'C', 'D', 'E', 'F']
+            for i, choice_text in enumerate(choices_a):
+                if choice_text and i < len(labels_a):  # Skip empty choices
+                    is_correct = labels_a[i] in part_a_correct
+                    add_choice_paragraph(q_cell, labels_a[i], choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK)
+
+            # Part B header
+            p2 = q_cell.add_paragraph()
+            p2.paragraph_format.space_before = Pt(6)
+            p2.paragraph_format.space_after = Pt(2)
+            run = p2.add_run('Part B: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = BLACK
+            run = p2.add_run(q.get('stem_part_b', ''))  # Full stem, no truncation
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Part B choices - use correct key name 'part_b_choices'
+            choices_b = q.get('part_b_choices', [])
+            part_b_correct = [c.strip().upper() for c in q.get('part_b_correct', '').split(',') if c.strip()]
+            labels_b = ['A', 'B', 'C', 'D', 'E', 'F']
+            for i, choice_text in enumerate(choices_b):
+                if choice_text and i < len(labels_b):  # Skip empty choices
+                    is_correct = labels_b[i] in part_b_correct
+                    add_choice_paragraph(q_cell, labels_b[i], choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK)
+
+        else:
+            # Single/multi-select - show full stem
+            stem = q.get('stem', '')
+            run = p.add_run(stem)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Add all non-empty choices
+            choices = q.get('choices', [])
+            correct_labels = [c.strip().upper() for c in q.get('correct_labels', '').split(',') if c.strip()]
+            labels = ['A', 'B', 'C', 'D', 'E', 'F']
+            for i, choice_text in enumerate(choices):
+                if choice_text and i < len(labels):  # Skip empty choices
+                    is_correct = labels[i] in correct_labels
+                    add_choice_paragraph(q_cell, labels[i], choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK)
+
+        q_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+        # Answer cell
+        ans_cell = row.cells[2]
+        ans_cell.text = ''
+        p = ans_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+
+        if q.get('type') == 'two_part':
+            # Split into two lines for better readability
+            run = p.add_run(f"Part A: {q.get('part_a_correct', '')}")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+
+            p2 = ans_cell.add_paragraph()
+            p2.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            p2.paragraph_format.space_before = Pt(2)
+            p2.paragraph_format.space_after = Pt(3)
+            run = p2.add_run(f"Part B: {q.get('part_b_correct', '')}")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+        else:
+            run = p.add_run(q.get('correct_labels', ''))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+
+        ans_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Alternating row shading
+        if idx % 2 == 1:
+            set_cell_shading(num_cell, 'F2F2F2')
+            set_cell_shading(q_cell, 'F2F2F2')
+            set_cell_shading(ans_cell, 'F2F2F2')
+
+    # Add spacing after table
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_after = Pt(12)
+
+
+def build_rcp_session_block(doc, rcp_session, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                            set_cell_shading, set_table_borders_color, keep_table_together):
+    """Build an RCP question block for a single session with full questions and choices"""
+    from docx.shared import Pt, Inches
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    # Create table for RCP questions (3 rows: Recall, Connect, Predict)
+    rcp_types = [
+        ('RECALL', rcp_session.get('recall', {})),
+        ('CONNECT', rcp_session.get('connect', {})),
+        ('PREDICT', rcp_session.get('predict', {}))
+    ]
+
+    table = doc.add_table(rows=3, cols=2)
+    table.style = 'Table Grid'
+    set_table_borders_color(table, '707373')
+    keep_table_together(table)
+
+    # Set column widths
+    for cell in table.columns[0].cells:
+        cell.width = Inches(1.2)
+    for cell in table.columns[1].cells:
+        cell.width = Inches(5.3)
+
+    for idx, (rcp_type, rcp_q) in enumerate(rcp_types):
+        row = table.rows[idx]
+
+        # Type cell (left column)
+        type_cell = row.cells[0]
+        type_cell.text = ''
+        set_cell_shading(type_cell, '1D2757')
+        p = type_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run(rcp_type)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+        type_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Content cell (right column)
+        content_cell = row.cells[1]
+        content_cell.text = ''
+
+        question = rcp_q.get('question', '')
+        choices = rcp_q.get('choices', [])
+        correct = rcp_q.get('correct_answer', '').strip().upper()
+
+        if question:
+            # Question text - full question, no truncation
+            p = content_cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(2)
+            run = p.add_run('Q: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+
+            run = p.add_run(question)  # Full question, no truncation
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Add all non-empty choices
+            labels = ['A', 'B', 'C', 'D', 'E']
+            for i, choice_text in enumerate(choices):
+                if choice_text and i < len(labels):  # Skip empty choices
+                    is_correct = labels[i] == correct
+                    add_choice_paragraph(content_cell, labels[i], choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK)
+
+            # Correct Answer line at bottom
+            p2 = content_cell.add_paragraph()
+            p2.paragraph_format.space_before = Pt(4)
+            p2.paragraph_format.space_after = Pt(4)
+            run = p2.add_run('Correct Answer: ')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+            run = p2.add_run(correct)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+        else:
+            p = content_cell.paragraphs[0]
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(6)
+            run = p.add_run('(No question provided)')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.italic = True
+            run.font.color.rgb = GRAY
+
+        content_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+    # Add spacing after table
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_after = Pt(12)
+
 
 def generate_module_answer_key(form):
     """Generate a Module Answer Key using docxtpl"""
@@ -6316,6 +9112,860 @@ def delete_moduleguide_draft(draft_id):
     
     return redirect(url_for('drafts'))
 
+# ===== MODULE GUIDE V2 ROUTES (JSON Import) =====
+
+def transform_json_to_form_data_v2(json_data):
+    """Transform imported JSON to form-compatible structure for Module Guide V2"""
+    module = json_data.get('module', {})
+
+    form_data = {
+        'module_name': module.get('name', ''),
+        'module_acronym': module.get('acronym', ''),
+        'grade_level': module.get('grade_level', ''),
+        'module_type': module.get('module_type', ''),
+        'sessions': []
+    }
+
+    for session in json_data.get('sessions', []):
+        session_data = {
+            'number': session.get('number', 0),
+            'title': session.get('title', ''),
+            'introduction': session.get('introduction', ''),
+
+            # Assembly/Maintenance (arrays to newline-separated)
+            'advance_prep': '\n'.join(session.get('assembly_maintenance', {}).get('advance_prep', [])),
+            'station_setup': '\n'.join(session.get('assembly_maintenance', {}).get('station_setup', [])),
+            'equipment_notes': '\n'.join(session.get('assembly_maintenance', {}).get('equipment_notes', [])),
+            'cleanup': '\n'.join(session.get('assembly_maintenance', {}).get('cleanup', [])),
+
+            # Goals
+            'learning_goals': '\n'.join(session.get('goals_standards', {}).get('learning_goals', [])),
+
+            # Standards (array of objects)
+            'standards': [
+                {
+                    'code': std.get('code', ''),
+                    'standard_type': std.get('type', ''),
+                    'description': std.get('description', ''),
+                    'how_it_shows_up': std.get('how_it_shows_up', '')
+                }
+                for std in session.get('goals_standards', {}).get('standards', [])
+            ],
+
+            # Materials (array of objects)
+            'materials': [
+                {
+                    'item': mat.get('item', ''),
+                    'quantity': mat.get('quantity', ''),
+                    'group': mat.get('group', '')
+                }
+                for mat in session.get('materials', [])
+            ],
+
+            # Safety
+            'general_safety_rules': '\n'.join(session.get('safety', {}).get('general_rules', [])),
+            'safety_items': [
+                {
+                    'item': si.get('item', ''),
+                    'warnings': '\n'.join(si.get('warnings', []))
+                }
+                for si in session.get('safety', {}).get('item_specific', [])
+            ],
+
+            # Vocabulary
+            'vocabulary': [
+                {
+                    'term': v.get('term', ''),
+                    'definition': v.get('definition', ''),
+                    'slides': ', '.join(str(s) for s in v.get('slides', []))
+                }
+                for v in session.get('vocabulary', [])
+            ],
+
+            # Career
+            'career': {
+                'name': session.get('career', {}).get('name', ''),
+                'title': session.get('career', {}).get('title', ''),
+                'connection': session.get('career', {}).get('connection', '')
+            },
+
+            # Teacher Tips
+            'teacher_tips': '\n'.join(session.get('teacher_tips_assessment', {}).get('tips', [])),
+            'look_fors': '\n'.join(session.get('teacher_tips_assessment', {}).get('look_fors', [])),
+            'questions_prompts': '\n'.join(session.get('teacher_tips_assessment', {}).get('questions_prompts', []))
+        }
+        form_data['sessions'].append(session_data)
+
+    # Transform answer key (if present)
+    answer_key = json_data.get('answer_key', {})
+
+    # Transform RCP sessions
+    rcp_sessions = []
+    rcp_data = answer_key.get('rcp_by_session', {})
+    for session_num in sorted(rcp_data.keys(), key=lambda x: int(x)):
+        session = rcp_data[session_num]
+        rcp_sessions.append({
+            'session_number': int(session_num),
+            'recall': transform_rcp_question_v2(session.get('recall', {})),
+            'connect': transform_rcp_question_v2(session.get('connect', {})),
+            'predict': transform_rcp_question_v2(session.get('predict', {}))
+        })
+
+    # Transform pre-test questions
+    pretest_questions = [
+        transform_test_question_v2(q) for q in answer_key.get('pre_test', [])
+    ]
+
+    # Transform post-test questions
+    posttest_questions = [
+        transform_test_question_v2(q) for q in answer_key.get('post_test', [])
+    ]
+
+    form_data['pretest_questions'] = pretest_questions
+    form_data['posttest_questions'] = posttest_questions
+    form_data['rcp_sessions'] = rcp_sessions
+
+    return form_data
+
+
+def transform_rcp_question_v2(q):
+    """Transform RCP question from JSON to form format"""
+    choices = q.get('choices', [])
+    return {
+        'question': q.get('question', ''),
+        'choice_a': choices[0].get('text', '') if len(choices) > 0 else '',
+        'choice_b': choices[1].get('text', '') if len(choices) > 1 else '',
+        'choice_c': choices[2].get('text', '') if len(choices) > 2 else '',
+        'choice_d': choices[3].get('text', '') if len(choices) > 3 else '',
+        'choice_e': choices[4].get('text', '') if len(choices) > 4 else '',
+        'correct_answer': q.get('correct_answer', '')
+    }
+
+
+def transform_test_question_v2(q):
+    """Transform pre/post test question from JSON to form format"""
+    q_type = q.get('question_type', 'single_select')
+    result = {
+        'question_number': q.get('question_number', 0),
+        'question_type': q_type
+    }
+
+    if q_type == 'two_part':
+        stem = q.get('stem', {})
+        choices = q.get('choices', {})
+        correct = q.get('correct_labels', {})
+
+        result['stem_part_a'] = stem.get('part_a', '')
+        result['stem_part_b'] = stem.get('part_b', '')
+
+        # Part A choices
+        part_a_choices = choices.get('part_a', [])
+        result['part_a_choice_a'] = part_a_choices[0].get('text', '') if len(part_a_choices) > 0 else ''
+        result['part_a_choice_b'] = part_a_choices[1].get('text', '') if len(part_a_choices) > 1 else ''
+        result['part_a_choice_c'] = part_a_choices[2].get('text', '') if len(part_a_choices) > 2 else ''
+        result['part_a_choice_d'] = part_a_choices[3].get('text', '') if len(part_a_choices) > 3 else ''
+        result['part_a_choice_e'] = part_a_choices[4].get('text', '') if len(part_a_choices) > 4 else ''
+        result['part_a_choice_f'] = part_a_choices[5].get('text', '') if len(part_a_choices) > 5 else ''
+
+        # Part B choices
+        part_b_choices = choices.get('part_b', [])
+        result['part_b_choice_a'] = part_b_choices[0].get('text', '') if len(part_b_choices) > 0 else ''
+        result['part_b_choice_b'] = part_b_choices[1].get('text', '') if len(part_b_choices) > 1 else ''
+        result['part_b_choice_c'] = part_b_choices[2].get('text', '') if len(part_b_choices) > 2 else ''
+        result['part_b_choice_d'] = part_b_choices[3].get('text', '') if len(part_b_choices) > 3 else ''
+        result['part_b_choice_e'] = part_b_choices[4].get('text', '') if len(part_b_choices) > 4 else ''
+        result['part_b_choice_f'] = part_b_choices[5].get('text', '') if len(part_b_choices) > 5 else ''
+
+        result['part_a_correct'] = ', '.join(correct.get('part_a', []))
+        result['part_b_correct'] = ', '.join(correct.get('part_b', []))
+    else:
+        # single_select or multi_select
+        result['stem'] = q.get('stem', '')
+        choices = q.get('choices', [])
+        result['choice_a'] = choices[0].get('text', '') if len(choices) > 0 else ''
+        result['choice_b'] = choices[1].get('text', '') if len(choices) > 1 else ''
+        result['choice_c'] = choices[2].get('text', '') if len(choices) > 2 else ''
+        result['choice_d'] = choices[3].get('text', '') if len(choices) > 3 else ''
+        result['choice_e'] = choices[4].get('text', '') if len(choices) > 4 else ''
+        result['choice_f'] = choices[5].get('text', '') if len(choices) > 5 else ''
+        result['correct_labels'] = ', '.join(q.get('correct_labels', []))
+
+    return result
+
+
+# ===== FAMILY BRIEFING V2 HELPER FUNCTIONS =====
+
+def transform_familybriefing_v2_json_to_form_data(json_data):
+    """Transform imported JSON to form-compatible structure for Family Briefing V2.
+
+    Note: module_acronym is intentionally left blank for manual entry.
+    """
+    module = json_data.get('module', {})
+    sections = json_data.get('sections', {})
+
+    form_data = {
+        'module_name': module.get('name', ''),
+        'module_acronym': '',  # Left blank for manual entry
+        'grade_level': module.get('grade_level', ''),
+        'parent_letter': sections.get('parent_letter', ''),
+        'learning_objectives': sections.get('learning_objectives', []),
+        'key_concepts': [
+            {
+                'concept': kc.get('concept', ''),
+                'explanation': kc.get('explanation', ''),
+                'question': kc.get('question', '')
+            }
+            for kc in sections.get('key_concepts', [])
+        ]
+    }
+
+    return form_data
+
+
+def load_familybriefing_v2_draft_into_form(form, form_data):
+    """Populate a FamilyBriefingV2Form with draft data.
+
+    Args:
+        form: FamilyBriefingV2Form instance
+        form_data: dict from FormDraft.form_data
+    """
+    # Set simple fields
+    form.module_name.data = form_data.get('module_name', '')
+    form.module_acronym.data = form_data.get('module_acronym', '')
+    form.grade_level.data = form_data.get('grade_level', '')
+    form.parent_letter.data = form_data.get('parent_letter', '')
+
+    # Populate learning objectives
+    objectives = form_data.get('learning_objectives', [])
+    while len(form.learning_objectives) < len(objectives):
+        form.learning_objectives.append_entry()
+    for i, obj in enumerate(objectives):
+        if i < len(form.learning_objectives):
+            form.learning_objectives[i].data = obj
+
+    # Populate key concepts with question field
+    key_concepts = form_data.get('key_concepts', [])
+    while len(form.key_concepts) < len(key_concepts):
+        form.key_concepts.append_entry()
+    for i, kc in enumerate(key_concepts):
+        if i < len(form.key_concepts):
+            form.key_concepts[i].form.concept.data = kc.get('concept', '')
+            form.key_concepts[i].form.explanation.data = kc.get('explanation', '')
+            form.key_concepts[i].form.question.data = kc.get('question', '')
+
+
+@app.route('/upload-moduleguide-v2-json', methods=['POST'])
+@login_required
+def upload_moduleguide_v2_json():
+    """Handle JSON file upload and create draft for Module Guide V2"""
+    if 'json_file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    file = request.files['json_file']
+    if file.filename == '' or not file.filename.endswith('.json'):
+        return jsonify({'success': False, 'error': 'Invalid file type. Please upload a .json file'}), 400
+
+    try:
+        # Parse JSON
+        json_data = json.load(file)
+
+        # Validate required structure
+        if 'module' not in json_data or 'sessions' not in json_data:
+            return jsonify({'success': False, 'error': 'Invalid JSON structure. Must contain "module" and "sessions" keys'}), 400
+
+        # Transform to form-compatible structure
+        form_data = transform_json_to_form_data_v2(json_data)
+
+        # Create draft
+        draft = FormDraft(
+            user_id=current_user.id,
+            form_type='moduleguide_v2',
+            title=f"Module Guide V2 - {form_data.get('module_acronym', 'Unknown')}",
+            module_acronym=form_data.get('module_acronym', ''),
+            form_data=form_data
+        )
+        db.session.add(draft)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'message': 'JSON imported successfully',
+            'session_count': len(form_data.get('sessions', []))
+        })
+
+    except json.JSONDecodeError:
+        return jsonify({'success': False, 'error': 'Invalid JSON format. Please check the file.'}), 400
+    except Exception as e:
+        print(f"Error in Module Guide V2 JSON upload: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/create-module-guide-v2', methods=['GET', 'POST'])
+@login_required
+def create_module_guide_v2():
+    """Main form page for Module Guide V2"""
+    form = ModuleGuideV2Form()
+    draft_id = request.args.get('draft_id')
+
+    if request.method == 'POST':
+        print("Module Guide V2 form submitted!")
+        print(f"Form valid: {form.validate_on_submit()}")
+        if form.errors:
+            print(f"Form errors: {form.errors}")
+
+        if form.validate_on_submit():
+            print("Module Guide V2 form validation passed!")
+            try:
+                # Load draft data for generation
+                draft_id_from_form = request.form.get('draft_id')
+                if draft_id_from_form:
+                    draft = FormDraft.query.filter_by(
+                        id=draft_id_from_form,
+                        user_id=current_user.id,
+                        form_type='moduleguide_v2'
+                    ).first()
+                    if draft and draft.form_data:
+                        print("Found draft data - using for generation")
+
+                print("Attempting to generate Module Guide V2...")
+                doc_path = generate_module_guide_v2(form)
+                filename = os.path.basename(doc_path)
+
+                print(f"Module Guide V2 generated at: {doc_path}")
+
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    document_type='moduleguide_v2',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path)
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+
+                flash('Module Guide V2 generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+            except Exception as e:
+                print(f"Error generating Module Guide V2: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Error generating Module Guide V2: {str(e)}', 'error')
+
+    # Check if loading a draft
+    if draft_id:
+        try:
+            draft = FormDraft.query.filter_by(
+                id=draft_id,
+                user_id=current_user.id,
+                form_type='moduleguide_v2'
+            ).first()
+            if draft:
+                form = load_moduleguide_v2_draft_into_form(draft.form_data)
+                flash(f'Draft "{draft.title}" loaded successfully!', 'success')
+        except Exception as e:
+            print(f"Error loading draft: {e}")
+            flash(f'Error loading draft: {str(e)}', 'error')
+
+    return render_template('create_moduleGuide_v2.html', form=form, draft_id=draft_id)
+
+
+def load_moduleguide_v2_draft_into_form(form_data):
+    """Create and populate a ModuleGuideV2Form from draft data"""
+    # Determine number of sessions
+    sessions_data = form_data.get('sessions', [])
+    num_sessions = len(sessions_data) if sessions_data else 1
+
+    # Create form with correct number of sessions
+    form = ModuleGuideV2Form()
+
+    # Populate basic fields
+    form.module_name.data = form_data.get('module_name', '')
+    form.module_acronym.data = form_data.get('module_acronym', '')
+    form.grade_level.data = form_data.get('grade_level', '')
+    form.module_type.data = form_data.get('module_type', '')
+
+    # Add sessions to match imported data
+    while len(form.sessions) < num_sessions:
+        form.sessions.append_entry()
+
+    # Populate each session
+    for i, session_data in enumerate(sessions_data):
+        if i < len(form.sessions):
+            session_entry = form.sessions[i]
+            # Access nested form fields via .form. (FormField wrapper requires this)
+            session_entry.form.number.data = session_data.get('number', i + 1)
+            session_entry.form.title.data = session_data.get('title', '')
+            session_entry.form.introduction.data = session_data.get('introduction', '')
+
+            # Assembly/Maintenance
+            session_entry.form.advance_prep.data = session_data.get('advance_prep', '')
+            session_entry.form.station_setup.data = session_data.get('station_setup', '')
+            session_entry.form.equipment_notes.data = session_data.get('equipment_notes', '')
+            session_entry.form.cleanup.data = session_data.get('cleanup', '')
+
+            # Goals
+            session_entry.form.learning_goals.data = session_data.get('learning_goals', '')
+
+            # Standards
+            standards_data = session_data.get('standards', [])
+            while len(session_entry.form.standards) < len(standards_data):
+                session_entry.form.standards.append_entry()
+            for j, std in enumerate(standards_data):
+                if j < len(session_entry.form.standards):
+                    session_entry.form.standards[j].form.code.data = std.get('code', '')
+                    session_entry.form.standards[j].form.standard_type.data = std.get('standard_type', '')
+                    session_entry.form.standards[j].form.description.data = std.get('description', '')
+                    session_entry.form.standards[j].form.how_it_shows_up.data = std.get('how_it_shows_up', '')
+
+            # Materials
+            materials_data = session_data.get('materials', [])
+            while len(session_entry.form.materials) < len(materials_data):
+                session_entry.form.materials.append_entry()
+            for j, mat in enumerate(materials_data):
+                if j < len(session_entry.form.materials):
+                    session_entry.form.materials[j].form.item.data = mat.get('item', '')
+                    session_entry.form.materials[j].form.quantity.data = mat.get('quantity', '')
+                    session_entry.form.materials[j].form.group.data = mat.get('group', '')
+
+            # Safety
+            session_entry.form.general_safety_rules.data = session_data.get('general_safety_rules', '')
+            safety_items_data = session_data.get('safety_items', [])
+            while len(session_entry.form.safety_items) < len(safety_items_data):
+                session_entry.form.safety_items.append_entry()
+            for j, si in enumerate(safety_items_data):
+                if j < len(session_entry.form.safety_items):
+                    session_entry.form.safety_items[j].form.item.data = si.get('item', '')
+                    session_entry.form.safety_items[j].form.warnings.data = si.get('warnings', '')
+
+            # Vocabulary
+            vocab_data = session_data.get('vocabulary', [])
+            while len(session_entry.form.vocabulary) < len(vocab_data):
+                session_entry.form.vocabulary.append_entry()
+            for j, v in enumerate(vocab_data):
+                if j < len(session_entry.form.vocabulary):
+                    session_entry.form.vocabulary[j].form.term.data = v.get('term', '')
+                    session_entry.form.vocabulary[j].form.definition.data = v.get('definition', '')
+                    session_entry.form.vocabulary[j].form.slides.data = v.get('slides', '')
+
+            # Career (nested FormField - needs .form. twice)
+            career_data = session_data.get('career', {})
+            session_entry.form.career.form.name.data = career_data.get('name', '')
+            session_entry.form.career.form.title.data = career_data.get('title', '')
+            session_entry.form.career.form.connection.data = career_data.get('connection', '')
+
+            # Teacher Tips
+            session_entry.form.teacher_tips.data = session_data.get('teacher_tips', '')
+            session_entry.form.look_fors.data = session_data.get('look_fors', '')
+            session_entry.form.questions_prompts.data = session_data.get('questions_prompts', '')
+
+    # Populate answer key sections
+    # Pre-test questions
+    pretest_data = form_data.get('pretest_questions', [])
+    while len(form.pretest_questions) < len(pretest_data):
+        form.pretest_questions.append_entry()
+    for i, q in enumerate(pretest_data):
+        if i < len(form.pretest_questions):
+            qf = form.pretest_questions[i].form
+            qf.question_number.data = q.get('question_number', i + 1)
+            qf.question_type.data = q.get('question_type', 'single_select')
+            qf.stem.data = q.get('stem', '')
+            qf.stem_part_a.data = q.get('stem_part_a', '')
+            qf.stem_part_b.data = q.get('stem_part_b', '')
+            qf.choice_a.data = q.get('choice_a', '')
+            qf.choice_b.data = q.get('choice_b', '')
+            qf.choice_c.data = q.get('choice_c', '')
+            qf.choice_d.data = q.get('choice_d', '')
+            qf.choice_e.data = q.get('choice_e', '')
+            qf.choice_f.data = q.get('choice_f', '')
+            qf.part_a_choice_a.data = q.get('part_a_choice_a', '')
+            qf.part_a_choice_b.data = q.get('part_a_choice_b', '')
+            qf.part_a_choice_c.data = q.get('part_a_choice_c', '')
+            qf.part_a_choice_d.data = q.get('part_a_choice_d', '')
+            qf.part_a_choice_e.data = q.get('part_a_choice_e', '')
+            qf.part_a_choice_f.data = q.get('part_a_choice_f', '')
+            qf.part_b_choice_a.data = q.get('part_b_choice_a', '')
+            qf.part_b_choice_b.data = q.get('part_b_choice_b', '')
+            qf.part_b_choice_c.data = q.get('part_b_choice_c', '')
+            qf.part_b_choice_d.data = q.get('part_b_choice_d', '')
+            qf.part_b_choice_e.data = q.get('part_b_choice_e', '')
+            qf.part_b_choice_f.data = q.get('part_b_choice_f', '')
+            qf.correct_labels.data = q.get('correct_labels', '')
+            qf.part_a_correct.data = q.get('part_a_correct', '')
+            qf.part_b_correct.data = q.get('part_b_correct', '')
+
+    # Post-test questions
+    posttest_data = form_data.get('posttest_questions', [])
+    while len(form.posttest_questions) < len(posttest_data):
+        form.posttest_questions.append_entry()
+    for i, q in enumerate(posttest_data):
+        if i < len(form.posttest_questions):
+            qf = form.posttest_questions[i].form
+            qf.question_number.data = q.get('question_number', i + 1)
+            qf.question_type.data = q.get('question_type', 'single_select')
+            qf.stem.data = q.get('stem', '')
+            qf.stem_part_a.data = q.get('stem_part_a', '')
+            qf.stem_part_b.data = q.get('stem_part_b', '')
+            qf.choice_a.data = q.get('choice_a', '')
+            qf.choice_b.data = q.get('choice_b', '')
+            qf.choice_c.data = q.get('choice_c', '')
+            qf.choice_d.data = q.get('choice_d', '')
+            qf.choice_e.data = q.get('choice_e', '')
+            qf.choice_f.data = q.get('choice_f', '')
+            qf.part_a_choice_a.data = q.get('part_a_choice_a', '')
+            qf.part_a_choice_b.data = q.get('part_a_choice_b', '')
+            qf.part_a_choice_c.data = q.get('part_a_choice_c', '')
+            qf.part_a_choice_d.data = q.get('part_a_choice_d', '')
+            qf.part_a_choice_e.data = q.get('part_a_choice_e', '')
+            qf.part_a_choice_f.data = q.get('part_a_choice_f', '')
+            qf.part_b_choice_a.data = q.get('part_b_choice_a', '')
+            qf.part_b_choice_b.data = q.get('part_b_choice_b', '')
+            qf.part_b_choice_c.data = q.get('part_b_choice_c', '')
+            qf.part_b_choice_d.data = q.get('part_b_choice_d', '')
+            qf.part_b_choice_e.data = q.get('part_b_choice_e', '')
+            qf.part_b_choice_f.data = q.get('part_b_choice_f', '')
+            qf.correct_labels.data = q.get('correct_labels', '')
+            qf.part_a_correct.data = q.get('part_a_correct', '')
+            qf.part_b_correct.data = q.get('part_b_correct', '')
+
+    # RCP sessions
+    rcp_data = form_data.get('rcp_sessions', [])
+    while len(form.rcp_sessions) < len(rcp_data):
+        form.rcp_sessions.append_entry()
+    for i, rcp_session in enumerate(rcp_data):
+        if i < len(form.rcp_sessions):
+            sf = form.rcp_sessions[i].form
+            sf.session_number.data = rcp_session.get('session_number', i + 2)
+
+            # Recall question
+            recall_data = rcp_session.get('recall', {})
+            sf.recall.form.question.data = recall_data.get('question', '')
+            sf.recall.form.choice_a.data = recall_data.get('choice_a', '')
+            sf.recall.form.choice_b.data = recall_data.get('choice_b', '')
+            sf.recall.form.choice_c.data = recall_data.get('choice_c', '')
+            sf.recall.form.choice_d.data = recall_data.get('choice_d', '')
+            sf.recall.form.choice_e.data = recall_data.get('choice_e', '')
+            sf.recall.form.correct_answer.data = recall_data.get('correct_answer', '')
+
+            # Connect question
+            connect_data = rcp_session.get('connect', {})
+            sf.connect.form.question.data = connect_data.get('question', '')
+            sf.connect.form.choice_a.data = connect_data.get('choice_a', '')
+            sf.connect.form.choice_b.data = connect_data.get('choice_b', '')
+            sf.connect.form.choice_c.data = connect_data.get('choice_c', '')
+            sf.connect.form.choice_d.data = connect_data.get('choice_d', '')
+            sf.connect.form.choice_e.data = connect_data.get('choice_e', '')
+            sf.connect.form.correct_answer.data = connect_data.get('correct_answer', '')
+
+            # Predict question
+            predict_data = rcp_session.get('predict', {})
+            sf.predict.form.question.data = predict_data.get('question', '')
+            sf.predict.form.choice_a.data = predict_data.get('choice_a', '')
+            sf.predict.form.choice_b.data = predict_data.get('choice_b', '')
+            sf.predict.form.choice_c.data = predict_data.get('choice_c', '')
+            sf.predict.form.choice_d.data = predict_data.get('choice_d', '')
+            sf.predict.form.choice_e.data = predict_data.get('choice_e', '')
+            sf.predict.form.correct_answer.data = predict_data.get('correct_answer', '')
+
+    return form
+
+
+@app.route('/autosave-moduleguide-v2-draft', methods=['POST'])
+@login_required
+def autosave_moduleguide_v2_draft():
+    """AJAX endpoint for autosaving Module Guide V2 draft"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+
+        # Prepare form data
+        form_data = {
+            'module_name': data.get('module_name', ''),
+            'module_acronym': data.get('module_acronym', ''),
+            'grade_level': data.get('grade_level', ''),
+            'module_type': data.get('module_type', ''),
+            'sessions': data.get('sessions', []),
+            # Answer Key sections
+            'pretest_questions': data.get('pretest_questions', []),
+            'posttest_questions': data.get('posttest_questions', []),
+            'rcp_sessions': data.get('rcp_sessions', [])
+        }
+
+        # Check if updating existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide_v2').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                if form_data['module_acronym']:
+                    draft.title = f"Module Guide V2 - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Module Guide V2 - {form_data['module_acronym']}" if form_data['module_acronym'] else "Module Guide V2 - Untitled"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='moduleguide_v2',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+
+    except Exception as e:
+        print(f"Error in Module Guide V2 autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/load-moduleguide-v2-draft/<int:draft_id>')
+@login_required
+def load_moduleguide_v2_draft(draft_id):
+    """Load Module Guide V2 draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide_v2').first()
+
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_module_guide_v2'))
+
+    return redirect(url_for('create_module_guide_v2', draft_id=draft_id))
+
+
+@app.route('/delete-moduleguide-v2-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_moduleguide_v2_draft(draft_id):
+    """Delete Module Guide V2 draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide_v2').first()
+
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+
+    return redirect(url_for('drafts'))
+
+
+# ===== FAMILY BRIEFING V2 ROUTES =====
+
+@app.route('/upload-familybriefing-v2-json', methods=['POST'])
+@login_required
+def upload_familybriefing_v2_json():
+    """Handle JSON file upload and create draft for Family Briefing V2"""
+    if 'json_file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    file = request.files['json_file']
+    if file.filename == '' or not file.filename.endswith('.json'):
+        return jsonify({'success': False, 'error': 'Invalid file type. Please upload a .json file'}), 400
+
+    try:
+        # Parse JSON
+        json_data = json.load(file)
+
+        # Validate required structure
+        if 'module' not in json_data or 'sections' not in json_data:
+            return jsonify({'success': False, 'error': 'Invalid JSON structure. Must contain "module" and "sections" keys'}), 400
+
+        # Transform to form-compatible structure
+        form_data = transform_familybriefing_v2_json_to_form_data(json_data)
+
+        # Create draft
+        draft = FormDraft(
+            user_id=current_user.id,
+            form_type='familybriefing_v2',
+            title=f"Family Briefing V2 - {form_data.get('module_name', 'Unknown')}",
+            module_acronym=form_data.get('module_acronym', ''),
+            form_data=form_data
+        )
+        db.session.add(draft)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'message': 'JSON imported successfully',
+            'section_count': len(form_data.get('key_concepts', []))
+        })
+
+    except json.JSONDecodeError:
+        return jsonify({'success': False, 'error': 'Invalid JSON format. Please check the file.'}), 400
+    except Exception as e:
+        print(f"Error in Family Briefing V2 JSON upload: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/create-family-briefing-v2', methods=['GET', 'POST'])
+@login_required
+def create_family_briefing_v2():
+    """Main form page for Family Briefing V2"""
+    form = FamilyBriefingV2Form()
+    draft_id = request.args.get('draft_id')
+
+    # Load draft data if available
+    if draft_id:
+        draft = FormDraft.query.filter_by(
+            id=draft_id,
+            user_id=current_user.id,
+            form_type='familybriefing_v2'
+        ).first()
+        if draft and draft.form_data:
+            load_familybriefing_v2_draft_into_form(form, draft.form_data)
+
+    if request.method == 'POST':
+        print("Family Briefing V2 form submitted!")
+        print(f"Form valid: {form.validate_on_submit()}")
+        if form.errors:
+            print(f"Form errors: {form.errors}")
+
+        if form.validate_on_submit():
+            print("Family Briefing V2 form validation passed!")
+            try:
+                # Load draft data for generation
+                draft_id_from_form = request.form.get('draft_id')
+                if draft_id_from_form:
+                    draft = FormDraft.query.filter_by(
+                        id=draft_id_from_form,
+                        user_id=current_user.id,
+                        form_type='familybriefing_v2'
+                    ).first()
+                    if draft and draft.form_data:
+                        print("Found draft data - using for generation")
+
+                print("Attempting to generate Family Briefing V2...")
+                doc_path = generate_family_briefing_v2(form)
+                filename = os.path.basename(doc_path)
+
+                print(f"Family Briefing V2 generated at: {doc_path}")
+
+                # Save document info to database
+                doc_record = GeneratedDocument(
+                    user_id=current_user.id,
+                    draft_id=int(draft_id_from_form) if draft_id_from_form else None,
+                    document_type='familybriefing_v2',
+                    filename=filename,
+                    file_path=doc_path,
+                    module_acronym=form.module_acronym.data,
+                    file_size=os.path.getsize(doc_path) if os.path.exists(doc_path) else 0
+                )
+                db.session.add(doc_record)
+                db.session.commit()
+
+                flash('Family Briefing V2 generated successfully!', 'success')
+                return redirect(url_for('my_documents'))
+
+            except Exception as e:
+                print(f"Error generating Family Briefing V2: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Error generating document: {str(e)}', 'error')
+
+    return render_template('create_familybriefing_v2.html', form=form, draft_id=draft_id)
+
+
+@app.route('/autosave-familybriefing-v2-draft', methods=['POST'])
+@login_required
+def autosave_familybriefing_v2_draft():
+    """AJAX endpoint for autosaving Family Briefing V2 draft"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'})
+
+        # Prepare form data
+        form_data = {
+            'module_name': data.get('module_name', ''),
+            'module_acronym': data.get('module_acronym', ''),
+            'grade_level': data.get('grade_level', ''),
+            'parent_letter': data.get('parent_letter', ''),
+            'learning_objectives': data.get('learning_objectives', []),
+            'key_concepts': data.get('key_concepts', [])
+        }
+
+        # Check if updating existing draft
+        draft_id = data.get('draft_id')
+        if draft_id:
+            draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing_v2').first()
+            if draft:
+                draft.form_data = form_data
+                draft.updated_at = datetime.utcnow()
+                if form_data['module_acronym']:
+                    draft.title = f"Family Briefing V2 - {form_data['module_acronym']}"
+                    draft.module_acronym = form_data['module_acronym']
+                elif form_data['module_name']:
+                    draft.title = f"Family Briefing V2 - {form_data['module_name']}"
+            else:
+                return jsonify({'success': False, 'error': 'Draft not found'})
+        else:
+            # Create new draft
+            title = f"Family Briefing V2 - {form_data['module_acronym'] or form_data['module_name'] or 'Untitled'}"
+            draft = FormDraft(
+                user_id=current_user.id,
+                form_type='familybriefing_v2',
+                title=title,
+                module_acronym=form_data['module_acronym'],
+                form_data=form_data
+            )
+            db.session.add(draft)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'message': 'Draft saved automatically',
+            'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+        })
+
+    except Exception as e:
+        print(f"Error in Family Briefing V2 autosave: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/load-familybriefing-v2-draft/<int:draft_id>')
+@login_required
+def load_familybriefing_v2_draft(draft_id):
+    """Load Family Briefing V2 draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing_v2').first()
+
+    if not draft:
+        flash('Draft not found', 'error')
+        return redirect(url_for('create_family_briefing_v2'))
+
+    return redirect(url_for('create_family_briefing_v2', draft_id=draft_id))
+
+
+@app.route('/delete-familybriefing-v2-draft/<int:draft_id>', methods=['POST'])
+@login_required
+def delete_familybriefing_v2_draft(draft_id):
+    """Delete Family Briefing V2 draft"""
+    draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='familybriefing_v2').first()
+
+    if not draft:
+        flash('Draft not found', 'error')
+    else:
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted successfully!', 'success')
+
+    return redirect(url_for('drafts'))
+
+
 @app.route('/autosave-moduleanswerkey-draft', methods=['POST'])
 @login_required
 def autosave_moduleanswerkey_draft():
@@ -7075,74 +10725,55 @@ def delete_familybriefing_draft(draft_id):
 @app.route('/create-studentmoduleworkbook', methods=['GET', 'POST'])
 @login_required
 def create_studentmoduleworkbook():
-    form = StudentModuleWorkbookForm()
-    
-    if request.method == 'POST':
-        print("Student Logbook form submitted!")
-        print(f"Form data: {request.form}")
-        print(f"Form valid: {form.validate_on_submit()}")
-        if form.errors:
-            print(f"Form errors: {form.errors}")
-    
+    form = StudentLogbookV2Form()
+
     if form.validate_on_submit():
-        print("Student Logbook form validation passed!")
-        # Generate the document
         try:
-            print("Attempting to generate student logbook...")
-            doc_path = generate_student_module_workbook(form)
+            module_name = form.module_name.data
+            module_title = form.module_title.data or ''
+            sessions_raw = request.form.get('sessions_data', '')
+            sessions = json.loads(sessions_raw) if sessions_raw else []
+
+            doc_path = generate_student_logbook_v2(module_name, sessions, module_title=module_title)
             filename = os.path.basename(doc_path)
-            
-            print(f"Student logbook generated at: {doc_path}")
-            
-            # Save document info to database
+
             doc_record = GeneratedDocument(
                 user_id=current_user.id,
                 document_type='studentmoduleworkbook',
                 filename=filename,
                 file_path=doc_path,
-                module_acronym=form.module_name.data or 'Student Workbook',  # Use the module name
+                module_acronym=module_name or 'Student Workbook',
                 file_size=os.path.getsize(doc_path)
             )
             db.session.add(doc_record)
             db.session.commit()
-            
+
             flash('Student Logbook generated successfully!', 'success')
             return redirect(url_for('my_documents'))
         except Exception as e:
             print(f"Error generating student logbook: {e}")
+            import traceback; traceback.print_exc()
             flash(f'Error generating document: {str(e)}', 'error')
-    
+
     return render_template('create_studentmoduleworkbook.html', form=form)
 
 @app.route('/autosave-studentmoduleworkbook-draft', methods=['POST'])
 @login_required
 def autosave_studentmoduleworkbook_draft():
-    """AJAX endpoint for autosaving student logbook draft"""
+    """AJAX endpoint for autosaving student logbook v2 draft"""
     try:
-        # Get JSON data from the request
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'})
-        
-        # Prepare form data for JSON storage
+
+        # Store the v2 JSON structure directly
         form_data = {
+            'version': 2,
             'module_name': data.get('module_name', ''),
+            'module_title': data.get('module_title', ''),
+            'sessions': data.get('sessions', [])
         }
-        
-        # Session focus
-        for i in range(1, 8):
-            form_data[f'focus_s{i}'] = data.get(f'focus_s{i}', '')
-        
-        # Session goals, vocabulary, and assessments
-        for s in range(1, 8):
-            for g in range(1, 4):
-                form_data[f's{s}_goal{g}'] = data.get(f's{s}_goal{g}', '')
-            for v in range(1, 6):
-                form_data[f's{s}_vocab{v}'] = data.get(f's{s}_vocab{v}', '')
-            for a in range(1, 5):
-                form_data[f's{s}_assessment{a}'] = data.get(f's{s}_assessment{a}', '')
-        
-        # Check if this is updating an existing draft
+
         draft_id = data.get('draft_id')
         if draft_id:
             draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
@@ -7150,23 +10781,18 @@ def autosave_studentmoduleworkbook_draft():
                 draft.form_data = form_data
                 draft.updated_at = datetime.utcnow()
                 db.session.commit()
-                
+
                 timestamp = draft.updated_at.strftime('%I:%M %p')
                 return jsonify({
                     'success': True,
                     'draft_id': draft.id,
                     'timestamp': timestamp
                 })
-        
-        # Create new draft
-        # Generate title from first non-empty focus
-        title = 'Student Logbook Draft'
-        for i in range(1, 8):
-            focus_text = data.get(f'focus_s{i}', '').strip()
-            if focus_text:
-                title = f'Student Logbook - Session {i}: {focus_text[:30]}...' if len(focus_text) > 30 else f'Student Logbook - Session {i}: {focus_text}'
-                break
-        
+
+        # Create new draft — title from module_name
+        module_name = data.get('module_name', '').strip()
+        title = f'Student Logbook - {module_name}' if module_name else 'Student Logbook Draft'
+
         draft = FormDraft(
             user_id=current_user.id,
             form_type='studentmoduleworkbook',
@@ -7175,14 +10801,14 @@ def autosave_studentmoduleworkbook_draft():
         )
         db.session.add(draft)
         db.session.commit()
-        
+
         timestamp = draft.created_at.strftime('%I:%M %p')
         return jsonify({
             'success': True,
             'draft_id': draft.id,
             'timestamp': timestamp
         })
-        
+
     except Exception as e:
         print(f"Error in autosave_studentmoduleworkbook_draft: {e}")
         return jsonify({'success': False, 'error': str(e)})
@@ -7192,35 +10818,34 @@ def autosave_studentmoduleworkbook_draft():
 def load_studentmoduleworkbook_draft(draft_id):
     """Load student logbook draft"""
     draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='studentmoduleworkbook').first()
-    
+
     if not draft:
         flash('Draft not found', 'error')
         return redirect(url_for('create_studentmoduleworkbook'))
-    
+
     try:
-        # Create form and populate with draft data
-        form = StudentModuleWorkbookForm()
         form_data = draft.form_data
-        
-        # Populate module information
+        version = form_data.get('version', 1)
+
+        if version < 2:
+            flash('This draft was created with an older version of the Student Logbook and cannot be loaded. Please create a new logbook.', 'warning')
+            return redirect(url_for('create_studentmoduleworkbook'))
+
+        form = StudentLogbookV2Form()
         form.module_name.data = form_data.get('module_name', '')
-        
-        # Populate session focus fields
-        for i in range(1, 8):
-            getattr(form, f'focus_s{i}').data = form_data.get(f'focus_s{i}', '')
-        
-        # Populate session goals, vocabulary, and assessments
-        for s in range(1, 8):
-            for g in range(1, 4):
-                getattr(form, f's{s}_goal{g}').data = form_data.get(f's{s}_goal{g}', '')
-            for v in range(1, 6):
-                getattr(form, f's{s}_vocab{v}').data = form_data.get(f's{s}_vocab{v}', '')
-            for a in range(1, 5):
-                getattr(form, f's{s}_assessment{a}').data = form_data.get(f's{s}_assessment{a}', '')
-        
+        form.module_title.data = form_data.get('module_title', '')
+
+        # Pass sessions data as JSON for JavaScript to restore
+        draft_sessions_json = json.dumps(form_data.get('sessions', []))
+
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
-        return render_template('create_studentmoduleworkbook.html', form=form, draft_id=draft.id)
-        
+        return render_template(
+            'create_studentmoduleworkbook.html',
+            form=form,
+            draft_id=draft.id,
+            draft_sessions_json=draft_sessions_json
+        )
+
     except Exception as e:
         print(f"Error loading student logbook draft: {e}")
         flash('Error loading draft', 'error')

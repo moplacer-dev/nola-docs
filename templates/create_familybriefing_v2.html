@@ -1,0 +1,658 @@
+{% extends "base.html" %}
+
+{% block title %}Create Family Briefing V2 - NOLA.docs{% endblock %}
+
+{% block content %}
+<style>
+    /* Autosave Status Styles */
+    .autosave-status {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .autosave-status.saving {
+        background: #fbbf24;
+        color: #92400e;
+    }
+
+    .autosave-status.saved {
+        background: #10b981;
+        color: white;
+    }
+
+    .autosave-status.error {
+        background: #ef4444;
+        color: white;
+    }
+
+    .autosave-status.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    /* Accordion styles */
+    .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .accordion-content.expanded {
+        max-height: none;
+        overflow: visible;
+    }
+    .accordion-icon {
+        transition: transform 0.3s ease;
+    }
+    .accordion-icon.expanded {
+        transform: rotate(90deg);
+    }
+
+    /* JSON Upload Zone */
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f8fafc;
+    }
+    .upload-zone:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    .upload-zone.dragover {
+        border-color: #3b82f6;
+        background: #dbeafe;
+    }
+    .upload-zone.success {
+        border-color: #10b981;
+        background: #d1fae5;
+    }
+
+    /* Section Card */
+    .section-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 7px 7px 0 0;
+        cursor: pointer;
+    }
+    .section-header:hover {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+
+    /* Dynamic list styles */
+    .dynamic-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .dynamic-item .item-number {
+        background: #1d4ed8;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .dynamic-item .item-content {
+        flex: 1;
+    }
+    .dynamic-item .remove-btn {
+        color: #ef4444;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
+    .dynamic-item .remove-btn:hover {
+        opacity: 1;
+    }
+
+    /* Concept card */
+    .concept-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+    .concept-header {
+        background: #f3f4f6;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .concept-body {
+        padding: 16px;
+    }
+
+</style>
+
+<!-- Autosave Status Indicator -->
+<div id="autosave-status" class="autosave-status hidden">
+    <span id="autosave-text">Ready to autosave</span>
+</div>
+
+<div class="max-w-5xl mx-auto py-8 px-4 pb-24">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Family Briefing V2</h1>
+        <p class="text-gray-600 mt-2">Import a JSON file to populate data, then edit as needed. <strong>Your progress is automatically saved as you type.</strong></p>
+    </div>
+
+    <!-- JSON Upload Section -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Step 1: Import JSON Data (Optional)</h2>
+        <p class="text-sm text-gray-600 mb-4">Upload a Family Briefing JSON file to auto-populate all fields. You can also fill out the form manually.</p>
+
+        <div id="upload-zone" class="upload-zone">
+            <input type="file" id="json-file-input" accept=".json" class="hidden">
+            <div id="upload-icon" class="mb-4">
+                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+            </div>
+            <p id="upload-text" class="text-gray-600 font-medium">Click to upload or drag and drop</p>
+            <p class="text-sm text-gray-500 mt-1">JSON files only</p>
+        </div>
+
+        <div id="upload-status" class="mt-4 hidden">
+            <div id="upload-success" class="hidden p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p class="text-green-800 font-medium">JSON imported successfully! Redirecting...</p>
+            </div>
+            <div id="upload-error" class="hidden p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-red-800 font-medium" id="error-message">Error importing file</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <form method="POST" action="{{ url_for('create_family_briefing_v2') }}" id="family-briefing-v2-form">
+            {{ form.hidden_tag() }}
+
+            <!-- Module Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Step 2: Module Information</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        {{ form.module_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.module_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", data_autosave="true", placeholder="e.g., Reactions, Weather") }}
+                    </div>
+                    <div>
+                        {{ form.module_acronym.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.module_acronym(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", data_autosave="true", placeholder="e.g., RXNS, WTHR") }}
+                        {% if form.module_acronym.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.module_acronym.errors[0] }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {{ form.grade_level.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                        {{ form.grade_level(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", data_autosave="true", placeholder="e.g., 7-8") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parent Letter Section -->
+            <div class="section-card">
+                <div class="section-header" onclick="toggleSection('parent-letter')">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Parent Letter</h3>
+                        <svg class="accordion-icon w-5 h-5 expanded" id="parent-letter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="accordion-content expanded" id="parent-letter-content">
+                    <div class="p-6">
+                        {{ form.parent_letter(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-48", rows="8", data_autosave="true", placeholder="Dear Parents & Guardians,\n\nAs parents and educators, we know it isn't always easy to get kids to open up about what they're learning at school...") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learning Objectives Section -->
+            <div class="section-card">
+                <div class="section-header" onclick="toggleSection('learning-objectives')">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Learning Objectives</h3>
+                        <svg class="accordion-icon w-5 h-5 expanded" id="learning-objectives-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="accordion-content expanded" id="learning-objectives-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Add the learning objectives for this module.</p>
+                        <div id="learning-objectives-container">
+                            {% for objective in form.learning_objectives %}
+                                <div class="dynamic-item" data-index="{{ loop.index0 }}">
+                                    <span class="item-number">{{ loop.index }}</span>
+                                    <div class="item-content">
+                                        {{ objective(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500", rows="2", data_autosave="true", placeholder="Enter learning objective...") }}
+                                    </div>
+                                    <button type="button" class="remove-btn" onclick="removeObjective(this)">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" onclick="addObjective()" class="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            + Add Learning Objective
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Concepts Section -->
+            <div class="section-card">
+                <div class="section-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);" onclick="toggleSection('key-concepts')">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Key Concepts</h3>
+                        <svg class="accordion-icon w-5 h-5 expanded" id="key-concepts-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="accordion-content expanded" id="key-concepts-content">
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Add key concepts with explanations and a question for parents to ask.</p>
+                        <div id="key-concepts-container">
+                            {% for kc in form.key_concepts %}
+                                <div class="concept-card" data-index="{{ loop.index0 }}">
+                                    <div class="concept-header">
+                                        <span class="font-semibold text-gray-700">Concept {{ loop.index }}</span>
+                                        <button type="button" class="text-red-500 hover:text-red-700" onclick="removeKeyConcept(this)">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="concept-body">
+                                        <div class="mb-4">
+                                            <label class="text-sm font-medium text-gray-700 block mb-1">Concept Name</label>
+                                            {{ kc.form.concept(class="w-full px-3 py-2 border border-gray-300 rounded-md", data_autosave="true", placeholder="e.g., Chemical Reactions Create New Substances") }}
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="text-sm font-medium text-gray-700 block mb-1">Explanation</label>
+                                            {{ kc.form.explanation(class="w-full px-3 py-2 border border-gray-300 rounded-md", rows="3", data_autosave="true", placeholder="Explain the concept in parent-friendly terms...") }}
+                                        </div>
+                                        <div>
+                                            <label class="text-sm font-medium text-gray-700 block mb-1">Question to Ask</label>
+                                            {{ kc.form.question(class="w-full px-3 py-2 border border-gray-300 rounded-md", rows="2", data_autosave="true", placeholder="A question parents can ask their child about this concept...") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" onclick="addKeyConcept()" class="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            + Add Key Concept
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button type="submit" name="action" value="generate"
+                        class="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 transition-colors text-lg font-medium">
+                    Generate Family Briefing V2
+                </button>
+            </div>
+
+            <!-- Hidden field to track draft -->
+            {% if draft_id %}
+                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+            {% else %}
+                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+// Toggle section accordion
+function toggleSection(sectionId) {
+    const content = document.getElementById(`${sectionId}-content`);
+    const icon = document.getElementById(`${sectionId}-icon`);
+    content.classList.toggle('expanded');
+    icon.classList.toggle('expanded');
+}
+
+// JSON Upload functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('json-file-input');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadSuccess = document.getElementById('upload-success');
+    const uploadError = document.getElementById('upload-error');
+    const errorMessage = document.getElementById('error-message');
+    const csrfToken = document.querySelector('[name=csrf_token]').value;
+
+    // Click to upload
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file.name.endsWith('.json')) {
+            showError('Please select a JSON file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('json_file', file);
+
+        // Show loading state
+        document.getElementById('upload-text').textContent = 'Uploading...';
+
+        fetch('/upload-familybriefing-v2-json', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess();
+                // Redirect to load the draft
+                window.location.href = `/create-family-briefing-v2?draft_id=${data.draft_id}`;
+            } else {
+                showError(data.error);
+            }
+        })
+        .catch(error => {
+            showError('Failed to upload file: ' + error);
+        });
+    }
+
+    function showSuccess() {
+        uploadZone.classList.add('success');
+        uploadStatus.classList.remove('hidden');
+        uploadSuccess.classList.remove('hidden');
+        uploadError.classList.add('hidden');
+        document.getElementById('upload-text').textContent = 'File uploaded successfully!';
+    }
+
+    function showError(message) {
+        uploadZone.classList.remove('success');
+        uploadStatus.classList.remove('hidden');
+        uploadSuccess.classList.add('hidden');
+        uploadError.classList.remove('hidden');
+        errorMessage.textContent = message;
+        document.getElementById('upload-text').textContent = 'Click to upload or drag and drop';
+    }
+
+    // Autosave functionality
+    initAutosave();
+});
+
+// ===== DYNAMIC FIELD FUNCTIONS =====
+
+// Learning Objectives
+let objectiveCount = {{ form.learning_objectives|length }};
+
+function addObjective() {
+    const container = document.getElementById('learning-objectives-container');
+    const index = objectiveCount++;
+    const div = document.createElement('div');
+    div.className = 'dynamic-item';
+    div.dataset.index = index;
+    div.innerHTML = `
+        <span class="item-number">${index + 1}</span>
+        <div class="item-content">
+            <textarea name="learning_objectives-${index}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="2" data-autosave="true" placeholder="Enter learning objective..."></textarea>
+        </div>
+        <button type="button" class="remove-btn" onclick="removeObjective(this)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    `;
+    container.appendChild(div);
+    renumberObjectives();
+    triggerAutosave();
+}
+
+function removeObjective(btn) {
+    btn.closest('.dynamic-item').remove();
+    renumberObjectives();
+    triggerAutosave();
+}
+
+function renumberObjectives() {
+    const items = document.querySelectorAll('#learning-objectives-container .dynamic-item');
+    items.forEach((item, idx) => {
+        item.querySelector('.item-number').textContent = idx + 1;
+    });
+}
+
+// Key Concepts
+let conceptCount = {{ form.key_concepts|length }};
+
+function addKeyConcept() {
+    const container = document.getElementById('key-concepts-container');
+    const index = conceptCount++;
+
+    const div = document.createElement('div');
+    div.className = 'concept-card';
+    div.dataset.index = index;
+    div.innerHTML = `
+        <div class="concept-header">
+            <span class="font-semibold text-gray-700">Concept ${index + 1}</span>
+            <button type="button" class="text-red-500 hover:text-red-700" onclick="removeKeyConcept(this)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="concept-body">
+            <div class="mb-4">
+                <label class="text-sm font-medium text-gray-700 block mb-1">Concept Name</label>
+                <input type="text" name="key_concepts-${index}-concept" class="w-full px-3 py-2 border border-gray-300 rounded-md" data-autosave="true" placeholder="e.g., Chemical Reactions Create New Substances">
+            </div>
+            <div class="mb-4">
+                <label class="text-sm font-medium text-gray-700 block mb-1">Explanation</label>
+                <textarea name="key_concepts-${index}-explanation" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="3" data-autosave="true" placeholder="Explain the concept in parent-friendly terms..."></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">Question to Ask</label>
+                <textarea name="key_concepts-${index}-question" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="2" data-autosave="true" placeholder="A question parents can ask their child about this concept..."></textarea>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+    triggerAutosave();
+}
+
+function removeKeyConcept(btn) {
+    btn.closest('.concept-card').remove();
+    triggerAutosave();
+}
+
+// ===== AUTOSAVE =====
+let autosaveTimeout = null;
+const autosaveDelay = 3000;
+let currentDraftId = document.getElementById('current_draft_id')?.value || null;
+let isAutosaving = false;
+let lastSaveData = null;
+
+function initAutosave() {
+    const form = document.getElementById('family-briefing-v2-form');
+    form.addEventListener('input', (e) => {
+        if (e.target.dataset.autosave === 'true') {
+            scheduleAutosave();
+        }
+    });
+    form.addEventListener('change', (e) => {
+        if (e.target.dataset.autosave === 'true') {
+            scheduleAutosave();
+        }
+    });
+}
+
+function scheduleAutosave() {
+    if (autosaveTimeout) clearTimeout(autosaveTimeout);
+    autosaveTimeout = setTimeout(performAutosave, autosaveDelay);
+}
+
+function triggerAutosave() {
+    scheduleAutosave();
+}
+
+function performAutosave() {
+    if (isAutosaving) return;
+
+    const formData = collectFormData();
+    const formDataStr = JSON.stringify(formData);
+
+    if (lastSaveData && formDataStr === lastSaveData) return;
+
+    isAutosaving = true;
+    showAutosaveStatus('Saving...', 'saving');
+
+    formData.draft_id = currentDraftId;
+
+    fetch('/autosave-familybriefing-v2-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            if (result.draft_id && !currentDraftId) {
+                currentDraftId = result.draft_id;
+                document.getElementById('current_draft_id').value = result.draft_id;
+            }
+            lastSaveData = formDataStr;
+            showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
+        } else {
+            showAutosaveStatus(`Save error: ${result.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Autosave error:', error);
+        showAutosaveStatus('Save failed - check connection', 'error');
+    })
+    .finally(() => {
+        isAutosaving = false;
+    });
+}
+
+function collectFormData() {
+    const form = document.getElementById('family-briefing-v2-form');
+
+    const formData = {
+        module_name: form.querySelector('[name="module_name"]')?.value || '',
+        module_acronym: form.querySelector('[name="module_acronym"]')?.value || '',
+        grade_level: form.querySelector('[name="grade_level"]')?.value || '',
+        parent_letter: form.querySelector('[name="parent_letter"]')?.value || '',
+        learning_objectives: [],
+        key_concepts: []
+    };
+
+    // Collect learning objectives
+    document.querySelectorAll('#learning-objectives-container .dynamic-item').forEach((item, idx) => {
+        const textarea = item.querySelector('textarea');
+        if (textarea && textarea.value.trim()) {
+            formData.learning_objectives.push(textarea.value);
+        }
+    });
+
+    // Collect key concepts
+    document.querySelectorAll('#key-concepts-container .concept-card').forEach((card) => {
+        const concept = card.querySelector('input[name*="concept"]')?.value || '';
+        const explanation = card.querySelector('textarea[name*="explanation"]')?.value || '';
+        const question = card.querySelector('textarea[name*="question"]')?.value || '';
+        if (concept.trim()) {
+            formData.key_concepts.push({
+                concept: concept,
+                explanation: explanation,
+                question: question
+            });
+        }
+    });
+
+    return formData;
+}
+
+function showAutosaveStatus(message, type) {
+    const statusElement = document.getElementById('autosave-status');
+    const textElement = document.getElementById('autosave-text');
+
+    textElement.textContent = message;
+    statusElement.className = `autosave-status ${type}`;
+
+    setTimeout(() => {
+        statusElement.classList.remove('hidden');
+    }, 10);
+
+    if (type !== 'error') {
+        setTimeout(() => {
+            statusElement.classList.add('hidden');
+        }, 3000);
+    }
+}
+</script>
+
+{% endblock %}

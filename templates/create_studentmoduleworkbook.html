@@ -4,7 +4,6 @@
 
 {% block content %}
 <style>
-    /* Autosave Status Styles */
     .autosave-status {
         position: fixed;
         top: 80px;
@@ -17,26 +16,83 @@
         transition: all 0.3s ease;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    
-    .autosave-status.saving {
-        background: #fbbf24;
-        color: #92400e;
-    }
-    
-    .autosave-status.saved {
-        background: #10b981;
-        color: white;
-    }
-    
-    .autosave-status.error {
-        background: #ef4444;
-        color: white;
-    }
+    .autosave-status.saving { background: #fbbf24; color: #92400e; }
+    .autosave-status.saved { background: #10b981; color: white; }
+    .autosave-status.error { background: #ef4444; color: white; }
+    .autosave-status.hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
 
-    .autosave-status.hidden {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
+    /* Session accordion */
+    .session-panel { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+    .session-header { background: #f9fafb; padding: 16px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+    .session-header:hover { background: #f3f4f6; }
+    .session-header h3 { font-size: 16px; font-weight: 600; color: #1f2937; margin: 0; }
+    .session-header .chevron { transition: transform 0.2s; font-size: 18px; color: #6b7280; }
+    .session-header.open .chevron { transform: rotate(180deg); }
+    .session-body { display: none; padding: 20px; border-top: 1px solid #e5e7eb; }
+    .session-body.open { display: block; }
+
+    /* Block cards */
+    .block-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px; margin-bottom: 10px; background: #fefefe; position: relative; }
+    .block-card .block-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .badge-partner-talk { background: #dcfce7; color: #166534; }
+    .badge-activity-observation { background: #dbeafe; color: #1e40af; }
+    .badge-custom-prompt { background: #f3e8ff; color: #6b21a8; }
+    .badge-custom-table { background: #fef3c7; color: #92400e; }
+    .badge-noticing-patterns { background: #ccfbf1; color: #115e59; }
+    .badge-section-header { background: #e5e7eb; color: #374151; }
+
+    .block-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+    .block-actions button { background: none; border: 1px solid #d1d5db; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #6b7280; }
+    .block-actions button:hover { background: #f3f4f6; color: #111827; }
+    .block-actions button.delete-btn:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+    /* Vocab tags */
+    .vocab-item { display: inline-flex; align-items: center; gap: 6px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 8px 4px 12px; margin: 4px 4px 4px 0; }
+    .vocab-item input { border: none; background: transparent; outline: none; font-size: 14px; width: 120px; }
+    .vocab-item .remove-vocab { background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 16px; padding: 0 2px; }
+    .vocab-item .remove-vocab:hover { color: #ef4444; }
+
+    /* Custom table builder */
+    .table-builder { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px; margin-top: 8px; }
+    .col-header-list, .row-list { margin-top: 8px; }
+    .col-header-item, .row-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .col-header-item input, .row-item input { flex: 1; }
+    .mini-grid { margin-top: 8px; overflow-x: auto; }
+    .mini-grid table { border-collapse: collapse; width: 100%; }
+    .mini-grid th, .mini-grid td { border: 1px solid #e5e7eb; padding: 4px 6px; font-size: 12px; }
+    .mini-grid th { background: #f3f4f6; font-weight: 600; }
+    .mini-grid input { width: 100%; border: none; outline: none; font-size: 12px; background: transparent; }
+
+    /* Toggles */
+    .toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .toggle-row label { font-weight: 500; color: #374151; cursor: pointer; }
+
+    /* CER prompts */
+    .cer-prompts { margin-top: 10px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; }
+    .cer-prompts label { font-size: 13px; font-weight: 600; color: #166534; }
+
+    /* Reflection prompts */
+    .reflection-prompts { margin-top: 10px; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; }
+    .reflection-prompts label { font-size: 13px; font-weight: 600; color: #1e40af; }
+
+    /* Checklist items */
+    .checklist-item { display: inline-flex; align-items: center; gap: 6px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 4px 8px 4px 12px; margin: 4px 4px 4px 0; }
+    .checklist-item input { border: none; background: transparent; outline: none; font-size: 14px; width: 140px; }
+    .checklist-item .remove-checklist { background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 16px; padding: 0 2px; }
+    .checklist-item .remove-checklist:hover { color: #ef4444; }
+    .checklist-auto { display: inline-block; background: #e5e7eb; border-radius: 4px; padding: 2px 8px; margin: 4px 4px 4px 0; font-size: 12px; color: #6b7280; }
+
+    .input-sm { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; width: 100%; }
+    .input-sm:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+    .textarea-sm { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; width: 100%; resize: vertical; min-height: 36px; }
+    .textarea-sm:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+
+    .add-block-dropdown { position: relative; display: inline-block; }
+    .add-block-menu { display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 50; min-width: 220px; padding: 6px 0; margin-top: 4px; }
+    .add-block-menu.open { display: block; }
+    .add-block-menu button { display: block; width: 100%; text-align: left; padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: #374151; }
+    .add-block-menu button:hover { background: #f3f4f6; }
+    .add-block-menu .menu-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
 </style>
 
 <!-- Autosave Status Indicator -->
@@ -48,266 +104,719 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Create Student Logbook</h1>
-        <p class="text-gray-600 mt-2">Generate a comprehensive student logbook with session goals, vocabulary, and assessments. <strong>Your progress is automatically saved as you type.</strong></p>
+        <p class="text-gray-600 mt-2">Build a dynamic student logbook with sessions, content blocks, vocabulary, and assessments. <strong>Your progress is automatically saved as you type.</strong></p>
     </div>
 
     <!-- Form Card -->
     <div class="bg-white rounded-lg shadow-md p-8">
-        <form method="POST" action="{{ url_for('create_studentmoduleworkbook') }}" id="studentmoduleworkbook-form">
+        <form method="POST" action="{{ url_for('create_studentmoduleworkbook') }}" id="logbook-form" onsubmit="return window.logbook.prepareSubmit()">
             {{ form.hidden_tag() }}
-            
+            <input type="hidden" name="sessions_data" id="sessions_data" value="">
+
             <!-- Module Information -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Module Information</h2>
-                
-                <div class="mb-6">
-                    {{ form.module_name.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                    {{ form.module_name(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent", 
-                        id="module_name",
-                        data_autosave="true") }}
-                    {% if form.module_name.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.module_name.errors[0] }}</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Session Focus Section -->
-            <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Session Focus</h2>
-                <p class="text-sm text-gray-600 mb-4">Note: Use title case (e.g., "Speed, Velocity, & Acceleration").</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {% for i in range(1, 8) %}
-                        {% set field = form['focus_s' ~ i] %}
-                        <div>
-                            {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-                                rows=2,
-                                data_autosave="true") }}
-                        </div>
-                    {% endfor %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label for="module_name" class="block text-sm font-medium text-gray-700 mb-2">Module Acronym</label>
+                        <input type="text" name="module_name" id="module_name"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="e.g., APHY, ENSC, BIOE"
+                               value="{{ form.module_name.data or '' }}"
+                               required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="module_title" class="block text-sm font-medium text-gray-700 mb-2">Module Title <span class="text-gray-400 font-normal">(for cover page)</span></label>
+                        <input type="text" name="module_title" id="module_title"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="e.g., Automotive Physics, Environmental Science"
+                               value="{{ form.module_title.data or '' }}">
+                    </div>
                 </div>
             </div>
 
-            <!-- Sessions 1-7 -->
-            {% for session_num in range(1, 8) %}
+            <!-- Sessions -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Session {{ session_num }}</h2>
-                <p class="text-sm text-gray-600 mb-4">Note: Use sentence case (e.g., "Explore the properties of motion.").</p>
-                <!-- Goals -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-800 mb-3">Session Goals</h3>
-                    <div class="grid grid-cols-1 gap-4">
-                        {% for goal_num in range(1, 4) %}
-                            {% set field = form['s' ~ session_num ~ '_goal' ~ goal_num] %}
-                            {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-                                data_autosave="true") }}
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Vocabulary -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-800 mb-3">Session Vocabulary</h3>
-                    <p class="text-sm text-gray-600 mb-3">Note: Use lowercase unless the term is a proper noun.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {% for vocab_num in range(1, 6) %}
-                            {% set field = form['s' ~ session_num ~ '_vocab' ~ vocab_num] %}
-                            {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-                                placeholder="Vocabulary " ~ vocab_num,
-                                data_autosave="true") }}
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Assessments -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-800 mb-3">Performance Based Assessments</h3>
-                    <p class="text-sm text-gray-600 mb-3">Note: Use sentence case (e.g., "Students will define velocity and use it in a sentence.").</p>
-                    <div class="space-y-3">
-                        {% for assessment_num in range(1, 5) %}
-                            {% set field = form['s' ~ session_num ~ '_assessment' ~ assessment_num] %}
-                            <div>
-                                {{ field.label(class="block text-sm font-medium text-gray-700 mb-2") }}
-                                {{ field(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-                                    rows=2,
-                                    data_autosave="true") }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Sessions</h2>
+                <div id="sessions-container"></div>
             </div>
-            {% endfor %}
-
 
             <!-- Form Actions -->
             <div class="flex justify-end pt-6 border-t border-gray-200">
-                <button type="submit" name="action" value="generate" 
+                <button type="submit"
                         class="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium">
                     Generate Student Logbook
                 </button>
             </div>
-            
-            <!-- Hidden field to track if we're editing an existing draft -->
+
             {% if draft_id %}
-                <input type="hidden" name="draft_id" value="{{ draft_id }}" id="current_draft_id">
+                <input type="hidden" id="current_draft_id" value="{{ draft_id }}">
             {% else %}
-                <input type="hidden" name="draft_id" value="" id="current_draft_id">
+                <input type="hidden" id="current_draft_id" value="">
             {% endif %}
         </form>
     </div>
 </div>
 
+<!-- Draft data injected from server when loading a draft -->
+{% if draft_sessions_json %}
+<script type="application/json" id="draft-sessions-data">{{ draft_sessions_json|safe }}</script>
+{% endif %}
+
 <script>
-    // Autosave functionality
-    class StudentModuleWorkbookAutosave {
-        constructor() {
-            this.autosaveTimeout = null;
-            this.autosaveDelay = 2000; // 2 seconds after user stops typing
-            this.currentDraftId = document.getElementById('current_draft_id').value || null;
-            this.isAutosaving = false;
-            this.lastSaveData = null;
-            
-            this.initializeEventListeners();
-            this.showAutosaveStatus('Ready to autosave', 'saved');
+class StudentLogbookV2 {
+    constructor() {
+        this.sessions = [];
+        this.autosaveTimeout = null;
+        this.autosaveDelay = 2000;
+        this.currentDraftId = document.getElementById('current_draft_id').value || null;
+        this.isAutosaving = false;
+        this.lastSaveData = null;
+
+        this.initializeSessions();
+
+        // Check for draft data to restore
+        const draftEl = document.getElementById('draft-sessions-data');
+        if (draftEl) {
+            try {
+                const draftSessions = JSON.parse(draftEl.textContent);
+                if (draftSessions && draftSessions.length > 0) {
+                    this.restoreFromDraft(draftSessions);
+                }
+            } catch(e) { console.error('Failed to parse draft data:', e); }
         }
-        
-        initializeEventListeners() {
-            // Listen for changes on autosave-enabled fields
-            const autosaveFields = document.querySelectorAll('[data-autosave="true"]');
-            
-            autosaveFields.forEach(field => {
-                field.addEventListener('input', () => {
-                    this.scheduleAutosave();
-                });
-                
-                field.addEventListener('blur', () => {
-                    // Save immediately when user leaves a field
-                    this.performAutosave();
-                });
+
+        this.renderAllSessions();
+        this.attachGlobalListeners();
+    }
+
+    initializeSessions() {
+        for (let i = 1; i <= 7; i++) {
+            this.sessions.push({
+                session_number: i,
+                title: '',
+                focus: '',
+                blocks: [],
+                vocabulary: [],
+                has_notes: false,
+                has_reflection: false,
+                reflection_prompt: '',
+                has_cer: false,
+                cer_prompts: { question: '', claim: '', evidence: '', reasoning: '' },
+                checklist_items: []
             });
         }
-        
-        scheduleAutosave() {
-            // Clear existing timeout
-            if (this.autosaveTimeout) {
-                clearTimeout(this.autosaveTimeout);
-            }
-            
-            // Schedule new autosave
-            this.autosaveTimeout = setTimeout(() => {
-                this.performAutosave();
-            }, this.autosaveDelay);
-        }
-        
-        async performAutosave() {
-            if (this.isAutosaving) {
-                return; // Already autosaving
-            }
-            
-            // Collect form data
-            const formData = this.collectFormData();
-            
-            // Check if data has changed
-            if (this.lastSaveData && JSON.stringify(formData) === JSON.stringify(this.lastSaveData)) {
-                return; // No changes to save
-            }
-            
-            this.isAutosaving = true;
-            this.showAutosaveStatus('Saving...', 'saving');
-            
-            try {
-                // Add draft_id to the data
-                formData.draft_id = this.currentDraftId;
-                
-                const response = await fetch('/autosave-studentmoduleworkbook-draft', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrf_token]').value
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Update current draft ID if this was a new draft
-                    if (result.draft_id && !this.currentDraftId) {
-                        this.currentDraftId = result.draft_id;
-                        document.getElementById('current_draft_id').value = result.draft_id;
-                    }
-                    
-                    this.lastSaveData = formData;
-                    this.showAutosaveStatus(`Saved at ${result.timestamp}`, 'saved');
-                } else {
-                    this.showAutosaveStatus(`Save error: ${result.error}`, 'error');
-                }
-                
-            } catch (error) {
-                console.error('Autosave error:', error);
-                this.showAutosaveStatus('Save failed - check connection', 'error');
-            } finally {
-                this.isAutosaving = false;
-            }
-        }
-        
-        collectFormData() {
-            // Collect all form fields with their values
-            const formData = {};
-            
-            // Module information
-            formData.module_name = document.getElementById('module_name').value;
-            
-            // Session focus
-            for (let i = 1; i <= 7; i++) {
-                formData[`focus_s${i}`] = document.querySelector(`[name="focus_s${i}"]`).value;
-            }
-            
-            // Session goals, vocabulary, and assessments
-            for (let s = 1; s <= 7; s++) {
-                for (let g = 1; g <= 3; g++) {
-                    formData[`s${s}_goal${g}`] = document.querySelector(`[name="s${s}_goal${g}"]`).value;
-                }
-                for (let v = 1; v <= 5; v++) {
-                    formData[`s${s}_vocab${v}`] = document.querySelector(`[name="s${s}_vocab${v}"]`).value;
-                }
-                for (let a = 1; a <= 4; a++) {
-                    formData[`s${s}_assessment${a}`] = document.querySelector(`[name="s${s}_assessment${a}"]`).value;
-                }
-            }
-            
-            return formData;
-        }
-        
-        showAutosaveStatus(message, type) {
-            const statusElement = document.getElementById('autosave-status');
-            const textElement = document.getElementById('autosave-text');
-            
-            // Update text and styling
-            textElement.textContent = message;
-            statusElement.className = `autosave-status ${type}`;
-            
-            // Show the status
-            setTimeout(() => {
-                statusElement.classList.remove('hidden');
-            }, 10);
-            
-            // Auto-hide after 3 seconds (except for errors)
-            if (type !== 'error') {
-                setTimeout(() => {
-                    statusElement.classList.add('hidden');
-                }, 3000);
-            }
+    }
+
+    restoreFromDraft(draftSessions) {
+        for (let i = 0; i < draftSessions.length && i < 7; i++) {
+            const ds = draftSessions[i];
+            const s = this.sessions[i];
+            s.title = ds.title || '';
+            s.focus = ds.focus || '';
+            s.blocks = ds.blocks || [];
+            s.vocabulary = ds.vocabulary || [];
+            s.has_notes = ds.has_notes || false;
+            s.has_reflection = ds.has_reflection || false;
+            s.reflection_prompt = ds.reflection_prompt || '';
+            s.has_cer = ds.has_cer || false;
+            s.cer_prompts = ds.cer_prompts || { question: '', claim: '', evidence: '', reasoning: '' };
+            s.checklist_items = ds.checklist_items || [];
         }
     }
-    
-    // Initialize everything when the DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize autosave
-        window.autosaveInstance = new StudentModuleWorkbookAutosave();
-    });
+
+    attachGlobalListeners() {
+        // Close add-block menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.add-block-dropdown')) {
+                document.querySelectorAll('.add-block-menu').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // Listen for input changes for autosave
+        document.getElementById('module_name').addEventListener('input', () => this.scheduleAutosave());
+        document.getElementById('module_title').addEventListener('input', () => this.scheduleAutosave());
+    }
+
+    // ---- Data Collection (reads DOM into this.sessions) ----
+    collectSessionData(sIdx) {
+        const s = this.sessions[sIdx];
+        const panel = document.getElementById(`session-body-${sIdx}`);
+        if (!panel) return;
+
+        s.title = (panel.querySelector(`.s-title`) || {}).value || '';
+        s.focus = (panel.querySelector(`.s-focus`) || {}).value || '';
+
+        // Blocks
+        s.blocks = [];
+        panel.querySelectorAll('.block-card').forEach((card) => {
+            const type = card.dataset.blockType;
+            const block = { type };
+            if (type === 'partner_talk' || type === 'activity_observation' || type === 'noticing_patterns') {
+                block.slide_ref = (card.querySelector('.b-slide-ref') || {}).value || '';
+                block.content = (card.querySelector('.b-content') || {}).value || '';
+            } else if (type === 'custom_prompt') {
+                block.label = (card.querySelector('.b-label') || {}).value || '';
+                block.content = (card.querySelector('.b-content') || {}).value || '';
+            } else if (type === 'section_header') {
+                block.content = (card.querySelector('.b-content') || {}).value || '';
+            } else if (type === 'custom_table') {
+                block.title = (card.querySelector('.bt-title') || {}).value || '';
+                block.columns = [];
+                card.querySelectorAll('.col-header-input').forEach(inp => block.columns.push(inp.value));
+                block.rows = [];
+                card.querySelectorAll('.row-item').forEach(ri => {
+                    const label = (ri.querySelector('.row-label-input') || {}).value || '';
+                    const cells = [];
+                    ri.querySelectorAll('.row-cell-input').forEach(ci => cells.push(ci.value));
+                    block.rows.push({ label, cells });
+                });
+            }
+            s.blocks.push(block);
+        });
+
+        // Vocabulary
+        s.vocabulary = [];
+        panel.querySelectorAll('.vocab-input').forEach(inp => {
+            if (inp.value.trim()) s.vocabulary.push(inp.value.trim());
+        });
+
+        // Toggles
+        s.has_notes = !!(panel.querySelector('.toggle-notes') || {}).checked;
+        s.has_reflection = !!(panel.querySelector('.toggle-reflection') || {}).checked;
+        s.has_cer = !!(panel.querySelector('.toggle-cer') || {}).checked;
+
+        // Reflection prompt
+        if (s.has_reflection) {
+            s.reflection_prompt = (panel.querySelector('.reflection-prompt') || {}).value || '';
+        }
+
+        // CER prompts
+        if (s.has_cer) {
+            s.cer_prompts = {
+                question: (panel.querySelector('.cer-question') || {}).value || '',
+                claim: (panel.querySelector('.cer-claim') || {}).value || '',
+                evidence: (panel.querySelector('.cer-evidence') || {}).value || '',
+                reasoning: (panel.querySelector('.cer-reasoning') || {}).value || ''
+            };
+        }
+
+        // Checklist items
+        s.checklist_items = [];
+        panel.querySelectorAll('.checklist-input').forEach(inp => {
+            if (inp.value.trim()) s.checklist_items.push(inp.value.trim());
+        });
+    }
+
+    collectAllData() {
+        for (let i = 0; i < 7; i++) this.collectSessionData(i);
+        return {
+            module_name: document.getElementById('module_name').value,
+            module_title: document.getElementById('module_title').value,
+            sessions: this.sessions
+        };
+    }
+
+    // ---- Rendering ----
+    renderAllSessions() {
+        const container = document.getElementById('sessions-container');
+        container.innerHTML = '';
+        for (let i = 0; i < 7; i++) {
+            container.appendChild(this.renderSessionPanel(i));
+        }
+    }
+
+    renderSessionPanel(sIdx) {
+        const s = this.sessions[sIdx];
+        const panel = document.createElement('div');
+        panel.className = 'session-panel';
+        const sLabel = `Session ${s.session_number}`;
+        const titlePreview = s.title ? `: ${s.title}` : '';
+
+        panel.innerHTML = `
+            <div class="session-header" onclick="window.logbook.toggleSession(${sIdx})">
+                <h3>${sLabel}${titlePreview}</h3>
+                <span class="chevron">&#9660;</span>
+            </div>
+            <div class="session-body" id="session-body-${sIdx}">
+                <!-- Title & Focus -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Session Title</label>
+                        <input type="text" class="input-sm s-title" value="${this.escHtml(s.title)}" placeholder="e.g., Inclined Plane Collisions">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Essential Question</label>
+                        <input type="text" class="input-sm s-focus" value="${this.escHtml(s.focus)}" placeholder="e.g., How does mass affect net force?">
+                    </div>
+                </div>
+
+                <!-- Content Blocks -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Content Blocks</h4>
+                        <div class="add-block-dropdown">
+                            <button type="button" class="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-md hover:bg-blue-100 font-medium" onclick="this.nextElementSibling.classList.toggle('open')">+ Add Block</button>
+                            <div class="add-block-menu">
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'partner_talk')"><span class="menu-badge" style="background:#22c55e"></span>Partner Talk</button>
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'activity_observation')"><span class="menu-badge" style="background:#3b82f6"></span>Activity Observation</button>
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'custom_prompt')"><span class="menu-badge" style="background:#a855f7"></span>Custom Prompt</button>
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'noticing_patterns')"><span class="menu-badge" style="background:#14b8a6"></span>Noticing Patterns</button>
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'custom_table')"><span class="menu-badge" style="background:#f59e0b"></span>Custom Table</button>
+                                <button type="button" onclick="window.logbook.addBlock(${sIdx},'section_header')"><span class="menu-badge" style="background:#6b7280"></span>Section Header</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="blocks-container" id="blocks-${sIdx}">
+                        ${s.blocks.map((b, bi) => this.renderBlock(sIdx, bi, b)).join('')}
+                    </div>
+                    ${s.blocks.length === 0 ? '<p class="text-sm text-gray-400 italic">No content blocks yet. Click "+ Add Block" to get started.</p>' : ''}
+                </div>
+
+                <!-- Vocabulary -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Vocabulary</h4>
+                    <div class="flex flex-wrap items-center" id="vocab-${sIdx}">
+                        ${(s.vocabulary || []).map((v, vi) => `
+                            <div class="vocab-item">
+                                <input type="text" class="vocab-input" value="${this.escHtml(v)}" placeholder="Term">
+                                <button type="button" class="remove-vocab" onclick="window.logbook.removeVocab(${sIdx},${vi})">&times;</button>
+                            </div>
+                        `).join('')}
+                        <button type="button" class="text-sm text-blue-600 hover:text-blue-800 font-medium ml-1" onclick="window.logbook.addVocab(${sIdx})">+ Add Term</button>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div class="mb-4 border-t border-gray-100 pt-4">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="notes-${sIdx}" class="toggle-notes" ${s.has_notes ? 'checked' : ''} onchange="window.logbook.scheduleAutosave()">
+                        <label for="notes-${sIdx}">Include Notes section</label>
+                    </div>
+                    <div class="toggle-row">
+                        <input type="checkbox" id="reflection-${sIdx}" class="toggle-reflection" ${s.has_reflection ? 'checked' : ''} onchange="window.logbook.toggleReflection(${sIdx})">
+                        <label for="reflection-${sIdx}">Include Reflection section</label>
+                    </div>
+                    <div class="reflection-prompts" id="reflection-prompts-${sIdx}" style="display:${s.has_reflection ? 'block' : 'none'}">
+                        <div>
+                            <label class="block mb-1" style="font-weight:700; color:#1B3A5C;">Reflection Prompt</label>
+                            <input type="text" class="input-sm reflection-prompt" value="${this.escHtml(s.reflection_prompt || '')}" placeholder="e.g., How did your understanding of net force change today?">
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <input type="checkbox" id="cer-${sIdx}" class="toggle-cer" ${s.has_cer ? 'checked' : ''} onchange="window.logbook.toggleCER(${sIdx})">
+                        <label for="cer-${sIdx}">Include CER section</label>
+                    </div>
+                    <div class="cer-prompts" id="cer-prompts-${sIdx}" style="display:${s.has_cer ? 'block' : 'none'}">
+                        <div class="mb-3">
+                            <label class="block mb-1" style="font-weight:700; color:#1B3A5C;">CER Question</label>
+                            <input type="text" class="input-sm cer-question" value="${this.escHtml(s.cer_prompts.question || '')}" placeholder="Question students will form their CER around...">
+                        </div>
+                        <div class="mb-2">
+                            <label class="block mb-1">Claim prompt (optional)</label>
+                            <input type="text" class="input-sm cer-claim" value="${this.escHtml(s.cer_prompts.claim || '')}" placeholder="Custom claim prompt...">
+                        </div>
+                        <div class="mb-2">
+                            <label class="block mb-1">Evidence prompt (optional)</label>
+                            <input type="text" class="input-sm cer-evidence" value="${this.escHtml(s.cer_prompts.evidence || '')}" placeholder="Custom evidence prompt...">
+                        </div>
+                        <div>
+                            <label class="block mb-1">Reasoning prompt (optional)</label>
+                            <input type="text" class="input-sm cer-reasoning" value="${this.escHtml(s.cer_prompts.reasoning || '')}" placeholder="Custom reasoning prompt...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checklist Items -->
+                <div class="mb-4 border-t border-gray-100 pt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Checklist Items</h4>
+                    <div class="mb-2">
+                        <span class="checklist-auto">${s.session_number === 1 ? 'Pre-Test' : (s.session_number === 7 ? 'Robo-Review' : 'RCP')} (auto)</span>
+                    </div>
+                    <div class="flex flex-wrap items-center" id="checklist-${sIdx}">
+                        ${(s.checklist_items || []).map((item, ci) => `
+                            <div class="checklist-item">
+                                <input type="text" class="checklist-input" value="${this.escHtml(item)}" placeholder="Custom item">
+                                <button type="button" class="remove-checklist" onclick="window.logbook.removeChecklistItem(${sIdx},${ci})">&times;</button>
+                            </div>
+                        `).join('')}
+                        <button type="button" class="text-sm text-amber-600 hover:text-amber-800 font-medium ml-1" onclick="window.logbook.addChecklistItem(${sIdx})">+ Add Item</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Add custom items like activities or CER assessments to the checklist page.</p>
+                </div>
+            </div>
+        `;
+
+        // Attach autosave listeners to all inputs inside this panel after it's in the DOM
+        setTimeout(() => {
+            const body = document.getElementById(`session-body-${sIdx}`);
+            if (body) {
+                body.addEventListener('input', () => this.scheduleAutosave());
+            }
+        }, 0);
+
+        return panel;
+    }
+
+    renderBlock(sIdx, bIdx, block) {
+        const type = block.type;
+        const badgeClass = `badge-${type.replace('_', '-')}`;
+        const labels = {
+            partner_talk: 'Partner Talk',
+            activity_observation: 'Activity Observation',
+            custom_prompt: 'Custom Prompt',
+            noticing_patterns: 'Noticing Patterns',
+            custom_table: 'Custom Table',
+            section_header: 'Section Header'
+        };
+
+        let fieldsHtml = '';
+        if (type === 'partner_talk' || type === 'activity_observation' || type === 'noticing_patterns') {
+            fieldsHtml = `
+                <div class="grid grid-cols-3 gap-3 mt-2">
+                    <input type="text" class="input-sm b-slide-ref" value="${this.escHtml(block.slide_ref || '')}" placeholder="Slide ref (e.g., Slide 6)">
+                    <div class="col-span-2">
+                        <textarea class="textarea-sm b-content" placeholder="Question or observation prompt...">${this.escHtml(block.content || '')}</textarea>
+                    </div>
+                </div>`;
+        } else if (type === 'custom_prompt') {
+            fieldsHtml = `
+                <div class="grid grid-cols-3 gap-3 mt-2">
+                    <input type="text" class="input-sm b-label" value="${this.escHtml(block.label || '')}" placeholder="Label (e.g., Reflection)">
+                    <div class="col-span-2">
+                        <textarea class="textarea-sm b-content" placeholder="Prompt text...">${this.escHtml(block.content || '')}</textarea>
+                    </div>
+                </div>`;
+        } else if (type === 'section_header') {
+            fieldsHtml = `
+                <div class="mt-2">
+                    <input type="text" class="input-sm b-content" value="${this.escHtml(block.content || '')}" placeholder="Section header text...">
+                </div>`;
+        } else if (type === 'custom_table') {
+            fieldsHtml = this.renderCustomTableFields(sIdx, bIdx, block);
+        }
+
+        return `
+            <div class="block-card" data-block-type="${type}" data-block-idx="${bIdx}">
+                <span class="block-badge ${badgeClass}">${labels[type] || type}</span>
+                <div class="block-actions">
+                    <button type="button" title="Move up" onclick="window.logbook.moveBlock(${sIdx},${bIdx},-1)">&uarr;</button>
+                    <button type="button" title="Move down" onclick="window.logbook.moveBlock(${sIdx},${bIdx},1)">&darr;</button>
+                    <button type="button" title="Delete" class="delete-btn" onclick="window.logbook.removeBlock(${sIdx},${bIdx})">&times;</button>
+                </div>
+                ${fieldsHtml}
+            </div>`;
+    }
+
+    renderCustomTableFields(sIdx, bIdx, block) {
+        const cols = block.columns || [];
+        const rows = block.rows || [];
+        return `
+            <div class="table-builder">
+                <input type="text" class="input-sm bt-title mb-2" value="${this.escHtml(block.title || '')}" placeholder="Table title...">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs font-semibold text-gray-600 uppercase">Columns</span>
+                    <button type="button" class="text-xs text-blue-600 hover:text-blue-800 font-medium" onclick="window.logbook.addTableCol(${sIdx},${bIdx})">+ Add Column</button>
+                </div>
+                <div class="col-header-list">
+                    ${cols.map((c, ci) => `
+                        <div class="col-header-item">
+                            <input type="text" class="input-sm col-header-input" value="${this.escHtml(c)}" placeholder="Column ${ci+1}">
+                            <button type="button" class="text-xs text-red-500 hover:text-red-700" onclick="window.logbook.removeTableCol(${sIdx},${bIdx},${ci})">&times;</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="flex items-center gap-2 mt-3 mb-1">
+                    <span class="text-xs font-semibold text-gray-600 uppercase">Rows</span>
+                    <button type="button" class="text-xs text-blue-600 hover:text-blue-800 font-medium" onclick="window.logbook.addTableRow(${sIdx},${bIdx})">+ Add Row</button>
+                </div>
+                <div class="row-list">
+                    ${rows.map((r, ri) => `
+                        <div class="row-item">
+                            <input type="text" class="input-sm row-label-input" value="${this.escHtml(r.label || '')}" placeholder="Row label" style="max-width:150px">
+                            ${(r.cells || []).map((cell, ci) => `
+                                <input type="text" class="input-sm row-cell-input" value="${this.escHtml(cell || '')}" placeholder="${cols[ci+1] || 'Cell'}" style="max-width:120px">
+                            `).join('')}
+                            <button type="button" class="text-xs text-red-500 hover:text-red-700" onclick="window.logbook.removeTableRow(${sIdx},${bIdx},${ri})">&times;</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+    }
+
+    // ---- Actions ----
+    toggleSession(sIdx) {
+        // Save current data before toggling
+        const openBodies = document.querySelectorAll('.session-body.open');
+        openBodies.forEach(b => {
+            const idx = parseInt(b.id.replace('session-body-', ''));
+            if (!isNaN(idx)) this.collectSessionData(idx);
+        });
+
+        const header = document.querySelectorAll('.session-header')[sIdx];
+        const body = document.getElementById(`session-body-${sIdx}`);
+        header.classList.toggle('open');
+        body.classList.toggle('open');
+    }
+
+    addBlock(sIdx, type) {
+        this.collectSessionData(sIdx);
+        const block = { type };
+        if (type === 'partner_talk' || type === 'activity_observation' || type === 'noticing_patterns') {
+            block.slide_ref = '';
+            block.content = '';
+        } else if (type === 'custom_prompt') {
+            block.label = '';
+            block.content = '';
+        } else if (type === 'section_header') {
+            block.content = '';
+        } else if (type === 'custom_table') {
+            block.title = '';
+            block.columns = ['', ''];
+            block.rows = [{ label: '', cells: [''] }];
+        }
+        this.sessions[sIdx].blocks.push(block);
+        this.refreshBlocks(sIdx);
+        // Close menu
+        document.querySelectorAll('.add-block-menu').forEach(m => m.classList.remove('open'));
+        this.scheduleAutosave();
+    }
+
+    removeBlock(sIdx, bIdx) {
+        this.collectSessionData(sIdx);
+        this.sessions[sIdx].blocks.splice(bIdx, 1);
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    moveBlock(sIdx, bIdx, direction) {
+        this.collectSessionData(sIdx);
+        const blocks = this.sessions[sIdx].blocks;
+        const newIdx = bIdx + direction;
+        if (newIdx < 0 || newIdx >= blocks.length) return;
+        [blocks[bIdx], blocks[newIdx]] = [blocks[newIdx], blocks[bIdx]];
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    refreshBlocks(sIdx) {
+        const container = document.getElementById(`blocks-${sIdx}`);
+        if (!container) return;
+        const s = this.sessions[sIdx];
+        if (s.blocks.length === 0) {
+            container.innerHTML = '<p class="text-sm text-gray-400 italic">No content blocks yet. Click "+ Add Block" to get started.</p>';
+        } else {
+            container.innerHTML = s.blocks.map((b, bi) => this.renderBlock(sIdx, bi, b)).join('');
+        }
+    }
+
+    // Custom table actions
+    addTableCol(sIdx, bIdx) {
+        this.collectSessionData(sIdx);
+        const block = this.sessions[sIdx].blocks[bIdx];
+        if (!block || block.type !== 'custom_table') return;
+        block.columns.push('');
+        // Add a cell to each row
+        (block.rows || []).forEach(r => r.cells.push(''));
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    removeTableCol(sIdx, bIdx, cIdx) {
+        this.collectSessionData(sIdx);
+        const block = this.sessions[sIdx].blocks[bIdx];
+        if (!block || block.type !== 'custom_table') return;
+        block.columns.splice(cIdx, 1);
+        // Remove corresponding cell from each row (cells are offset by 1 since col 0 is the row label)
+        (block.rows || []).forEach(r => {
+            if (cIdx > 0 && (cIdx - 1) < r.cells.length) {
+                r.cells.splice(cIdx - 1, 1);
+            } else if (cIdx === 0) {
+                // Removing the first column means the row label column goes away
+                // Shift: the first cell becomes the new label scenario
+            }
+        });
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    addTableRow(sIdx, bIdx) {
+        this.collectSessionData(sIdx);
+        const block = this.sessions[sIdx].blocks[bIdx];
+        if (!block || block.type !== 'custom_table') return;
+        const numCells = Math.max(0, (block.columns || []).length - 1);
+        block.rows.push({ label: '', cells: Array(numCells).fill('') });
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    removeTableRow(sIdx, bIdx, rIdx) {
+        this.collectSessionData(sIdx);
+        const block = this.sessions[sIdx].blocks[bIdx];
+        if (!block || block.type !== 'custom_table') return;
+        block.rows.splice(rIdx, 1);
+        this.refreshBlocks(sIdx);
+        this.scheduleAutosave();
+    }
+
+    // Vocabulary
+    addVocab(sIdx) {
+        this.collectSessionData(sIdx);
+        this.sessions[sIdx].vocabulary.push('');
+        this.refreshVocab(sIdx);
+        // Focus the new input
+        setTimeout(() => {
+            const inputs = document.querySelectorAll(`#vocab-${sIdx} .vocab-input`);
+            if (inputs.length) inputs[inputs.length - 1].focus();
+        }, 50);
+        this.scheduleAutosave();
+    }
+
+    removeVocab(sIdx, vIdx) {
+        this.collectSessionData(sIdx);
+        this.sessions[sIdx].vocabulary.splice(vIdx, 1);
+        this.refreshVocab(sIdx);
+        this.scheduleAutosave();
+    }
+
+    refreshVocab(sIdx) {
+        const container = document.getElementById(`vocab-${sIdx}`);
+        if (!container) return;
+        const s = this.sessions[sIdx];
+        container.innerHTML = (s.vocabulary || []).map((v, vi) => `
+            <div class="vocab-item">
+                <input type="text" class="vocab-input" value="${this.escHtml(v)}" placeholder="Term">
+                <button type="button" class="remove-vocab" onclick="window.logbook.removeVocab(${sIdx},${vi})">&times;</button>
+            </div>
+        `).join('') + `<button type="button" class="text-sm text-blue-600 hover:text-blue-800 font-medium ml-1" onclick="window.logbook.addVocab(${sIdx})">+ Add Term</button>`;
+    }
+
+    // Checklist items
+    addChecklistItem(sIdx) {
+        this.collectSessionData(sIdx);
+        this.sessions[sIdx].checklist_items.push('');
+        this.refreshChecklist(sIdx);
+        setTimeout(() => {
+            const inputs = document.querySelectorAll(`#checklist-${sIdx} .checklist-input`);
+            if (inputs.length) inputs[inputs.length - 1].focus();
+        }, 50);
+        this.scheduleAutosave();
+    }
+
+    removeChecklistItem(sIdx, cIdx) {
+        this.collectSessionData(sIdx);
+        this.sessions[sIdx].checklist_items.splice(cIdx, 1);
+        this.refreshChecklist(sIdx);
+        this.scheduleAutosave();
+    }
+
+    refreshChecklist(sIdx) {
+        const container = document.getElementById(`checklist-${sIdx}`);
+        if (!container) return;
+        const s = this.sessions[sIdx];
+        container.innerHTML = (s.checklist_items || []).map((item, ci) => `
+            <div class="checklist-item">
+                <input type="text" class="checklist-input" value="${this.escHtml(item)}" placeholder="Custom item">
+                <button type="button" class="remove-checklist" onclick="window.logbook.removeChecklistItem(${sIdx},${ci})">&times;</button>
+            </div>
+        `).join('') + `<button type="button" class="text-sm text-amber-600 hover:text-amber-800 font-medium ml-1" onclick="window.logbook.addChecklistItem(${sIdx})">+ Add Item</button>`;
+    }
+
+    toggleReflection(sIdx) {
+        const cb = document.getElementById(`reflection-${sIdx}`);
+        const prompts = document.getElementById(`reflection-prompts-${sIdx}`);
+        if (prompts) prompts.style.display = cb.checked ? 'block' : 'none';
+        this.scheduleAutosave();
+    }
+
+    toggleCER(sIdx) {
+        const cb = document.getElementById(`cer-${sIdx}`);
+        const prompts = document.getElementById(`cer-prompts-${sIdx}`);
+        if (prompts) prompts.style.display = cb.checked ? 'block' : 'none';
+        this.scheduleAutosave();
+    }
+
+    // ---- Autosave ----
+    scheduleAutosave() {
+        if (this.autosaveTimeout) clearTimeout(this.autosaveTimeout);
+        this.autosaveTimeout = setTimeout(() => this.performAutosave(), this.autosaveDelay);
+    }
+
+    async performAutosave() {
+        if (this.isAutosaving) return;
+
+        const data = this.collectAllData();
+        const dataStr = JSON.stringify(data);
+        if (this.lastSaveData && dataStr === this.lastSaveData) return;
+
+        this.isAutosaving = true;
+        this.showStatus('Saving...', 'saving');
+
+        try {
+            const payload = {
+                module_name: data.module_name,
+                module_title: data.module_title,
+                sessions: data.sessions,
+                draft_id: this.currentDraftId
+            };
+
+            const resp = await fetch('/autosave-studentmoduleworkbook-draft', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                if (result.draft_id && !this.currentDraftId) {
+                    this.currentDraftId = result.draft_id;
+                    document.getElementById('current_draft_id').value = result.draft_id;
+                }
+                this.lastSaveData = dataStr;
+                this.showStatus(`Saved at ${result.timestamp}`, 'saved');
+            } else {
+                this.showStatus(`Save error: ${result.error}`, 'error');
+            }
+        } catch(err) {
+            console.error('Autosave error:', err);
+            this.showStatus('Save failed - check connection', 'error');
+        } finally {
+            this.isAutosaving = false;
+        }
+    }
+
+    showStatus(message, type) {
+        const el = document.getElementById('autosave-status');
+        const text = document.getElementById('autosave-text');
+        text.textContent = message;
+        el.className = `autosave-status ${type}`;
+        setTimeout(() => el.classList.remove('hidden'), 10);
+        if (type !== 'error') {
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+    }
+
+    // ---- Submit ----
+    prepareSubmit() {
+        const data = this.collectAllData();
+        document.getElementById('sessions_data').value = JSON.stringify(data.sessions);
+        document.getElementById('module_name').value = data.module_name;
+        return true;
+    }
+
+    // ---- Utility ----
+    escHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    window.logbook = new StudentLogbookV2();
+});
 </script>
 
 {% endblock %}
