@@ -5607,11 +5607,12 @@ def generate_module_guide(form):
         except Exception as e:
             print(f"Warning: Could not clean up temporary file {temp_template_path}: {e}")
 
-def generate_module_guide_v2(form):
+def generate_module_guide_v2(form, draft_id=None):
     """Generate a Module Guide V2 using python-docx directly with Star Academy branding.
 
     Args:
         form: WTForms form object with module guide data
+        draft_id: Optional draft ID for extracting learning checkpoints
     Returns:
         output_path: Path to the generated .docx file
     """
@@ -6453,10 +6454,11 @@ def generate_module_guide_v2(form):
     pretest_data = extract_pretest_from_form_v2(form)
     posttest_data = extract_posttest_from_form_v2(form)
     rcp_data = extract_rcp_from_form_v2(form)
+    checkpoint_data = extract_checkpoints_from_draft(draft_id)
 
-    if pretest_data or posttest_data or rcp_data:
+    if pretest_data or posttest_data or rcp_data or checkpoint_data:
         add_page_break(doc)
-        build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions,
+        build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data,
                                   FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                   set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
                                   keep_table_together, add_paragraph_bottom_border)
@@ -6639,7 +6641,19 @@ def extract_rcp_from_form_v2(form):
     return rcp_sessions
 
 
-def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions,
+def extract_checkpoints_from_draft(draft_id):
+    """Retrieve learning checkpoints from draft data for document generation"""
+    if not draft_id:
+        return {}
+
+    draft = FormDraft.query.get(draft_id)
+    if not draft or not draft.form_data:
+        return {}
+
+    return draft.form_data.get('learning_checkpoints', {})
+
+
+def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data,
                                FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
                                keep_table_together, add_paragraph_bottom_border):
@@ -6658,7 +6672,6 @@ def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessio
     run.font.size = Pt(18)
     run.font.bold = True
     run.font.color.rgb = DARK_BLUE
-    add_paragraph_bottom_border(title_p, 'E81D2C', '24')
 
     # Pre-Test Section
     if pretest_data:
@@ -6692,6 +6705,17 @@ def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessio
 
             build_rcp_session_block(doc, rcp_session, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                     set_cell_shading, set_table_borders_color, keep_table_together)
+
+    # Learning Checkpoints
+    if checkpoint_data:
+        add_section_header(doc, 'LEARNING CHECKPOINTS')
+        for checkpoint_num in sorted(checkpoint_data.keys(), key=lambda x: int(x)):
+            checkpoint = checkpoint_data[checkpoint_num]
+            add_subsection_header(doc, checkpoint.get('name', f'Checkpoint {checkpoint_num}'))
+
+            build_checkpoint_table(doc, checkpoint.get('questions', []),
+                                   FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                                   set_cell_shading, set_table_borders_color, keep_table_together)
 
 
 def add_choice_paragraph(cell, label, choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK):
@@ -6998,6 +7022,220 @@ def build_rcp_session_block(doc, rcp_session, FONT_HEADER, FONT_BODY, DARK_BLUE,
             run.font.color.rgb = GRAY
 
         content_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+    # Add spacing after table
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_after = Pt(12)
+
+
+def build_checkpoint_table(doc, questions, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                           set_cell_shading, set_table_borders_color, keep_table_together):
+    """Build a table for checkpoint questions matching the pre/post test format"""
+    from docx.shared import Pt, Inches
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+    if not questions:
+        return
+
+    # Create table with 3 columns: #, Question, Answer
+    table = doc.add_table(rows=1 + len(questions), cols=3)
+    table.style = 'Table Grid'
+    set_table_borders_color(table, '707373')
+    keep_table_together(table)
+
+    # Set column widths
+    for cell in table.columns[0].cells:
+        cell.width = Inches(0.5)
+    for cell in table.columns[1].cells:
+        cell.width = Inches(5.0)
+    for cell in table.columns[2].cells:
+        cell.width = Inches(1.0)
+
+    # Header row
+    headers = ['#', 'Question', 'Answer']
+    for i, header in enumerate(headers):
+        cell = table.rows[0].cells[i]
+        cell.text = ''
+        set_cell_shading(cell, '1D2757')
+        p = cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(header)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+    # Data rows
+    for idx, q in enumerate(questions):
+        row = table.rows[1 + idx]
+        q_type = q.get('question_type', 'single_select')
+
+        # Number cell
+        num_cell = row.cells[0]
+        num_cell.text = ''
+        num_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        p = num_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+        run = p.add_run(str(q.get('question_number', idx + 1)))
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Question cell
+        q_cell = row.cells[1]
+        q_cell.text = ''
+
+        # Scenario (if present)
+        scenario = q.get('scenario', '')
+        if scenario:
+            p_scenario = q_cell.paragraphs[0]
+            p_scenario.paragraph_format.space_before = Pt(3)
+            p_scenario.paragraph_format.space_after = Pt(6)
+            run = p_scenario.add_run(scenario)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Stem (after scenario)
+            p_stem = q_cell.add_paragraph()
+            p_stem.paragraph_format.space_before = Pt(0)
+            p_stem.paragraph_format.space_after = Pt(2)
+            run = p_stem.add_run(q.get('stem', ''))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+        else:
+            # Stem only (no scenario)
+            p_stem = q_cell.paragraphs[0]
+            p_stem.paragraph_format.space_before = Pt(3)
+            p_stem.paragraph_format.space_after = Pt(2)
+            run = p_stem.add_run(q.get('stem', ''))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+        # Type-specific content
+        if q_type in ['single_select', 'multi_select']:
+            # Show choices with correct ones highlighted
+            choices = q.get('choices', [])
+            correct_labels = q.get('correct_labels', [])
+            for choice in choices:
+                label = choice.get('label', '')
+                text = choice.get('text', '')
+                is_correct = label in correct_labels
+                add_choice_paragraph(q_cell, label, text, is_correct, FONT_BODY, DARK_BLUE, BLACK)
+
+        elif q_type == 'drag_drop':
+            # Show categories and mapping
+            categories = q.get('categories', [])
+            items = q.get('items', [])
+            correct_mapping = q.get('correct_mapping', {})
+            cat_lookup = {cat.get('id', ''): cat.get('label', '') for cat in categories}
+
+            # Categories
+            p_cat = q_cell.add_paragraph()
+            p_cat.paragraph_format.space_before = Pt(4)
+            p_cat.paragraph_format.space_after = Pt(2)
+            run = p_cat.add_run("Categories: ")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+            cat_texts = [cat.get('label', '') for cat in categories]
+            run = p_cat.add_run(" | ".join(cat_texts))
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+            # Mapping
+            for item in items:
+                item_text = item.get('text', '')
+                cat_id = correct_mapping.get(item.get('id', ''), '')
+                cat_label = cat_lookup.get(cat_id, '')
+                p_map = q_cell.add_paragraph()
+                p_map.paragraph_format.space_before = Pt(1)
+                p_map.paragraph_format.space_after = Pt(1)
+                p_map.paragraph_format.left_indent = Pt(12)
+                run = p_map.add_run(f"• {item_text} → ")
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.color.rgb = BLACK
+                run = p_map.add_run(cat_label)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.bold = True
+                run.font.color.rgb = DARK_BLUE
+
+        elif q_type == 'reorder':
+            # Show correct order
+            items = q.get('items', [])
+            correct_order = q.get('correct_order', [])
+            item_lookup = {item.get('id', ''): item.get('text', '') for item in items}
+
+            p_order = q_cell.add_paragraph()
+            p_order.paragraph_format.space_before = Pt(4)
+            p_order.paragraph_format.space_after = Pt(2)
+            run = p_order.add_run("Correct Order:")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+
+            for i, step_id in enumerate(correct_order, 1):
+                step_text = item_lookup.get(step_id, step_id)
+                p_step = q_cell.add_paragraph()
+                p_step.paragraph_format.space_before = Pt(1)
+                p_step.paragraph_format.space_after = Pt(1)
+                p_step.paragraph_format.left_indent = Pt(12)
+                run = p_step.add_run(f"{i}. {step_text}")
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.color.rgb = BLACK
+
+        q_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+        # Answer cell
+        ans_cell = row.cells[2]
+        ans_cell.text = ''
+        p = ans_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+
+        if q_type in ['single_select', 'multi_select']:
+            correct = ', '.join(q.get('correct_labels', []))
+            run = p.add_run(correct)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+        elif q_type == 'drag_drop':
+            run = p.add_run("See mapping")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.italic = True
+            run.font.color.rgb = GRAY
+        elif q_type == 'reorder':
+            run = p.add_run("See order")
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.italic = True
+            run.font.color.rgb = GRAY
+
+        ans_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Alternating row shading
+        if idx % 2 == 1:
+            set_cell_shading(num_cell, 'F2F2F2')
+            set_cell_shading(q_cell, 'F2F2F2')
+            set_cell_shading(ans_cell, 'F2F2F2')
 
     # Add spacing after table
     spacer = doc.add_paragraph()
@@ -9225,6 +9463,18 @@ def transform_json_to_form_data_v2(json_data):
     form_data['posttest_questions'] = posttest_questions
     form_data['rcp_sessions'] = rcp_sessions
 
+    # Transform learning checkpoints (preserve complete structure for all question types)
+    learning_checkpoints = {}
+    checkpoint_data = answer_key.get('learning_checkpoints', {})
+    for checkpoint_num in sorted(checkpoint_data.keys(), key=lambda x: int(x)):
+        checkpoint = checkpoint_data[checkpoint_num]
+        learning_checkpoints[checkpoint_num] = {
+            'name': checkpoint.get('name', f'Checkpoint {checkpoint_num}'),
+            'sessions': checkpoint.get('sessions', ''),
+            'questions': checkpoint.get('questions', [])  # Preserve complete question structure
+        }
+    form_data['learning_checkpoints'] = learning_checkpoints
+
     return form_data
 
 
@@ -9429,7 +9679,7 @@ def create_module_guide_v2():
                         print("Found draft data - using for generation")
 
                 print("Attempting to generate Module Guide V2...")
-                doc_path = generate_module_guide_v2(form)
+                doc_path = generate_module_guide_v2(form, draft_id=draft_id_from_form)
                 filename = os.path.basename(doc_path)
 
                 print(f"Module Guide V2 generated at: {doc_path}")
@@ -9455,6 +9705,7 @@ def create_module_guide_v2():
                 flash(f'Error generating Module Guide V2: {str(e)}', 'error')
 
     # Check if loading a draft
+    learning_checkpoints = {}
     if draft_id:
         try:
             draft = FormDraft.query.filter_by(
@@ -9464,12 +9715,14 @@ def create_module_guide_v2():
             ).first()
             if draft:
                 form = load_moduleguide_v2_draft_into_form(draft.form_data)
+                # Extract learning checkpoints from draft (read-only display)
+                learning_checkpoints = draft.form_data.get('learning_checkpoints', {})
                 flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         except Exception as e:
             print(f"Error loading draft: {e}")
             flash(f'Error loading draft: {str(e)}', 'error')
 
-    return render_template('create_moduleGuide_v2.html', form=form, draft_id=draft_id)
+    return render_template('create_moduleGuide_v2.html', form=form, draft_id=draft_id, learning_checkpoints=learning_checkpoints)
 
 
 def load_moduleguide_v2_draft_into_form(form_data):
@@ -9699,6 +9952,11 @@ def autosave_moduleguide_v2_draft():
         if draft_id:
             draft = FormDraft.query.filter_by(id=draft_id, user_id=current_user.id, form_type='moduleguide_v2').first()
             if draft:
+                # Preserve learning_checkpoints from existing draft (not editable via form)
+                existing_checkpoints = draft.form_data.get('learning_checkpoints', {}) if draft.form_data else {}
+                if existing_checkpoints:
+                    form_data['learning_checkpoints'] = existing_checkpoints
+
                 draft.form_data = form_data
                 draft.updated_at = datetime.utcnow()
                 if form_data['module_acronym']:
