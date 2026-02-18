@@ -1187,8 +1187,7 @@ class SessionMaterialFormV2(FlaskForm):
         csrf = False
 
     item = StringField('Item', validators=[Optional(), Length(max=200)])
-    quantity = StringField('Quantity', validators=[Optional(), Length(max=100)])
-    group = StringField('Group', validators=[Optional(), Length(max=100)])
+    locally_sourced = BooleanField('Locally Sourced', default=False)
 
 # Safety items per session (V2)
 class SessionSafetyItemFormV2(FlaskForm):
@@ -1206,7 +1205,7 @@ class SessionVocabFormV2(FlaskForm):
 
     term = StringField('Term', validators=[Optional(), Length(max=100)])
     definition = TextAreaField('Definition', validators=[Optional(), Length(max=500)])
-    slides = StringField('Slides', validators=[Optional(), Length(max=50)])  # e.g., "3, 4, 5"
+    slide = StringField('Slide', validators=[Optional(), Length(max=10)])  # Single slide number
 
 # Career spotlight per session (V2)
 class SessionCareerFormV2(FlaskForm):
@@ -1228,9 +1227,7 @@ class SessionFormV2(FlaskForm):
 
     # Assembly/Maintenance (stored as newline-separated text)
     advance_prep = TextAreaField('Advance Prep', validators=[Optional()])
-    station_setup = TextAreaField('Station Setup', validators=[Optional()])
     equipment_notes = TextAreaField('Equipment Notes', validators=[Optional()])
-    cleanup = TextAreaField('Cleanup', validators=[Optional()])
 
     # Goals & Standards
     learning_goals = TextAreaField('Learning Goals', validators=[Optional()])
@@ -5735,8 +5732,14 @@ def generate_module_guide_v2(form, draft_id=None):
         run.font.bold = True
         run.font.color.rgb = DARK_BLUE
 
-    def add_bullet_list(doc, items):
-        """Add styled bullet points with tight spacing."""
+    def add_bullet_list(doc, items, hanging_indent=None):
+        """Add styled bullet points with tight spacing.
+
+        Args:
+            doc: Document object
+            items: List of text items
+            hanging_indent: Optional hanging indent in inches (e.g., 0.13)
+        """
         from docx.enum.text import WD_LINE_SPACING
         for item in items:
             if item and item.strip():
@@ -5746,6 +5749,8 @@ def generate_module_guide_v2(form, draft_id=None):
                 p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
                 p.paragraph_format.line_spacing = 1.15
                 p.paragraph_format.left_indent = Pt(18)
+                if hanging_indent:
+                    p.paragraph_format.first_line_indent = Inches(-hanging_indent)
                 run = p.add_run('\u2022  ')
                 run.font.name = FONT_BODY
                 run.font.size = Pt(10)
@@ -5756,106 +5761,84 @@ def generate_module_guide_v2(form, draft_id=None):
                 run.font.color.rgb = BLACK
 
     def add_materials_table(doc, materials):
-        """Add materials organized by group with 2-column tables."""
+        """Add materials as a 2-column table with items side-by-side for space efficiency."""
         if not materials:
             return
 
-        # Group materials by their group field, preserving order within groups
-        from collections import OrderedDict
-        grouped = OrderedDict()
-        ungrouped = []
+        # Check if any items are locally sourced
+        has_locally_sourced = any(mat.get('locally_sourced', False) for mat in materials)
 
-        for mat in materials:
-            group_name = mat.get('group', '').strip()
-            if group_name:
-                if group_name not in grouped:
-                    grouped[group_name] = []
-                grouped[group_name].append(mat)
-            else:
-                ungrouped.append(mat)
+        # Calculate number of rows needed (items arranged in pairs)
+        num_items = len(materials)
+        num_rows = (num_items + 1) // 2  # Ceiling division
 
-        def add_group_table(group_materials):
-            """Helper to add a table for a group of materials."""
-            table = doc.add_table(rows=1 + len(group_materials), cols=2)
-            table.style = 'Table Grid'
-            set_table_borders_color(table, '707373')
-            keep_table_together(table)
+        # Create table: 1 header row + data rows
+        table = doc.add_table(rows=1 + num_rows, cols=2)
+        table.style = 'Table Grid'
+        set_table_borders_color(table, '707373')
+        keep_table_together(table)
 
-            # Header row
-            headers = ['Item', 'Quantity']
-            for i, header in enumerate(headers):
-                cell = table.rows[0].cells[i]
+        # Header row - merge cells and add single header
+        header_cell_left = table.rows[0].cells[0]
+        header_cell_right = table.rows[0].cells[1]
+        header_cell_left.merge(header_cell_right)
+        header_cell_left.text = ''
+        set_cell_shading(header_cell_left, '1D2757')
+        p = header_cell_left.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Item Name & Quantity')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+        header_cell_left.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        # Data rows - items arranged in zigzag: [item1, item2], [item3, item4], etc.
+        for row_idx in range(num_rows):
+            row = table.rows[1 + row_idx]
+            for col_idx in range(2):
+                mat_idx = row_idx * 2 + col_idx
+                cell = row.cells[col_idx]
                 cell.text = ''
-                set_cell_shading(cell, '1D2757')
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 p = cell.paragraphs[0]
                 p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                p.paragraph_format.space_before = Pt(4)
-                p.paragraph_format.space_after = Pt(4)
-                run = p.add_run(header)
-                run.font.name = FONT_HEADER
-                run.font.size = Pt(10)
-                run.font.bold = True
-                run.font.color.rgb = WHITE
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-
-            # Data rows
-            for idx, mat in enumerate(group_materials):
-                row = table.rows[1 + idx]
-                item_cell = row.cells[0]
-                qty_cell = row.cells[1]
-
-                item_cell.text = ''
-                item_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                p = item_cell.paragraphs[0]
-                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 p.paragraph_format.space_before = Pt(3)
                 p.paragraph_format.space_after = Pt(3)
-                run = p.add_run(mat.get('item', ''))
-                run.font.name = FONT_BODY
-                run.font.size = Pt(10)
-                run.font.color.rgb = BLACK
 
-                qty_cell.text = ''
-                qty_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                p = qty_cell.paragraphs[0]
-                p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                p.paragraph_format.space_before = Pt(3)
-                p.paragraph_format.space_after = Pt(3)
-                run = p.add_run(mat.get('quantity', ''))
-                run.font.name = FONT_BODY
-                run.font.size = Pt(10)
-                run.font.color.rgb = BLACK
+                if mat_idx < num_items:
+                    mat = materials[mat_idx]
+                    item_text = mat.get('item', '')
+                    # Add asterisk for locally sourced items
+                    if mat.get('locally_sourced', False):
+                        item_text += ' *'
+                    run = p.add_run(item_text)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(10)
+                    run.font.color.rgb = BLACK
 
-                # Alternating row shading
-                if idx % 2 == 1:
-                    set_cell_shading(item_cell, 'F2F2F2')
-                    set_cell_shading(qty_cell, 'F2F2F2')
+            # Alternating row shading
+            if row_idx % 2 == 1:
+                set_cell_shading(row.cells[0], 'F2F2F2')
+                set_cell_shading(row.cells[1], 'F2F2F2')
 
-        # Render grouped materials first
-        for group_name, group_mats in grouped.items():
-            # Add group header paragraph
+        # Add footer note if any items are locally sourced
+        if has_locally_sourced:
             p = doc.add_paragraph()
-            p.paragraph_format.space_before = Pt(8)
+            p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+            p.paragraph_format.space_before = Pt(2)
             p.paragraph_format.space_after = Pt(4)
-            run = p.add_run(group_name)
-            run.font.name = FONT_HEADER
-            run.font.size = Pt(10)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(0x1D, 0x27, 0x57)  # Dark blue
-
-            add_group_table(group_mats)
-
-        # Render ungrouped materials at the end (no header)
-        if ungrouped:
-            if grouped:
-                # Add small spacer if there were grouped materials before
-                sp = doc.add_paragraph()
-                sp.paragraph_format.space_before = Pt(4)
-            add_group_table(ungrouped)
-
-        # Spacer after all tables
-        sp = doc.add_paragraph()
-        sp.paragraph_format.space_after = Pt(4)
+            run = p.add_run('* Locally sourced')
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.italic = True
+            run.font.color.rgb = GRAY
+        else:
+            # Spacer after table
+            sp = doc.add_paragraph()
+            sp.paragraph_format.space_after = Pt(4)
 
     def add_standards_table(doc, standards):
         """Add a 4-column standards table."""
@@ -5916,7 +5899,7 @@ def generate_module_guide_v2(form, draft_id=None):
         sp.paragraph_format.space_after = Pt(4)
 
     def add_vocabulary_table_v2(doc, vocabulary):
-        """Add a 3-column vocabulary table (term, definition, slides)."""
+        """Add a 3-column vocabulary table (term, definition, slide)."""
         if not vocabulary:
             return
         table = doc.add_table(rows=1 + len(vocabulary), cols=3)
@@ -5925,7 +5908,7 @@ def generate_module_guide_v2(form, draft_id=None):
         keep_table_together(table)
 
         # Header row
-        headers = ['Term', 'Definition', 'Slides']
+        headers = ['Term', 'Definition', 'Slide']
         for i, header in enumerate(headers):
             cell = table.rows[0].cells[i]
             cell.text = ''
@@ -5969,7 +5952,7 @@ def generate_module_guide_v2(form, draft_id=None):
             run.font.size = Pt(10)
             run.font.color.rgb = BLACK
 
-            # Slides
+            # Slide (single integer value)
             cell = row.cells[2]
             cell.text = ''
             cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
@@ -5977,11 +5960,8 @@ def generate_module_guide_v2(form, draft_id=None):
             p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
             p.paragraph_format.space_before = Pt(3)
             p.paragraph_format.space_after = Pt(3)
-            slides_val = vocab.get('slides', '')
-            # Handle list or string
-            if isinstance(slides_val, list):
-                slides_val = ', '.join(str(s) for s in slides_val)
-            run = p.add_run(str(slides_val))
+            slide_val = vocab.get('slide', '')
+            run = p.add_run(str(slide_val))
             run.font.name = FONT_BODY
             run.font.size = Pt(10)
             run.font.color.rgb = GRAY
@@ -6071,7 +6051,7 @@ def generate_module_guide_v2(form, draft_id=None):
         # General rules
         if general_rules:
             add_subsection_header(doc, 'General Safety Rules')
-            add_bullet_list(doc, general_rules)
+            add_bullet_list(doc, general_rules, hanging_indent=0.13)
 
         # Item-specific warnings
         if item_specific:
@@ -6102,6 +6082,7 @@ def generate_module_guide_v2(form, draft_id=None):
                             p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
                             p.paragraph_format.line_spacing = 1.15
                             p.paragraph_format.left_indent = Pt(30)
+                            p.paragraph_format.first_line_indent = Inches(-0.13)
                             run = p.add_run('\u2022  ')
                             run.font.name = FONT_BODY
                             run.font.size = Pt(9)
@@ -6117,15 +6098,15 @@ def generate_module_guide_v2(form, draft_id=None):
 
         if tips:
             add_subsection_header(doc, 'Teaching Tips')
-            add_bullet_list(doc, tips)
+            add_bullet_list(doc, tips, hanging_indent=0.13)
 
         if look_fors:
             add_subsection_header(doc, 'What to Look For')
-            add_bullet_list(doc, look_fors)
+            add_bullet_list(doc, look_fors, hanging_indent=0.13)
 
         if questions:
             add_subsection_header(doc, 'Questions & Prompts')
-            add_bullet_list(doc, questions)
+            add_bullet_list(doc, questions, hanging_indent=0.13)
 
     # ---- Cover Page ----
     def build_cover_page(doc, module):
@@ -6244,23 +6225,15 @@ def generate_module_guide_v2(form, draft_id=None):
 
         # Assembly & Maintenance
         advance_prep = session.get('advance_prep', [])
-        station_setup = session.get('station_setup', [])
         equipment_notes = session.get('equipment_notes', [])
-        cleanup = session.get('cleanup', [])
-        if advance_prep or station_setup or equipment_notes or cleanup:
+        if advance_prep or equipment_notes:
             add_section_header(doc, 'Assembly & Maintenance')
             if advance_prep:
                 add_subsection_header(doc, 'Advance Preparation')
-                add_bullet_list(doc, advance_prep)
-            if station_setup:
-                add_subsection_header(doc, 'Station Setup')
-                add_bullet_list(doc, station_setup)
+                add_bullet_list(doc, advance_prep, hanging_indent=0.13)
             if equipment_notes:
                 add_subsection_header(doc, 'Equipment Notes')
-                add_bullet_list(doc, equipment_notes)
-            if cleanup:
-                add_subsection_header(doc, 'Cleanup')
-                add_bullet_list(doc, cleanup)
+                add_bullet_list(doc, equipment_notes, hanging_indent=0.13)
 
         # Learning Goals & Standards
         learning_goals = session.get('learning_goals', [])
@@ -6269,7 +6242,7 @@ def generate_module_guide_v2(form, draft_id=None):
             add_section_header(doc, 'Learning Goals & Standards')
             if learning_goals:
                 add_subsection_header(doc, 'Learning Goals')
-                add_bullet_list(doc, learning_goals)
+                add_bullet_list(doc, learning_goals, hanging_indent=0.13)
             if standards:
                 add_subsection_header(doc, 'Standards')
                 add_standards_table(doc, standards)
@@ -6342,9 +6315,7 @@ def generate_module_guide_v2(form, draft_id=None):
             'title': sf.title.data or '',
             'introduction': sf.introduction.data or '',
             'advance_prep': [x.strip() for x in (sf.advance_prep.data or '').split('\n') if x.strip()],
-            'station_setup': [x.strip() for x in (sf.station_setup.data or '').split('\n') if x.strip()],
             'equipment_notes': [x.strip() for x in (sf.equipment_notes.data or '').split('\n') if x.strip()],
-            'cleanup': [x.strip() for x in (sf.cleanup.data or '').split('\n') if x.strip()],
             'learning_goals': [x.strip() for x in (sf.learning_goals.data or '').split('\n') if x.strip()],
             'standards': [
                 {
@@ -6358,8 +6329,7 @@ def generate_module_guide_v2(form, draft_id=None):
             'materials': [
                 {
                     'item': m.form.item.data or '',
-                    'quantity': m.form.quantity.data or '',
-                    'group': m.form.group.data or ''
+                    'locally_sourced': m.form.locally_sourced.data or False
                 }
                 for m in sf.materials if m.form.item.data
             ],
@@ -6375,7 +6345,7 @@ def generate_module_guide_v2(form, draft_id=None):
                 {
                     'term': v.form.term.data or '',
                     'definition': v.form.definition.data or '',
-                    'slides': v.form.slides.data or ''
+                    'slide': v.form.slide.data or ''
                 }
                 for v in sf.vocabulary if v.form.term.data
             ],
@@ -9372,9 +9342,7 @@ def transform_json_to_form_data_v2(json_data):
 
             # Assembly/Maintenance (arrays to newline-separated)
             'advance_prep': '\n'.join(session.get('assembly_maintenance', {}).get('advance_prep', [])),
-            'station_setup': '\n'.join(session.get('assembly_maintenance', {}).get('station_setup', [])),
             'equipment_notes': '\n'.join(session.get('assembly_maintenance', {}).get('equipment_notes', [])),
-            'cleanup': '\n'.join(session.get('assembly_maintenance', {}).get('cleanup', [])),
 
             # Goals
             'learning_goals': '\n'.join(session.get('goals_standards', {}).get('learning_goals', [])),
@@ -9394,8 +9362,7 @@ def transform_json_to_form_data_v2(json_data):
             'materials': [
                 {
                     'item': mat.get('item', ''),
-                    'quantity': mat.get('quantity', ''),
-                    'group': mat.get('group', '')
+                    'locally_sourced': mat.get('locally_sourced', False)
                 }
                 for mat in session.get('materials', [])
             ],
@@ -9415,7 +9382,7 @@ def transform_json_to_form_data_v2(json_data):
                 {
                     'term': v.get('term', ''),
                     'definition': v.get('definition', ''),
-                    'slides': ', '.join(str(s) for s in v.get('slides', []))
+                    'slide': str(v.get('slide', ''))  # Single integer, not array
                 }
                 for v in session.get('vocabulary', [])
             ],
@@ -9755,9 +9722,7 @@ def load_moduleguide_v2_draft_into_form(form_data):
 
             # Assembly/Maintenance
             session_entry.form.advance_prep.data = session_data.get('advance_prep', '')
-            session_entry.form.station_setup.data = session_data.get('station_setup', '')
             session_entry.form.equipment_notes.data = session_data.get('equipment_notes', '')
-            session_entry.form.cleanup.data = session_data.get('cleanup', '')
 
             # Goals
             session_entry.form.learning_goals.data = session_data.get('learning_goals', '')
@@ -9780,8 +9745,7 @@ def load_moduleguide_v2_draft_into_form(form_data):
             for j, mat in enumerate(materials_data):
                 if j < len(session_entry.form.materials):
                     session_entry.form.materials[j].form.item.data = mat.get('item', '')
-                    session_entry.form.materials[j].form.quantity.data = mat.get('quantity', '')
-                    session_entry.form.materials[j].form.group.data = mat.get('group', '')
+                    session_entry.form.materials[j].form.locally_sourced.data = mat.get('locally_sourced', False)
 
             # Safety
             session_entry.form.general_safety_rules.data = session_data.get('general_safety_rules', '')
@@ -9801,7 +9765,7 @@ def load_moduleguide_v2_draft_into_form(form_data):
                 if j < len(session_entry.form.vocabulary):
                     session_entry.form.vocabulary[j].form.term.data = v.get('term', '')
                     session_entry.form.vocabulary[j].form.definition.data = v.get('definition', '')
-                    session_entry.form.vocabulary[j].form.slides.data = v.get('slides', '')
+                    session_entry.form.vocabulary[j].form.slide.data = v.get('slide', '')
 
             # Career (nested FormField - needs .form. twice)
             career_data = session_data.get('career', {})
