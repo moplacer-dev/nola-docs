@@ -1214,7 +1214,7 @@ class SessionCareerFormV2(FlaskForm):
 
     name = StringField('Name', validators=[Optional(), Length(max=100)])
     title = StringField('Title', validators=[Optional(), Length(max=100)])
-    connection = TextAreaField('Connection', validators=[Optional(), Length(max=500)])
+    connection = TextAreaField('Connection', validators=[Optional(), Length(max=1000)])
 
 # Complete session form (V2)
 class SessionFormV2(FlaskForm):
