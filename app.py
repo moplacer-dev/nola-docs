@@ -6425,10 +6425,11 @@ def generate_module_guide_v2(form, draft_id=None):
     posttest_data = extract_posttest_from_form_v2(form)
     rcp_data = extract_rcp_from_form_v2(form)
     checkpoint_data = extract_checkpoints_from_draft(draft_id)
+    knowledge_checks_data = extract_knowledge_checks_from_draft(draft_id)
 
-    if pretest_data or posttest_data or rcp_data or checkpoint_data:
+    if pretest_data or posttest_data or rcp_data or checkpoint_data or knowledge_checks_data:
         add_page_break(doc)
-        build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data,
+        build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data, knowledge_checks_data,
                                   FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                   set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
                                   keep_table_together, add_paragraph_bottom_border)
@@ -6623,7 +6624,19 @@ def extract_checkpoints_from_draft(draft_id):
     return draft.form_data.get('learning_checkpoints', {})
 
 
-def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data,
+def extract_knowledge_checks_from_draft(draft_id):
+    """Retrieve in-session knowledge checks from draft data for document generation"""
+    if not draft_id:
+        return {}
+
+    draft = FormDraft.query.get(draft_id)
+    if not draft or not draft.form_data:
+        return {}
+
+    return draft.form_data.get('knowledge_checks', {})
+
+
+def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data, knowledge_checks_data,
                                FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
                                keep_table_together, add_paragraph_bottom_border):
@@ -6687,6 +6700,27 @@ def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessio
                                    FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                    set_cell_shading, set_table_borders_color, keep_table_together)
 
+    # In-Session Knowledge Checks
+    if knowledge_checks_data:
+        add_section_header(doc, 'IN-SESSION KNOWLEDGE CHECKS')
+        for session_num in sorted(knowledge_checks_data.keys(), key=lambda x: int(x)):
+            checks = knowledge_checks_data[session_num]
+            # Find session title from sessions list
+            session_title = ''
+            for s in sessions:
+                if s.get('number') == int(session_num):
+                    session_title = s.get('title', '')
+                    break
+
+            # Session header
+            session_header = f"Session {session_num}"
+            if session_title:
+                session_header += f": {session_title}"
+            add_subsection_header(doc, session_header)
+
+            build_knowledge_checks_table(doc, checks, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                                         set_cell_shading, set_table_borders_color, keep_table_together)
+
 
 def add_choice_paragraph(cell, label, choice_text, is_correct, FONT_BODY, DARK_BLUE, BLACK):
     """Add a formatted choice paragraph to a cell. Returns the paragraph."""
@@ -6737,7 +6771,7 @@ def build_test_answer_table(doc, questions, FONT_HEADER, FONT_BODY, DARK_BLUE, B
     for cell in table.columns[0].cells:
         cell.width = Inches(0.5)
     for cell in table.columns[1].cells:
-        cell.width = Inches(5.0)
+        cell.width = Inches(5.5)
     for cell in table.columns[2].cells:
         cell.width = Inches(1.0)
 
@@ -6916,7 +6950,7 @@ def build_rcp_session_block(doc, rcp_session, FONT_HEADER, FONT_BODY, DARK_BLUE,
     for cell in table.columns[0].cells:
         cell.width = Inches(1.2)
     for cell in table.columns[1].cells:
-        cell.width = Inches(5.3)
+        cell.width = Inches(5.8)
 
     for idx, (rcp_type, rcp_q) in enumerate(rcp_types):
         row = table.rows[idx]
@@ -7018,7 +7052,7 @@ def build_checkpoint_table(doc, questions, FONT_HEADER, FONT_BODY, DARK_BLUE, BL
     for cell in table.columns[0].cells:
         cell.width = Inches(0.5)
     for cell in table.columns[1].cells:
-        cell.width = Inches(5.0)
+        cell.width = Inches(5.5)
     for cell in table.columns[2].cells:
         cell.width = Inches(1.0)
 
@@ -7206,6 +7240,400 @@ def build_checkpoint_table(doc, questions, FONT_HEADER, FONT_BODY, DARK_BLUE, BL
             set_cell_shading(num_cell, 'F2F2F2')
             set_cell_shading(q_cell, 'F2F2F2')
             set_cell_shading(ans_cell, 'F2F2F2')
+
+    # Add spacing after table
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_after = Pt(12)
+
+
+def build_knowledge_checks_table(doc, checks, FONT_HEADER, FONT_BODY, DARK_BLUE, BLACK, WHITE, GRAY, LIGHT_GRAY,
+                                  set_cell_shading, set_table_borders_color, keep_table_together):
+    """Build a table for in-session knowledge checks matching checkpoint table format"""
+    from docx.shared import Pt, Inches
+    from docx.enum.table import WD_ALIGN_VERTICAL
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+    if not checks:
+        return
+
+    # Create table with 2 columns: Slide #, Question & Expected Response
+    table = doc.add_table(rows=1 + len(checks), cols=2)
+    table.style = 'Table Grid'
+    set_table_borders_color(table, '707373')
+    keep_table_together(table)
+
+    # Set column widths
+    for cell in table.columns[0].cells:
+        cell.width = Inches(0.6)  # Slide # column
+    for cell in table.columns[1].cells:
+        cell.width = Inches(6.4)  # Content column
+
+    # Header row
+    headers = ['Slide #', 'Question & Expected Response']
+    for i, header in enumerate(headers):
+        cell = table.rows[0].cells[i]
+        cell.text = ''
+        set_cell_shading(cell, '1D2757')
+        p = cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run(header)
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+    # Data rows
+    for idx, check in enumerate(checks):
+        row = table.rows[1 + idx]
+
+        # Slide # cell
+        slide_cell = row.cells[0]
+        slide_cell.text = ''
+        slide_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        p = slide_cell.paragraphs[0]
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+        slide_num = check.get('slide_number', '')
+        run = p.add_run(str(slide_num) if slide_num else str(idx + 1))
+        run.font.name = FONT_BODY
+        run.font.size = Pt(10)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Question & Expected Response cell (contains title, prompt, and answer details)
+        q_cell = row.cells[1]
+        q_cell.text = ''
+
+        # Title (if present)
+        title = check.get('title', '')
+        prompt = check.get('prompt', '')
+
+        first_para = q_cell.paragraphs[0]
+        first_para.paragraph_format.space_before = Pt(3)
+        first_para.paragraph_format.space_after = Pt(2)
+
+        if title:
+            run = first_para.add_run(title)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.bold = True
+            run.font.color.rgb = BLACK
+            # Prompt goes in a new paragraph after title
+            if prompt:
+                p_prompt = q_cell.add_paragraph()
+                p_prompt.paragraph_format.space_before = Pt(0)
+                p_prompt.paragraph_format.space_after = Pt(2)
+                run = p_prompt.add_run(prompt)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.color.rgb = BLACK
+        elif prompt:
+            # No title, prompt goes in first paragraph
+            run = first_para.add_run(prompt)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(9)
+            run.font.color.rgb = BLACK
+
+        # Answer details in Question cell
+        answer = check.get('answer', {})
+        if answer and isinstance(answer, dict):
+            answer_type = answer.get('type', '')
+
+            if answer_type == 'key_ideas':
+                expected_points = answer.get('expected_points', [])
+                for point in expected_points:
+                    p_point = q_cell.add_paragraph()
+                    p_point.paragraph_format.space_before = Pt(1)
+                    p_point.paragraph_format.space_after = Pt(1)
+                    p_point.paragraph_format.left_indent = Inches(0.19)
+                    p_point.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_point.add_run("• ")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = GRAY
+                    run = p_point.add_run(point)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = BLACK
+
+            elif answer_type == 'expected_observations':
+                observations = answer.get('observations', [])
+                # Check for alternative fields if observations is empty
+                if not observations:
+                    observations = answer.get('expected', []) or answer.get('expected_patterns', [])
+
+                if observations:
+                    for obs in observations:
+                        if isinstance(obs, dict):
+                            item = obs.get('item', obs.get('material', ''))
+                            observation = obs.get('observation', obs.get('expected', ''))
+                            p_obs = q_cell.add_paragraph()
+                            p_obs.paragraph_format.space_before = Pt(1)
+                            p_obs.paragraph_format.space_after = Pt(1)
+                            p_obs.paragraph_format.left_indent = Inches(0.19)
+                            p_obs.paragraph_format.first_line_indent = Inches(-0.07)
+                            run = p_obs.add_run("• ")
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = GRAY
+                            run = p_obs.add_run(f"{item}: ")
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.bold = True
+                            run.font.color.rgb = BLACK
+                            run = p_obs.add_run(str(observation))
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = BLACK
+                        else:
+                            p_obs = q_cell.add_paragraph()
+                            p_obs.paragraph_format.space_before = Pt(1)
+                            p_obs.paragraph_format.space_after = Pt(1)
+                            p_obs.paragraph_format.left_indent = Inches(0.19)
+                            p_obs.paragraph_format.first_line_indent = Inches(-0.07)
+                            run = p_obs.add_run("• ")
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = GRAY
+                            run = p_obs.add_run(str(obs))
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = BLACK
+                else:
+                    # Fallback for empty observations
+                    p_obs = q_cell.add_paragraph()
+                    p_obs.paragraph_format.space_before = Pt(1)
+                    p_obs.paragraph_format.space_after = Pt(1)
+                    p_obs.paragraph_format.left_indent = Inches(0.19)
+                    p_obs.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_obs.add_run("(Open-ended observation)")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.italic = True
+                    run.font.color.rgb = GRAY
+
+            elif answer_type == 'classification':
+                correct_answers = answer.get('correct_answers', {})
+                if isinstance(correct_answers, dict):
+                    for item, category in correct_answers.items():
+                        p_class = q_cell.add_paragraph()
+                        p_class.paragraph_format.space_before = Pt(1)
+                        p_class.paragraph_format.space_after = Pt(1)
+                        p_class.paragraph_format.left_indent = Inches(0.19)
+                        p_class.paragraph_format.first_line_indent = Inches(-0.07)
+                        run = p_class.add_run("• ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = GRAY
+                        run = p_class.add_run(f"{item} → ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = BLACK
+                        # Handle dict category values (e.g., {'type': 'Homogeneous', 'mixture_kind': 'Solution'})
+                        # Just show the values, not the keys (e.g., "Homogeneous Solution")
+                        if isinstance(category, dict):
+                            values = [str(v) for k, v in category.items() if k not in ('id', '_id') and v]
+                            display_text = " ".join(values) if values else str(category)
+                        else:
+                            display_text = str(category)
+                        run = p_class.add_run(display_text)
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.bold = True
+                        run.font.color.rgb = BLACK
+                elif isinstance(correct_answers, list):
+                    for ans in correct_answers:
+                        p_class = q_cell.add_paragraph()
+                        p_class.paragraph_format.space_before = Pt(1)
+                        p_class.paragraph_format.space_after = Pt(1)
+                        p_class.paragraph_format.left_indent = Inches(0.19)
+                        p_class.paragraph_format.first_line_indent = Inches(-0.07)
+                        # Handle dict items in list - just show values
+                        if isinstance(ans, dict):
+                            values = [str(v) for k, v in ans.items() if k not in ('id', '_id') and v]
+                            display_text = " ".join(values) if values else str(ans)
+                        else:
+                            display_text = str(ans)
+                        run = p_class.add_run("• ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = GRAY
+                        run = p_class.add_run(display_text)
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = BLACK
+
+            elif answer_type == 'matching':
+                categories = answer.get('categories', {})
+                correct_mapping = answer.get('correct_mapping', {})
+
+                if isinstance(categories, dict):
+                    for category, items in categories.items():
+                        p_cat = q_cell.add_paragraph()
+                        p_cat.paragraph_format.space_before = Pt(1)
+                        p_cat.paragraph_format.space_after = Pt(1)
+                        p_cat.paragraph_format.left_indent = Inches(0.19)
+                        p_cat.paragraph_format.first_line_indent = Inches(-0.07)
+                        run = p_cat.add_run("• ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = GRAY
+                        run = p_cat.add_run(f"{category}: ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.bold = True
+                        run.font.color.rgb = BLACK
+                        # Handle list of items (may contain dicts) - just show values
+                        if isinstance(items, list):
+                            item_texts = []
+                            for item in items:
+                                if isinstance(item, dict):
+                                    values = [str(v) for k, v in item.items() if k not in ('id', '_id') and v]
+                                    item_texts.append(" ".join(values) if values else str(item))
+                                else:
+                                    item_texts.append(str(item))
+                            run = p_cat.add_run(', '.join(item_texts))
+                        elif isinstance(items, dict):
+                            values = [str(v) for k, v in items.items() if k not in ('id', '_id') and v]
+                            run = p_cat.add_run(" ".join(values) if values else str(items))
+                        else:
+                            run = p_cat.add_run(str(items))
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = BLACK
+                elif isinstance(categories, list) and correct_mapping:
+                    # Categories is a list, but we have a separate correct_mapping dict
+                    for item, category in correct_mapping.items():
+                        p_cat = q_cell.add_paragraph()
+                        p_cat.paragraph_format.space_before = Pt(1)
+                        p_cat.paragraph_format.space_after = Pt(1)
+                        p_cat.paragraph_format.left_indent = Inches(0.19)
+                        p_cat.paragraph_format.first_line_indent = Inches(-0.07)
+                        run = p_cat.add_run("• ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = GRAY
+                        run = p_cat.add_run(f"{item} → ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = BLACK
+                        run = p_cat.add_run(str(category))
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.bold = True
+                        run.font.color.rgb = BLACK
+                elif isinstance(categories, list):
+                    # Just a list of category names with no mapping
+                    p_cat = q_cell.add_paragraph()
+                    p_cat.paragraph_format.space_before = Pt(1)
+                    p_cat.paragraph_format.space_after = Pt(1)
+                    p_cat.paragraph_format.left_indent = Inches(0.19)
+                    p_cat.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_cat.add_run("• ")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = GRAY
+                    run = p_cat.add_run("Categories: ")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.bold = True
+                    run.font.color.rgb = BLACK
+                    run = p_cat.add_run(', '.join(str(cat) for cat in categories))
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = BLACK
+
+            elif answer_type == 'rubric':
+                key_points = answer.get('key_points', [])
+                for point in key_points:
+                    p_point = q_cell.add_paragraph()
+                    p_point.paragraph_format.space_before = Pt(1)
+                    p_point.paragraph_format.space_after = Pt(1)
+                    p_point.paragraph_format.left_indent = Inches(0.19)
+                    p_point.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_point.add_run("• ")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = GRAY
+                    run = p_point.add_run(point)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = BLACK
+
+            elif answer_type in ('data_collection', 'prediction_guidance'):
+                # Handle expected observations/patterns
+                items = answer.get('expected_observations', []) or answer.get('expected_patterns', [])
+                notes = answer.get('notes', '') or answer.get('validation_notes', '')
+                if notes:
+                    p_note = q_cell.add_paragraph()
+                    p_note.paragraph_format.space_before = Pt(1)
+                    p_note.paragraph_format.space_after = Pt(1)
+                    p_note.paragraph_format.left_indent = Inches(0.19)
+                    p_note.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_note.add_run(notes)
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = BLACK
+                for item in items:
+                    p_item = q_cell.add_paragraph()
+                    p_item.paragraph_format.space_before = Pt(1)
+                    p_item.paragraph_format.space_after = Pt(1)
+                    p_item.paragraph_format.left_indent = Inches(0.19)
+                    p_item.paragraph_format.first_line_indent = Inches(-0.07)
+                    run = p_item.add_run("• ")
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = GRAY
+                    run = p_item.add_run(str(item))
+                    run.font.name = FONT_BODY
+                    run.font.size = Pt(9)
+                    run.font.color.rgb = BLACK
+
+            else:
+                # Generic fallback
+                for key, value in answer.items():
+                    if key == 'type':
+                        continue
+                    if isinstance(value, str) and value:
+                        p_val = q_cell.add_paragraph()
+                        p_val.paragraph_format.space_before = Pt(1)
+                        p_val.paragraph_format.space_after = Pt(1)
+                        p_val.paragraph_format.left_indent = Inches(0.19)
+                        p_val.paragraph_format.first_line_indent = Inches(-0.07)
+                        run = p_val.add_run("• ")
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = GRAY
+                        run = p_val.add_run(value)
+                        run.font.name = FONT_BODY
+                        run.font.size = Pt(9)
+                        run.font.color.rgb = BLACK
+                    elif isinstance(value, list):
+                        for item in value:
+                            p_item = q_cell.add_paragraph()
+                            p_item.paragraph_format.space_before = Pt(1)
+                            p_item.paragraph_format.space_after = Pt(1)
+                            p_item.paragraph_format.left_indent = Inches(0.19)
+                            p_item.paragraph_format.first_line_indent = Inches(-0.07)
+                            run = p_item.add_run("• ")
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = GRAY
+                            run = p_item.add_run(str(item))
+                            run.font.name = FONT_BODY
+                            run.font.size = Pt(9)
+                            run.font.color.rgb = BLACK
+
+        q_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+
+        # Alternating row shading (2 columns only)
+        if idx % 2 == 1:
+            set_cell_shading(slide_cell, 'F2F2F2')
+            set_cell_shading(q_cell, 'F2F2F2')
 
     # Add spacing after table
     spacer = doc.add_paragraph()
@@ -9442,6 +9870,13 @@ def transform_json_to_form_data_v2(json_data):
         }
     form_data['learning_checkpoints'] = learning_checkpoints
 
+    # Transform in-session knowledge checks (preserve complete structure)
+    knowledge_checks = {}
+    check_data = answer_key.get('knowledge_checks', {})
+    for session_num in sorted(check_data.keys(), key=lambda x: int(x)):
+        knowledge_checks[session_num] = check_data[session_num]
+    form_data['knowledge_checks'] = knowledge_checks
+
     return form_data
 
 
@@ -9673,6 +10108,7 @@ def create_module_guide_v2():
 
     # Check if loading a draft
     learning_checkpoints = {}
+    knowledge_checks = {}
     if draft_id:
         try:
             draft = FormDraft.query.filter_by(
@@ -9684,12 +10120,14 @@ def create_module_guide_v2():
                 form = load_moduleguide_v2_draft_into_form(draft.form_data)
                 # Extract learning checkpoints from draft (read-only display)
                 learning_checkpoints = draft.form_data.get('learning_checkpoints', {})
+                # Extract in-session knowledge checks from draft (read-only display)
+                knowledge_checks = draft.form_data.get('knowledge_checks', {})
                 flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         except Exception as e:
             print(f"Error loading draft: {e}")
             flash(f'Error loading draft: {str(e)}', 'error')
 
-    return render_template('create_moduleGuide_v2.html', form=form, draft_id=draft_id, learning_checkpoints=learning_checkpoints)
+    return render_template('create_moduleGuide_v2.html', form=form, draft_id=draft_id, learning_checkpoints=learning_checkpoints, knowledge_checks=knowledge_checks)
 
 
 def load_moduleguide_v2_draft_into_form(form_data):
@@ -9920,6 +10358,11 @@ def autosave_moduleguide_v2_draft():
                 existing_checkpoints = draft.form_data.get('learning_checkpoints', {}) if draft.form_data else {}
                 if existing_checkpoints:
                     form_data['learning_checkpoints'] = existing_checkpoints
+
+                # Preserve knowledge_checks from existing draft (not editable via form)
+                existing_knowledge_checks = draft.form_data.get('knowledge_checks', {}) if draft.form_data else {}
+                if existing_knowledge_checks:
+                    form_data['knowledge_checks'] = existing_knowledge_checks
 
                 draft.form_data = form_data
                 draft.updated_at = datetime.utcnow()
