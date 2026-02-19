@@ -3998,70 +3998,94 @@ def generate_family_briefing_v2(form):
     module_acronym = form.module_acronym.data or ''
     grade_level = form.grade_level.data or ''
 
-    # ===== HEADER (Minimal Blocks Layout) =====
-    header_table = doc.add_table(rows=1, cols=3)
+    # ===== HEADER (Modern asymmetric design) =====
+    # Clean, professional look with subtle brand accents
+
+    # Main header table: Text left, Logo right
+    header_table = doc.add_table(rows=1, cols=2)
     header_table.autofit = False
     remove_table_borders(header_table)
-    # Set table indent to 0 to align with page margins
     header_tblPr = header_table._tbl.tblPr
     header_tblInd = OxmlElement('w:tblInd')
     header_tblInd.set(qn('w:w'), '0')
     header_tblInd.set(qn('w:type'), 'dxa')
     header_tblPr.append(header_tblInd)
 
-    # Set column widths: Logo | Module Info | Family Briefing (total 7.2" to match content width)
-    header_table.columns[0].width = Inches(1.5)
-    header_table.columns[1].width = Inches(3.9)
-    header_table.columns[2].width = Inches(1.8)
+    header_table.columns[0].width = Inches(5.4)
+    header_table.columns[1].width = Inches(1.8)
 
-    # Left cell: Logo
-    logo_cell = header_table.rows[0].cells[0]
-    logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    logo_cell.width = Inches(1.6)
-    set_cell_margins(logo_cell, top=60, bottom=60, left=0, right=0)
+    # Left cell: Typography stack
+    text_cell = header_table.rows[0].cells[0]
+    text_cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+    text_cell.width = Inches(5.4)
+    set_cell_margins(text_cell, top=0, bottom=80, left=0, right=0)
+
+    # "FAMILY BRIEFING" - small caps style, letter-spaced, subtle gray
+    p = text_cell.paragraphs[0]
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    p.paragraph_format.space_after = Pt(2)
+    run = p.add_run('F A M I L Y   B R I E F I N G')
+    run.font.name = FONT_BODY
+    run.font.size = Pt(8)
+    run.font.bold = False
+    run.font.color.rgb = GRAY  # Subtle gray
+
+    # Module name - large, bold, charcoal
+    p2 = text_cell.add_paragraph()
+    p2.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    p2.paragraph_format.space_before = Pt(0)
+    p2.paragraph_format.space_after = Pt(6)
+    run = p2.add_run(module_name.title())
+    run.font.name = FONT_HEADER
+    run.font.size = Pt(28)
+    run.font.bold = True
+    run.font.color.rgb = BLACK  # Dark charcoal
+
+    # Right cell: Logo (bottom-aligned to match text baseline)
+    logo_cell = header_table.rows[0].cells[1]
+    logo_cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+    logo_cell.width = Inches(1.8)
+    set_cell_margins(logo_cell, top=0, bottom=80, left=0, right=0)
+
     p = logo_cell.paragraphs[0]
     p.paragraph_format.space_after = Pt(0)
-    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
-    # Add logo (1.4" width)
     logo_path = os.path.join('static', 'images', 'logo_red_gray.png')
     if os.path.exists(logo_path):
         run = p.add_run()
-        run.add_picture(logo_path, width=Inches(1.4))
+        run.add_picture(logo_path, width=Inches(1.5))
 
-    # Middle cell: Module name and Grade level (left-aligned)
-    module_cell = header_table.rows[0].cells[1]
-    module_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    module_cell.width = Inches(4.0)
-    set_cell_margins(module_cell, top=60, bottom=60, left=80, right=0)
+    # Accent line - thin red line, partial width for visual interest
+    accent_table = doc.add_table(rows=1, cols=2)
+    accent_table.autofit = False
+    remove_table_borders(accent_table)
+    accent_tblPr = accent_table._tbl.tblPr
+    accent_tblInd = OxmlElement('w:tblInd')
+    accent_tblInd.set(qn('w:w'), '0')
+    accent_tblInd.set(qn('w:type'), 'dxa')
+    accent_tblPr.append(accent_tblInd)
 
-    p = module_cell.paragraphs[0]
-    p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    p.paragraph_format.space_after = Pt(0)
-    run = p.add_run(module_name)
-    run.font.name = FONT_HEADER
-    run.font.size = Pt(22)
-    run.font.bold = True
-    run.font.color.rgb = DARK_BLUE
+    # Red accent portion (left ~30%)
+    accent_table.columns[0].width = Inches(2.2)
+    accent_table.columns[1].width = Inches(5.0)
 
-    # Right cell: "Family Briefing" (right-aligned)
-    fb_cell = header_table.rows[0].cells[2]
-    fb_cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    fb_cell.width = Inches(1.8)
-    set_cell_margins(fb_cell, top=60, bottom=60, left=0, right=0)
+    red_cell = accent_table.rows[0].cells[0]
+    red_cell.width = Inches(2.2)
+    set_cell_borders(red_cell,
+        top={'val': 'single', 'sz': 18, 'color': 'E81D2C'},  # Red accent
+        bottom=None, left=None, right=None)
+    set_cell_margins(red_cell, top=0, bottom=0, left=0, right=0)
+    red_cell.paragraphs[0].paragraph_format.space_after = Pt(0)
 
-    p = fb_cell.paragraphs[0]
-    p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-    p.paragraph_format.space_after = Pt(0)
-    run = p.add_run('Family Briefing')
-    run.font.name = FONT_HEADER
-    run.font.size = Pt(14)
-    run.font.bold = True
-    run.font.color.rgb = RED_ACCENT
-
-    # Add 4pt navy bottom border to all header cells
-    for cell in header_table.rows[0].cells:
-        set_cell_borders(cell, bottom={'sz': 32, 'color': '1D2757', 'val': 'single'})
+    # Light gray continuation (right ~70%)
+    gray_cell = accent_table.rows[0].cells[1]
+    gray_cell.width = Inches(5.0)
+    set_cell_borders(gray_cell,
+        top={'val': 'single', 'sz': 6, 'color': 'E5E7EB'},  # Light gray
+        bottom=None, left=None, right=None)
+    set_cell_margins(gray_cell, top=0, bottom=0, left=0, right=0)
+    gray_cell.paragraphs[0].paragraph_format.space_after = Pt(0)
 
     # ===== PARENT LETTER (Intro) =====
     parent_letter = form.parent_letter.data
@@ -4072,13 +4096,16 @@ def generate_family_briefing_v2(form):
         # Show all paragraphs
         for i, para_text in enumerate(paragraphs):
             p = doc.add_paragraph()
-            p.paragraph_format.space_before = Pt(10) if i == 0 else Pt(6)
-            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.space_before = Pt(8) if i == 0 else Pt(4)
+            p.paragraph_format.space_after = Pt(4)
             p.paragraph_format.line_spacing = 1.15
             run = p.add_run(para_text)
             run.font.name = FONT_BODY
             run.font.size = Pt(10)
             run.font.color.rgb = BLACK
+            # Make greeting line bold
+            if i == 0 and para_text.lower().startswith('dear'):
+                run.font.bold = True
     else:
         # Small spacer if no letter
         spacer = doc.add_paragraph()
@@ -4108,12 +4135,12 @@ def generate_family_briefing_v2(form):
     goals_cell = goals_card.rows[0].cells[0]
     goals_cell.width = goals_card.columns[0].width
     goals_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-    set_cell_margins(goals_cell, top=120, bottom=120, left=0, right=0)
+    set_cell_margins(goals_cell, top=60, bottom=60, left=0, right=0)
 
     # Section header
     p = goals_cell.paragraphs[0]
     p.paragraph_format.space_before = Pt(0)
-    p.paragraph_format.space_after = Pt(10)
+    p.paragraph_format.space_after = Pt(6)
     run = p.add_run('Learning Goals')
     run.font.name = FONT_HEADER
     run.font.size = Pt(13)
@@ -4126,8 +4153,8 @@ def generate_family_briefing_v2(form):
         for obj in objectives:
             p = goals_cell.add_paragraph()
             p.paragraph_format.space_before = Pt(0)
-            p.paragraph_format.space_after = Pt(6)
-            p.paragraph_format.line_spacing = 1.15
+            p.paragraph_format.space_after = Pt(3)
+            p.paragraph_format.line_spacing = 1.0
             p.paragraph_format.left_indent = Pt(8)
             run = p.add_run('\u2022 ')
             run.font.name = FONT_BODY
@@ -4176,12 +4203,12 @@ def generate_family_briefing_v2(form):
         concepts_cell = concepts_card.rows[0].cells[0]
         concepts_cell.width = concepts_card.columns[0].width
         concepts_cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-        set_cell_margins(concepts_cell, top=120, bottom=120, left=0, right=0)
+        set_cell_margins(concepts_cell, top=60, bottom=60, left=0, right=0)
 
         # Section header
         p = concepts_cell.paragraphs[0]
         p.paragraph_format.space_before = Pt(0)
-        p.paragraph_format.space_after = Pt(10)
+        p.paragraph_format.space_after = Pt(6)
         run = p.add_run('Key Concepts')
         run.font.name = FONT_HEADER
         run.font.size = Pt(13)
@@ -4192,8 +4219,8 @@ def generate_family_briefing_v2(form):
         for i, concept_data in enumerate(key_concepts_data):
             # Concept name (bold, dark gray)
             p = concepts_cell.add_paragraph()
-            p.paragraph_format.space_before = Pt(6) if i == 0 else Pt(12)
-            p.paragraph_format.space_after = Pt(3)
+            p.paragraph_format.space_before = Pt(4) if i == 0 else Pt(8)
+            p.paragraph_format.space_after = Pt(2)
             run = p.add_run(concept_data['concept'])
             run.font.name = FONT_HEADER
             run.font.size = Pt(11)
@@ -4206,7 +4233,7 @@ def generate_family_briefing_v2(form):
                 p2 = concepts_cell.add_paragraph()
                 p2.paragraph_format.space_before = Pt(0)
                 p2.paragraph_format.space_after = Pt(2)
-                p2.paragraph_format.line_spacing = 1.15
+                p2.paragraph_format.line_spacing = 1.0
                 run = p2.add_run(concept_data['explanation'])
                 run.font.name = FONT_BODY
                 run.font.size = Pt(10)
@@ -4215,9 +4242,9 @@ def generate_family_briefing_v2(form):
             # "Question:" label + question (navy blue, indented for visual distinction)
             if concept_data['question']:
                 p3 = concepts_cell.add_paragraph()
-                p3.paragraph_format.space_before = Pt(8)
+                p3.paragraph_format.space_before = Pt(4)
                 p3.paragraph_format.space_after = Pt(0)
-                p3.paragraph_format.line_spacing = 1.15
+                p3.paragraph_format.line_spacing = 1.0
                 p3.paragraph_format.left_indent = Pt(6)
                 run = p3.add_run('Question: ')
                 run.font.name = FONT_BODY
@@ -4232,7 +4259,7 @@ def generate_family_briefing_v2(form):
 
     # ===== FOOTER =====
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(16)
+    p.paragraph_format.space_before = Pt(10)
     p.paragraph_format.space_after = Pt(0)
     p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     run = p.add_run('Star Academy is a product of NOLA Education, LLC. | www.StarAcademyProgram.com')
