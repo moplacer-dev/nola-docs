@@ -4283,13 +4283,14 @@ def generate_family_briefing_v2(form):
     return output_path
 
 
-def generate_student_logbook_v2(module_name, sessions, module_title=None):
+def generate_student_logbook_v2(module_name, sessions, module_title=None, career_exploration=None):
     """Generate a student logbook v2 using python-docx directly.
 
     Args:
         module_name: Module acronym string (e.g. 'APHY')
         sessions: List of session dicts from the JSON form data
         module_title: Full module title string (e.g. 'Automotive Physics')
+        career_exploration: Dict with introduction, degree_careers, and trade_careers
     Returns:
         output_path: Path to the generated .docx file
     """
@@ -5102,6 +5103,170 @@ def generate_student_logbook_v2(module_name, sessions, module_title=None):
             sp.paragraph_format.space_before = Pt(2)
             sp.paragraph_format.space_after = Pt(2)
 
+    # ---- Career Exploration Page ----
+    def build_career_exploration_page(doc, career_data):
+        """Build a compact Career Exploration page with 2-column layout."""
+        if not career_data:
+            return
+
+        introduction = career_data.get('introduction', '')
+        degree_careers = career_data.get('degree_careers', [])
+        trade_careers = career_data.get('trade_careers', [])
+
+        # Skip if no content
+        if not introduction and not degree_careers and not trade_careers:
+            return
+
+        RED_ACCENT = RGBColor(0xE8, 0x1D, 0x2C)
+
+        # Page Title - compact
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(0)
+        p.paragraph_format.space_after = Pt(4)
+        run = p.add_run('Career Exploration')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(16)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+        add_paragraph_bottom_border(p, '1D2757', '12')
+
+        # Introduction - italic text
+        if introduction and introduction.strip():
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(8)
+            run = p.add_run(introduction)
+            run.font.name = FONT_BODY
+            run.font.size = Pt(10)
+            run.font.italic = True
+            run.font.color.rgb = GRAY
+
+        def add_career_to_cell(cell, career, is_degree, is_first=False):
+            """Add a career entry to a table cell."""
+            title = career.get('title', '')
+            description = career.get('description', '')
+            what_they_do = career.get('what_they_do', '')
+            path_field = 'education' if is_degree else 'training'
+            path_value = career.get(path_field, '')
+
+            if not title:
+                return
+
+            # Job Title with colored bullet (always new paragraph)
+            p = cell.add_paragraph()
+            p.paragraph_format.space_before = Pt(10) if not is_first else Pt(6)
+            p.paragraph_format.space_after = Pt(2)
+            accent = '1D2757' if is_degree else 'E81D2C'
+            run = p.add_run('\u25A0 ')  # Colored square bullet
+            run.font.size = Pt(9)
+            run.font.color.rgb = RGBColor(int(accent[0:2], 16), int(accent[2:4], 16), int(accent[4:6], 16))
+            run = p.add_run(title)
+            run.font.name = FONT_HEADER
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run.font.color.rgb = DARK_BLUE
+
+            # Education/Training path
+            if path_value and path_value.strip():
+                p = cell.add_paragraph()
+                p.paragraph_format.space_before = Pt(0)
+                p.paragraph_format.space_after = Pt(2)
+                p.paragraph_format.left_indent = Pt(14)
+                run = p.add_run(path_value)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.italic = True
+                run.font.color.rgb = GRAY
+
+            # Description
+            if description and description.strip():
+                p = cell.add_paragraph()
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(3)
+                p.paragraph_format.left_indent = Pt(14)
+                run = p.add_run(description)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.color.rgb = BLACK
+
+            # Day in the Life
+            if what_they_do and what_they_do.strip():
+                p = cell.add_paragraph()
+                p.paragraph_format.space_before = Pt(2)
+                p.paragraph_format.space_after = Pt(0)
+                p.paragraph_format.left_indent = Pt(14)
+                run = p.add_run('Day in the Life: ')
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.bold = True
+                run.font.color.rgb = GRAY
+                run = p.add_run(what_they_do)
+                run.font.name = FONT_BODY
+                run.font.size = Pt(9)
+                run.font.italic = True
+                run.font.color.rgb = GRAY
+
+        # Create 2-column layout table
+        col_table = doc.add_table(rows=1, cols=2)
+        col_table.autofit = False
+        col_table.allow_autofit = False
+
+        # Set equal column widths (3.5" each)
+        from docx.shared import Twips
+        EQUAL_WIDTH = Inches(3.5)
+        col_table.columns[0].width = EQUAL_WIDTH
+        col_table.columns[1].width = EQUAL_WIDTH
+
+        left_cell = col_table.rows[0].cells[0]
+        right_cell = col_table.rows[0].cells[1]
+
+        # Explicitly set cell widths to match column widths
+        left_cell.width = EQUAL_WIDTH
+        right_cell.width = EQUAL_WIDTH
+
+        # Style cells - remove borders, add top accent, align to top
+        from docx.enum.table import WD_ALIGN_VERTICAL
+        for cell, accent_color in [(left_cell, '1D2757'), (right_cell, 'E81D2C')]:
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+            set_cell_borders(cell,
+                top={'val': 'single', 'sz': 18, 'color': accent_color},
+                bottom={'val': 'nil', 'sz': 0, 'color': 'FFFFFF'},
+                left={'val': 'nil', 'sz': 0, 'color': 'FFFFFF'},
+                right={'val': 'nil', 'sz': 0, 'color': 'FFFFFF'})
+
+        # Left column header - Degree Careers
+        p = left_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run('Degree-Required Careers')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = DARK_BLUE
+
+        # Right column header - Trade Careers
+        p = right_cell.paragraphs[0]
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run('Trade & Certification Careers')
+        run.font.name = FONT_HEADER
+        run.font.size = Pt(12)
+        run.font.bold = True
+        run.font.color.rgb = RED_ACCENT
+
+        # Add degree careers to left column
+        for i, career in enumerate(degree_careers):
+            add_career_to_cell(left_cell, career, is_degree=True, is_first=(i == 0))
+
+        # Add trade careers to right column
+        for i, career in enumerate(trade_careers):
+            add_career_to_cell(right_cell, career, is_degree=False, is_first=(i == 0))
+
+        # Small spacer after table
+        sp = doc.add_paragraph()
+        sp.paragraph_format.space_before = Pt(0)
+        sp.paragraph_format.space_after = Pt(0)
+
     # ==================== Build the document ====================
     doc = Document()
 
@@ -5233,6 +5398,13 @@ def generate_student_logbook_v2(module_name, sessions, module_title=None):
         # Page break between sessions (not after the last one)
         if s_idx < len(sessions) - 1:
             add_page_break(doc)
+
+    # Career Exploration page (after all sessions)
+    if career_exploration and (career_exploration.get('introduction') or
+                              career_exploration.get('degree_careers') or
+                              career_exploration.get('trade_careers')):
+        add_page_break(doc)
+        build_career_exploration_page(doc, career_exploration)
 
     # Save the document
     output_dir = 'generated_docs'
@@ -11414,19 +11586,146 @@ def delete_familybriefing_draft(draft_id):
 
 # ===== STUDENT LOGBOOK ROUTES =====
 
+def transform_studentlogbook_json(json_data):
+    """Transform uploaded JSON to Student Logbook V2 form structure.
+
+    Converts from the external JSON format (from script tool) to the internal form format:
+    - session_title -> title
+    - essential_question -> focus
+    - content_blocks -> blocks
+    - slide_number -> slide_ref (with "Slide " prefix)
+    - vocabulary[].term -> vocabulary[] (terms only)
+    - optional_sections.include_* -> has_*
+    """
+    sessions = []
+    for s in json_data.get('sessions', []):
+        # Transform content blocks
+        blocks = []
+        for block in s.get('content_blocks', []):
+            block_type = block.get('type', '').lower().replace(' ', '_')
+            transformed = {
+                'type': block_type,
+                'slide_ref': f"Slide {block.get('slide_number', '')}" if block.get('slide_number') else '',
+                'content': block.get('prompt', '')
+            }
+            if block_type == 'custom_prompt':
+                transformed['label'] = block.get('section_name', '')
+            if block_type == 'custom_table' and block.get('table_structure'):
+                ts = block['table_structure']
+                transformed['title'] = block.get('prompt', '')
+                transformed['columns'] = ts.get('columns', [])
+                transformed['rows'] = [{'label': r, 'cells': []} for r in ts.get('rows', [])]
+            blocks.append(transformed)
+
+        # Transform vocabulary (extract just terms, students fill in definitions)
+        vocab_terms = [v.get('term', '') for v in s.get('vocabulary', [])]
+
+        # Get optional sections
+        opts = s.get('optional_sections', {})
+
+        sessions.append({
+            'session_number': s.get('session_number', 1),
+            'title': s.get('session_title', ''),
+            'focus': s.get('essential_question', ''),
+            'blocks': blocks,
+            'vocabulary': vocab_terms,
+            'has_notes': opts.get('include_notes', False),
+            'has_reflection': opts.get('include_reflection', False),
+            'reflection_prompt': '',
+            'has_cer': opts.get('include_cer', False) or s.get('has_cer', False),
+            'cer_prompts': {'question': '', 'claim': '', 'evidence': '', 'reasoning': ''},
+            'checklist_items': s.get('checklist_items', [])
+        })
+
+    return {
+        'version': 2,
+        'module_name': json_data.get('module_acronym', ''),
+        'module_title': json_data.get('module_name', ''),
+        'sessions': sessions,
+        'career_exploration': json_data.get('career_exploration', {})
+    }
+
+
+@app.route('/upload-studentlogbook-v2-json', methods=['POST'])
+@login_required
+def upload_studentlogbook_v2_json():
+    """Handle JSON file upload for Student Logbook V2.
+
+    Accepts a JSON file, transforms it to form-compatible structure,
+    creates a draft, and returns the draft_id for redirect.
+    """
+    if 'json_file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    file = request.files['json_file']
+    if file.filename == '' or not file.filename.endswith('.json'):
+        return jsonify({'success': False, 'error': 'Invalid file type. Please upload a .json file'}), 400
+
+    try:
+        # Parse JSON
+        json_data = json.load(file)
+
+        # Validate required structure
+        if 'sessions' not in json_data:
+            return jsonify({'success': False, 'error': 'Invalid JSON structure. Must contain "sessions" key'}), 400
+
+        # Transform to form-compatible structure
+        form_data = transform_studentlogbook_json(json_data)
+
+        # Create draft
+        module_name = form_data.get('module_name', '').strip()
+        title = f'Student Logbook - {module_name}' if module_name else 'Student Logbook Draft'
+
+        draft = FormDraft(
+            user_id=current_user.id,
+            form_type='studentmoduleworkbook',
+            title=title,
+            form_data=form_data
+        )
+        db.session.add(draft)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'draft_id': draft.id,
+            'message': 'JSON imported successfully',
+            'session_count': len(form_data.get('sessions', []))
+        })
+
+    except json.JSONDecodeError:
+        return jsonify({'success': False, 'error': 'Invalid JSON format. Please check the file.'}), 400
+    except Exception as e:
+        print(f"Error in Student Logbook JSON upload: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/create-studentmoduleworkbook', methods=['GET', 'POST'])
 @login_required
 def create_studentmoduleworkbook():
     form = StudentLogbookV2Form()
+    draft_id = request.args.get('draft_id')
+    draft_sessions_json = None
 
     if form.validate_on_submit():
         try:
             module_name = form.module_name.data
             module_title = form.module_title.data or ''
             sessions_raw = request.form.get('sessions_data', '')
-            sessions = json.loads(sessions_raw) if sessions_raw else []
 
-            doc_path = generate_student_logbook_v2(module_name, sessions, module_title=module_title)
+            # Parse the full JSON data structure
+            full_data = json.loads(sessions_raw) if sessions_raw else {}
+
+            # Handle both old format (array of sessions) and new format (object with sessions + career_exploration)
+            if isinstance(full_data, list):
+                sessions = full_data
+                career_exploration = None
+            else:
+                sessions = full_data.get('sessions', [])
+                career_exploration = full_data.get('career_exploration', None)
+
+            doc_path = generate_student_logbook_v2(module_name, sessions, module_title=module_title, career_exploration=career_exploration)
             filename = os.path.basename(doc_path)
 
             doc_record = GeneratedDocument(
@@ -11447,7 +11746,36 @@ def create_studentmoduleworkbook():
             import traceback; traceback.print_exc()
             flash(f'Error generating document: {str(e)}', 'error')
 
-    return render_template('create_studentmoduleworkbook.html', form=form)
+    # Check if loading a draft (from JSON upload or drafts page)
+    if draft_id:
+        try:
+            draft = FormDraft.query.filter_by(
+                id=draft_id,
+                user_id=current_user.id,
+                form_type='studentmoduleworkbook'
+            ).first()
+            if draft and draft.form_data:
+                form_data = draft.form_data
+                version = form_data.get('version', 1)
+
+                if version >= 2:
+                    form.module_name.data = form_data.get('module_name', '')
+                    form.module_title.data = form_data.get('module_title', '')
+
+                    # Pass full draft data as JSON for JavaScript to restore
+                    draft_data = {
+                        'sessions': form_data.get('sessions', []),
+                        'career_exploration': form_data.get('career_exploration', {})
+                    }
+                    draft_sessions_json = json.dumps(draft_data)
+                    flash(f'Draft loaded successfully!', 'success')
+                else:
+                    flash('This draft was created with an older version and cannot be loaded.', 'warning')
+        except Exception as e:
+            print(f"Error loading draft: {e}")
+            flash(f'Error loading draft: {str(e)}', 'error')
+
+    return render_template('create_studentmoduleworkbook.html', form=form, draft_id=draft_id, draft_sessions_json=draft_sessions_json)
 
 @app.route('/autosave-studentmoduleworkbook-draft', methods=['POST'])
 @login_required
@@ -11463,7 +11791,8 @@ def autosave_studentmoduleworkbook_draft():
             'version': 2,
             'module_name': data.get('module_name', ''),
             'module_title': data.get('module_title', ''),
-            'sessions': data.get('sessions', [])
+            'sessions': data.get('sessions', []),
+            'career_exploration': data.get('career_exploration', {})
         }
 
         draft_id = data.get('draft_id')
@@ -11527,8 +11856,12 @@ def load_studentmoduleworkbook_draft(draft_id):
         form.module_name.data = form_data.get('module_name', '')
         form.module_title.data = form_data.get('module_title', '')
 
-        # Pass sessions data as JSON for JavaScript to restore
-        draft_sessions_json = json.dumps(form_data.get('sessions', []))
+        # Pass full draft data as JSON for JavaScript to restore (sessions + career_exploration)
+        draft_data = {
+            'sessions': form_data.get('sessions', []),
+            'career_exploration': form_data.get('career_exploration', {})
+        }
+        draft_sessions_json = json.dumps(draft_data)
 
         flash(f'Draft "{draft.title}" loaded successfully!', 'success')
         return render_template(

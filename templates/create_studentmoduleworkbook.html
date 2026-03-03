@@ -93,6 +93,31 @@
     .add-block-menu button { display: block; width: 100%; text-align: left; padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: #374151; }
     .add-block-menu button:hover { background: #f3f4f6; }
     .add-block-menu .menu-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
+    /* JSON Upload Zone */
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f8fafc;
+    }
+    .upload-zone:hover { border-color: #3b82f6; background: #eff6ff; }
+    .upload-zone.dragover { border-color: #3b82f6; background: #dbeafe; }
+    .upload-zone.success { border-color: #10b981; background: #d1fae5; }
+
+    /* Career Exploration Section */
+    .career-section { margin-top: 16px; }
+    .career-category { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fefefe; }
+    .career-category h5 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #374151; }
+    .career-category h5 .icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; }
+    .career-degree .icon { background: #1D2757; }
+    .career-trade .icon { background: #E81D2C; }
+    .career-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-bottom: 10px; background: #fefefe; position: relative; }
+    .career-card .remove-career { position: absolute; top: 8px; right: 8px; background: none; border: 1px solid #d1d5db; border-radius: 4px; width: 28px; height: 28px; cursor: pointer; color: #9ca3af; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    .career-card .remove-career:hover { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
 </style>
 
 <!-- Autosave Status Indicator -->
@@ -105,6 +130,32 @@
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Create Student Logbook</h1>
         <p class="text-gray-600 mt-2">Build a dynamic student logbook with sessions, content blocks, vocabulary, and assessments. <strong>Your progress is automatically saved as you type.</strong></p>
+    </div>
+
+    <!-- JSON Upload Section -->
+    <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Import JSON (Optional)</h2>
+        <p class="text-sm text-gray-600 mb-4">Upload a Student Logbook JSON file to auto-populate all fields, or fill out the form manually below.</p>
+
+        <div id="upload-zone" class="upload-zone">
+            <input type="file" id="json-file-input" accept=".json" class="hidden">
+            <div class="mb-4">
+                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+            </div>
+            <p id="upload-text" class="text-gray-600 font-medium">Click to upload or drag and drop</p>
+            <p class="text-sm text-gray-500 mt-1">JSON files only</p>
+        </div>
+
+        <div id="upload-status" class="mt-4 hidden">
+            <div id="upload-success" class="hidden p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p class="text-green-800 font-medium"><span id="session-count">0</span> sessions imported successfully!</p>
+            </div>
+            <div id="upload-error" class="hidden p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-red-800 font-medium" id="error-message">Error importing file</p>
+            </div>
+        </div>
     </div>
 
     <!-- Form Card -->
@@ -141,6 +192,39 @@
                 <div id="sessions-container"></div>
             </div>
 
+            <!-- Career Exploration -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Career Exploration</h2>
+                <p class="text-gray-600 text-sm mb-4">Add career information to help students connect module concepts to real-world professions. This section will appear as the final page of the Student Logbook.</p>
+
+                <div class="career-section">
+                    <!-- Introduction -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Introduction</label>
+                        <textarea id="career-intro" class="textarea-sm" rows="3"
+                            placeholder="2-3 sentences connecting this module's content to career opportunities..."></textarea>
+                    </div>
+
+                    <!-- Degree-Required Careers -->
+                    <div class="career-category career-degree">
+                        <h5><span class="icon">D</span> Degree-Required Careers</h5>
+                        <p class="text-xs text-gray-500 mb-3">Careers that typically require a bachelor's degree or higher.</p>
+                        <div id="degree-careers-container"></div>
+                        <button type="button" class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            onclick="window.logbook.addCareer('degree')">+ Add Degree Career</button>
+                    </div>
+
+                    <!-- Trade/Certification Careers -->
+                    <div class="career-category career-trade">
+                        <h5><span class="icon">T</span> Trade & Certification Careers</h5>
+                        <p class="text-xs text-gray-500 mb-3">Careers accessible through certificate programs, apprenticeships, or on-the-job training.</p>
+                        <div id="trade-careers-container"></div>
+                        <button type="button" class="text-sm text-amber-600 hover:text-amber-800 font-medium"
+                            onclick="window.logbook.addCareer('trade')">+ Add Trade Career</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Form Actions -->
             <div class="flex justify-end pt-6 border-t border-gray-200">
                 <button type="submit"
@@ -167,6 +251,11 @@
 class StudentLogbookV2 {
     constructor() {
         this.sessions = [];
+        this.careerExploration = {
+            introduction: '',
+            degree_careers: [],
+            trade_careers: []
+        };
         this.autosaveTimeout = null;
         this.autosaveDelay = 2000;
         this.currentDraftId = document.getElementById('current_draft_id').value || null;
@@ -179,15 +268,22 @@ class StudentLogbookV2 {
         const draftEl = document.getElementById('draft-sessions-data');
         if (draftEl) {
             try {
-                const draftSessions = JSON.parse(draftEl.textContent);
-                if (draftSessions && draftSessions.length > 0) {
-                    this.restoreFromDraft(draftSessions);
+                const draftData = JSON.parse(draftEl.textContent);
+                // Handle both old format (array) and new format (object with sessions + career_exploration)
+                if (Array.isArray(draftData)) {
+                    if (draftData.length > 0) {
+                        this.restoreFromDraft({ sessions: draftData });
+                    }
+                } else if (draftData && (draftData.sessions || draftData.career_exploration)) {
+                    this.restoreFromDraft(draftData);
                 }
             } catch(e) { console.error('Failed to parse draft data:', e); }
         }
 
         this.renderAllSessions();
+        this.refreshCareerSection();
         this.attachGlobalListeners();
+        this.attachUploadListeners();
     }
 
     initializeSessions() {
@@ -208,7 +304,9 @@ class StudentLogbookV2 {
         }
     }
 
-    restoreFromDraft(draftSessions) {
+    restoreFromDraft(draftData) {
+        // Restore sessions
+        const draftSessions = draftData.sessions || [];
         for (let i = 0; i < draftSessions.length && i < 7; i++) {
             const ds = draftSessions[i];
             const s = this.sessions[i];
@@ -223,6 +321,15 @@ class StudentLogbookV2 {
             s.cer_prompts = ds.cer_prompts || { question: '', claim: '', evidence: '', reasoning: '' };
             s.checklist_items = ds.checklist_items || [];
         }
+
+        // Restore career exploration
+        if (draftData.career_exploration) {
+            this.careerExploration = {
+                introduction: draftData.career_exploration.introduction || '',
+                degree_careers: draftData.career_exploration.degree_careers || [],
+                trade_careers: draftData.career_exploration.trade_careers || []
+            };
+        }
     }
 
     attachGlobalListeners() {
@@ -236,6 +343,229 @@ class StudentLogbookV2 {
         // Listen for input changes for autosave
         document.getElementById('module_name').addEventListener('input', () => this.scheduleAutosave());
         document.getElementById('module_title').addEventListener('input', () => this.scheduleAutosave());
+
+        // Career exploration autosave listeners
+        const careerIntro = document.getElementById('career-intro');
+        if (careerIntro) careerIntro.addEventListener('input', () => this.scheduleAutosave());
+    }
+
+    attachUploadListeners() {
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('json-file-input');
+        if (!uploadZone || !fileInput) return;
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                this.handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
+
+    handleFileUpload(file) {
+        if (!file.name.endsWith('.json')) {
+            this.showUploadError('Please select a JSON file');
+            return;
+        }
+
+        document.getElementById('upload-text').textContent = 'Uploading...';
+
+        const formData = new FormData();
+        formData.append('json_file', file);
+
+        fetch('/upload-studentlogbook-v2-json', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+            },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                this.showUploadSuccess(data.session_count);
+                window.location.href = `/create-studentmoduleworkbook?draft_id=${data.draft_id}`;
+            } else {
+                this.showUploadError(data.error);
+            }
+        })
+        .catch(err => {
+            this.showUploadError('Failed to upload file: ' + err);
+        });
+    }
+
+    showUploadSuccess(count) {
+        const zone = document.getElementById('upload-zone');
+        const status = document.getElementById('upload-status');
+        const success = document.getElementById('upload-success');
+        const error = document.getElementById('upload-error');
+        const sessionCount = document.getElementById('session-count');
+
+        zone.classList.add('success');
+        sessionCount.textContent = count;
+        status.classList.remove('hidden');
+        success.classList.remove('hidden');
+        error.classList.add('hidden');
+        document.getElementById('upload-text').textContent = 'File uploaded successfully!';
+    }
+
+    showUploadError(message) {
+        const zone = document.getElementById('upload-zone');
+        const status = document.getElementById('upload-status');
+        const success = document.getElementById('upload-success');
+        const error = document.getElementById('upload-error');
+        const errorMsg = document.getElementById('error-message');
+
+        zone.classList.remove('success');
+        status.classList.remove('hidden');
+        success.classList.add('hidden');
+        error.classList.remove('hidden');
+        errorMsg.textContent = message;
+        document.getElementById('upload-text').textContent = 'Click to upload or drag and drop';
+    }
+
+    // ---- Career Exploration ----
+    renderCareerCard(careerType, idx, career) {
+        const isDegree = careerType === 'degree';
+        const pathField = isDegree ? 'education' : 'training';
+        const pathLabel = isDegree ? 'Education Path' : 'Training Path';
+        const pathPlaceholder = isDegree
+            ? "e.g., Bachelor's or Master's in Chemistry"
+            : "e.g., Certificate program or Associate degree";
+
+        return `
+            <div class="career-card" data-career-type="${careerType}" data-career-idx="${idx}">
+                <button type="button" class="remove-career" onclick="window.logbook.removeCareer('${careerType}', ${idx})">&times;</button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Job Title</label>
+                        <input type="text" class="input-sm career-title" value="${this.escHtml(career.title || '')}" placeholder="e.g., Forensic Chemist">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">${pathLabel}</label>
+                        <input type="text" class="input-sm career-${pathField}" value="${this.escHtml(career[pathField] || '')}" placeholder="${pathPlaceholder}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Role Description</label>
+                    <input type="text" class="input-sm career-description" value="${this.escHtml(career.description || '')}" placeholder="One-sentence description of the role">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Module Connection</label>
+                    <textarea class="textarea-sm career-connection" rows="2" placeholder="How does this career use the concepts from this module?">${this.escHtml(career.connection || '')}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Day in the Life</label>
+                    <textarea class="textarea-sm career-whattheydo" rows="2" placeholder="Brief glimpse of what this professional does day-to-day">${this.escHtml(career.what_they_do || '')}</textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    refreshCareerSection() {
+        // Render degree careers
+        const degreeContainer = document.getElementById('degree-careers-container');
+        if (degreeContainer) {
+            degreeContainer.innerHTML = this.careerExploration.degree_careers
+                .map((c, i) => this.renderCareerCard('degree', i, c)).join('');
+            // Add autosave listeners to new inputs
+            degreeContainer.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('input', () => this.scheduleAutosave());
+            });
+        }
+
+        // Render trade careers
+        const tradeContainer = document.getElementById('trade-careers-container');
+        if (tradeContainer) {
+            tradeContainer.innerHTML = this.careerExploration.trade_careers
+                .map((c, i) => this.renderCareerCard('trade', i, c)).join('');
+            // Add autosave listeners to new inputs
+            tradeContainer.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('input', () => this.scheduleAutosave());
+            });
+        }
+
+        // Restore introduction
+        const introEl = document.getElementById('career-intro');
+        if (introEl) introEl.value = this.careerExploration.introduction || '';
+    }
+
+    addCareer(careerType) {
+        this.collectCareerData();
+        const newCareer = {
+            title: '',
+            description: '',
+            connection: '',
+            what_they_do: ''
+        };
+        if (careerType === 'degree') {
+            newCareer.education = '';
+            this.careerExploration.degree_careers.push(newCareer);
+        } else {
+            newCareer.training = '';
+            this.careerExploration.trade_careers.push(newCareer);
+        }
+        this.refreshCareerSection();
+        this.scheduleAutosave();
+    }
+
+    removeCareer(careerType, idx) {
+        this.collectCareerData();
+        if (careerType === 'degree') {
+            this.careerExploration.degree_careers.splice(idx, 1);
+        } else {
+            this.careerExploration.trade_careers.splice(idx, 1);
+        }
+        this.refreshCareerSection();
+        this.scheduleAutosave();
+    }
+
+    collectCareerData() {
+        // Introduction
+        const introEl = document.getElementById('career-intro');
+        this.careerExploration.introduction = introEl ? introEl.value : '';
+
+        // Degree careers
+        this.careerExploration.degree_careers = [];
+        document.querySelectorAll('#degree-careers-container .career-card').forEach(card => {
+            this.careerExploration.degree_careers.push({
+                title: (card.querySelector('.career-title') || {}).value || '',
+                description: (card.querySelector('.career-description') || {}).value || '',
+                connection: (card.querySelector('.career-connection') || {}).value || '',
+                education: (card.querySelector('.career-education') || {}).value || '',
+                what_they_do: (card.querySelector('.career-whattheydo') || {}).value || ''
+            });
+        });
+
+        // Trade careers
+        this.careerExploration.trade_careers = [];
+        document.querySelectorAll('#trade-careers-container .career-card').forEach(card => {
+            this.careerExploration.trade_careers.push({
+                title: (card.querySelector('.career-title') || {}).value || '',
+                description: (card.querySelector('.career-description') || {}).value || '',
+                connection: (card.querySelector('.career-connection') || {}).value || '',
+                training: (card.querySelector('.career-training') || {}).value || '',
+                what_they_do: (card.querySelector('.career-whattheydo') || {}).value || ''
+            });
+        });
     }
 
     // ---- Data Collection (reads DOM into this.sessions) ----
@@ -310,10 +640,12 @@ class StudentLogbookV2 {
 
     collectAllData() {
         for (let i = 0; i < 7; i++) this.collectSessionData(i);
+        this.collectCareerData();
         return {
             module_name: document.getElementById('module_name').value,
             module_title: document.getElementById('module_title').value,
-            sessions: this.sessions
+            sessions: this.sessions,
+            career_exploration: this.careerExploration
         };
     }
 
@@ -757,6 +1089,7 @@ class StudentLogbookV2 {
                 module_name: data.module_name,
                 module_title: data.module_title,
                 sessions: data.sessions,
+                career_exploration: data.career_exploration,
                 draft_id: this.currentDraftId
             };
 
@@ -802,7 +1135,11 @@ class StudentLogbookV2 {
     // ---- Submit ----
     prepareSubmit() {
         const data = this.collectAllData();
-        document.getElementById('sessions_data').value = JSON.stringify(data.sessions);
+        // Send full structure including career_exploration
+        document.getElementById('sessions_data').value = JSON.stringify({
+            sessions: data.sessions,
+            career_exploration: data.career_exploration
+        });
         document.getElementById('module_name').value = data.module_name;
         return true;
     }
