@@ -6625,13 +6625,15 @@ def generate_module_guide_v2(form, draft_id=None):
     rcp_data = extract_rcp_from_form_v2(form)
     checkpoint_data = extract_checkpoints_from_draft(draft_id)
     knowledge_checks_data = extract_knowledge_checks_from_draft(draft_id)
+    randomization_note = extract_randomization_note_from_draft(draft_id)
 
     if pretest_data or posttest_data or rcp_data or checkpoint_data or knowledge_checks_data:
         add_page_break(doc)
         build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data, knowledge_checks_data,
                                   FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                   set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
-                                  keep_table_together, add_paragraph_bottom_border)
+                                  keep_table_together, add_paragraph_bottom_border,
+                                  randomization_note=randomization_note)
 
     # Save the document
     output_dir = 'generated_docs'
@@ -6835,10 +6837,22 @@ def extract_knowledge_checks_from_draft(draft_id):
     return draft.form_data.get('knowledge_checks', {})
 
 
+def extract_randomization_note_from_draft(draft_id):
+    """Retrieve answer-key randomization note from draft data for document generation"""
+    if not draft_id:
+        return ''
+
+    draft = FormDraft.query.get(draft_id)
+    if not draft or not draft.form_data:
+        return ''
+
+    return draft.form_data.get('randomization_note', '') or ''
+
+
 def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessions, checkpoint_data, knowledge_checks_data,
                                FONT_HEADER, FONT_BODY, DARK_BLUE, RED_ACCENT, BLACK, WHITE, GRAY, LIGHT_GRAY,
                                set_cell_shading, add_section_header, add_subsection_header, set_table_borders_color,
-                               keep_table_together, add_paragraph_bottom_border):
+                               keep_table_together, add_paragraph_bottom_border, randomization_note=''):
     """Build the Answer Key appendix for Module Guide V2"""
     from docx.shared import Pt, Inches
     from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -6846,14 +6860,25 @@ def build_answer_key_appendix(doc, pretest_data, posttest_data, rcp_data, sessio
 
     # Appendix Title
     title_p = doc.add_paragraph()
-    title_p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     title_p.paragraph_format.space_before = Pt(24)
-    title_p.paragraph_format.space_after = Pt(18)
-    run = title_p.add_run('APPENDIX: ANSWER KEY')
+    title_p.paragraph_format.space_after = Pt(6)
+    run = title_p.add_run('APPENDIX: Module Answer Keys')
     run.font.name = FONT_HEADER
-    run.font.size = Pt(18)
+    run.font.size = Pt(22)
     run.font.bold = True
     run.font.color.rgb = DARK_BLUE
+    add_paragraph_bottom_border(title_p, '1D2757', '12')
+
+    # Randomization note (rendered once, only when populated)
+    if randomization_note and randomization_note.strip():
+        note_p = doc.add_paragraph()
+        note_p.paragraph_format.space_before = Pt(12)
+        note_p.paragraph_format.space_after = Pt(12)
+        note_run = note_p.add_run(randomization_note.strip())
+        note_run.font.name = FONT_BODY
+        note_run.font.size = Pt(11)
+        note_run.font.italic = True
+        note_run.font.color.rgb = BLACK
 
     # Pre-Test Section
     if pretest_data:
@@ -10056,6 +10081,7 @@ def transform_json_to_form_data_v2(json_data):
     form_data['pretest_questions'] = pretest_questions
     form_data['posttest_questions'] = posttest_questions
     form_data['rcp_sessions'] = rcp_sessions
+    form_data['randomization_note'] = answer_key.get('randomization_note', '')
 
     # Transform learning checkpoints (preserve complete structure for all question types)
     learning_checkpoints = {}
@@ -10562,6 +10588,11 @@ def autosave_moduleguide_v2_draft():
                 existing_knowledge_checks = draft.form_data.get('knowledge_checks', {}) if draft.form_data else {}
                 if existing_knowledge_checks:
                     form_data['knowledge_checks'] = existing_knowledge_checks
+
+                # Preserve randomization_note from existing draft (not editable via form)
+                existing_randomization_note = draft.form_data.get('randomization_note', '') if draft.form_data else ''
+                if existing_randomization_note:
+                    form_data['randomization_note'] = existing_randomization_note
 
                 draft.form_data = form_data
                 draft.updated_at = datetime.utcnow()
