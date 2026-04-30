@@ -1335,9 +1335,9 @@ class ModuleGuideV2Form(FlaskForm):
     sessions = FieldList(FormField(SessionFormV2), min_entries=1, max_entries=10)
 
     # Answer Key sections
-    pretest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=10)
-    posttest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=10)
-    rcp_sessions = FieldList(FormField(RCPSessionFormV2), min_entries=0, max_entries=6)
+    pretest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=15)
+    posttest_questions = FieldList(FormField(TestQuestionFormV2), min_entries=0, max_entries=15)
+    rcp_sessions = FieldList(FormField(RCPSessionFormV2), min_entries=0, max_entries=10)
 
     submit = SubmitField('Generate Module Guide')
 
