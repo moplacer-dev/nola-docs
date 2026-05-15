@@ -68,29 +68,21 @@ def get_framework_for(state: str, subject: str) -> str:
 def get_all_standards(state: str, grade: int, subject: str) -> list:
     """Get all standard codes for a given state, grade, and subject"""
     fw = get_framework_for(state, subject)
-    q = Standard.query.filter_by(framework=fw, subject=subject.upper())
-    
-    if subject.upper() == 'MATH':
-        q = q.filter_by(grade_level=int(grade))
-    else:
-        # For Science (NGSS), standards are now separated by grade level
-        q = q.filter_by(grade_level=int(grade))
-    
+    q = (Standard.query
+         .filter_by(framework=fw, subject=subject.upper())
+         .filter_by(grade_level=int(grade)))
     return [s.code for s in q.order_by(Standard.code).all()]
 
 def get_module_to_standards(subject: str, grade: int) -> dict:
-    """Get mapping of module titles to their covered standard codes"""
+    """Get mapping of module titles to their covered standard codes for a given grade."""
+    fw = get_framework_for(None, subject)
     q = (db.session.query(Module.title, Standard.code)
-         .join(ModuleStandardMapping, Module.id==ModuleStandardMapping.module_id)
-         .join(Standard, Standard.id==ModuleStandardMapping.standard_id)
-         .filter(Module.subject==subject.upper()))
-    
-    if subject.upper() == 'MATH':
-        q = q.filter(Module.grade_level==int(grade), Standard.framework=='CCSS-M')
-    else:
-        # For Science (NGSS), standards are now separated by grade level
-        q = q.filter(Standard.framework=='NGSS', Standard.grade_level==int(grade))
-    
+         .join(ModuleStandardMapping, Module.id == ModuleStandardMapping.module_id)
+         .join(Standard, Standard.id == ModuleStandardMapping.standard_id)
+         .filter(Module.subject == subject.upper())
+         .filter(Standard.framework == fw)
+         .filter(Standard.grade_level == int(grade)))
+
     out = {}
     for title, code in q:
         out.setdefault(title, set()).add(code)
@@ -13284,17 +13276,31 @@ def generate_correlation_report_document(state, grade_level, subject, selected_m
     # Get module-to-standards mapping for ALL selected modules (any subject/grade)
     module_to_standards = {}
     if ordered_modules:
+        # Guard against stale form IDs (e.g. bookmarked form posted after the
+        # collapse migration removed ~39 module IDs). Module.query.filter(...in)
+        # silently drops missing IDs, which would render a report with fewer
+        # columns than the user selected and no error. Flash a warning instead.
+        if len(ordered_modules) < len(selected_module_ids):
+            found_ids = {m.id for m in ordered_modules}
+            missing = [int(i) for i in selected_module_ids if int(i) not in found_ids]
+            app.logger.warning(
+                'Correlation report: %d selected module IDs not found: %s',
+                len(missing), missing
+            )
+            flash(f'{len(missing)} selected module(s) no longer exist and were skipped.', 'warning')
+
         module_ids = [m.id for m in ordered_modules]
+        framework = get_framework_for(state, subject)
         mappings = (db.session.query(Module.title, Standard.code)
-                   .join(ModuleStandardMapping, Module.id==ModuleStandardMapping.module_id)
-                   .join(Standard, Standard.id==ModuleStandardMapping.standard_id)
+                   .join(ModuleStandardMapping, Module.id == ModuleStandardMapping.module_id)
+                   .join(Standard, Standard.id == ModuleStandardMapping.standard_id)
                    .filter(Module.id.in_(module_ids))
+                   .filter(Standard.framework == framework)
+                   .filter(Standard.grade_level == grade_num)
                    .all())
-        
+
         for title, code in mappings:
-            if title not in module_to_standards:
-                module_to_standards[title] = set()
-            module_to_standards[title].add(code)
+            module_to_standards.setdefault(title, set()).add(code)
     
     # Subset for selected modules only (but we already filtered above)
     subset = {t: module_to_standards.get(t, set()) for t in title_set}
