@@ -70,3 +70,7 @@ logs/
 .coverage
 .pytest_cache/ .env2
 reset_admin.py
+
+# Prod snapshot artifacts (do not commit)
+instance/prod_snapshot_*.sql
+instance/nola_docs.db*
