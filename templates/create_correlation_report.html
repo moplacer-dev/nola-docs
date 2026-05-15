@@ -170,19 +170,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             modulesBySubject[subject].forEach(module => {
                 const isChecked = selectedModuleIds.has(module.id.toString());
-                
-                let gradeInfo = '';
-                if (module.grade_level) {
-                    gradeInfo = ` <span class="text-gray-500">(${module.grade_level})</span>`;
-                }
-                
+
                 html += `
                 <div class="flex items-center px-4 py-3 hover:bg-gray-50 ${isChecked ? 'bg-blue-50' : ''}">
-                    <input type="checkbox" id="module-${module.id}" value="${module.id}" 
-                           class="module-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    <input type="checkbox" id="module-${module.id}" value="${module.id}"
+                           class="module-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                            ${isChecked ? 'checked' : ''}>
                     <label for="module-${module.id}" class="ml-3 text-sm text-gray-900 flex-1 cursor-pointer">
-                        ${module.title}${gradeInfo}
+                        ${module.title}
                     </label>
                 </div>`;
             });
@@ -256,11 +251,10 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedModuleIds.forEach(moduleId => {
             const module = allModules.find(m => m.id.toString() === moduleId);
             if (module) {
-                const gradeInfo = module.grade_level ? ` (${module.grade_level})` : '';
                 const tag = document.createElement('div');
                 tag.className = 'inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full';
                 tag.innerHTML = `
-                    <span>${module.title}${gradeInfo}</span>
+                    <span>${module.title}</span>
                     <button type="button" class="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none"
                             onclick="removeSelectedModule('${moduleId}')">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

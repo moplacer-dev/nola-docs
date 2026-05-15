@@ -12461,23 +12461,13 @@ def create_correlation_report():
 def get_modules_api():
     """API endpoint to get all modules for correlation report form"""
     try:
-        modules = Module.query.order_by(Module.title).all()
-        module_data = []
-        
-        for module in modules:
-            # Skip "Unnamed: 1" modules which are Excel artifacts
-            if module.title.startswith('Unnamed:'):
-                continue
-                
-            module_data.append({
-                'id': module.id,
-                'title': module.title,
-                'subject': module.subject,
-                'grade_level': module.grade_level
-            })
-        
+        modules = Module.query.order_by(Module.subject, Module.title).all()
+        module_data = [
+            {'id': m.id, 'title': m.title, 'subject': m.subject}
+            for m in modules
+            if not m.title.startswith('Unnamed:')
+        ]
         return {'modules': module_data}
-        
     except Exception as e:
         return {'error': str(e)}, 500
 
