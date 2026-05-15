@@ -313,11 +313,10 @@ class Module(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     subject = db.Column(db.String(10), nullable=False)      # 'MATH' or 'SCIENCE'
-    grade_level = db.Column(db.Integer)                     # 7, 8, None for banded MS science
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    __table_args__ = (db.UniqueConstraint('title','subject','grade_level', name='uq_module_title_subject_grade'),)
+    __table_args__ = (db.UniqueConstraint('title', 'subject', name='uq_module_title_subject'),)
     
     # Relationships
     standard_mappings = db.relationship('ModuleStandardMapping', backref='module', lazy='dynamic')
