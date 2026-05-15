@@ -7,6 +7,7 @@ Create Date: 2026-05-15
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -78,12 +79,22 @@ def upgrade():
             deleted_modules += 1
 
     # Step B + C: replace unique constraint and drop column.
-    # Use batch_alter_table for SQLite portability — matches the pattern from
-    # migration a0a02b6cac87.
+    # The prior migration a0a02b6cac87 wrapped its constraint operations in
+    # try/except, so prod's actual constraint state is uncertain. Inspect first.
+    inspector = inspect(conn)
+    existing_constraints = {c['name'] for c in inspector.get_unique_constraints('modules')}
+    existing_columns = {c['name'] for c in inspector.get_columns('modules')}
+
     with op.batch_alter_table('modules', schema=None) as batch_op:
-        batch_op.drop_constraint('uq_module_title_subject_grade', type_='unique')
+        if 'uq_module_title_subject_grade' in existing_constraints:
+            batch_op.drop_constraint('uq_module_title_subject_grade', type_='unique')
+        if 'uq_module_title_subject' in existing_constraints:
+            # Could exist if a0a02b6cac87's drop step was swallowed. We're about
+            # to recreate it on the correct columns below, so drop the old one.
+            batch_op.drop_constraint('uq_module_title_subject', type_='unique')
         batch_op.create_unique_constraint('uq_module_title_subject', ['title', 'subject'])
-        batch_op.drop_column('grade_level')
+        if 'grade_level' in existing_columns:
+            batch_op.drop_column('grade_level')
 
     print(f'Repointed mappings: {repointed}')
     print(f'Skipped conflict mappings: {skipped_conflicts}')
@@ -93,7 +104,9 @@ def upgrade():
 def downgrade():
     # Intentionally not implemented. The per-grade module split cannot be
     # reconstructed from the post-merge schema; recovery requires restoring
-    # from the pre-migration backup taken in Task 6 Step 2.
+    # from the pre-migration database backup.
     raise NotImplementedError(
-        "downgrade not supported; restore from prod backup taken before this migration"
+        "Migration 17f056db10e5 is one-way; the per-grade module split "
+        "cannot be reconstructed from post-merge schema. To revert, "
+        "restore the database from the pre-migration backup."
     )
