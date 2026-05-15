@@ -13280,12 +13280,13 @@ def generate_correlation_report_document(state, grade_level, subject, selected_m
         # collapse migration removed ~39 module IDs). Module.query.filter(...in)
         # silently drops missing IDs, which would render a report with fewer
         # columns than the user selected and no error. Flash a warning instead.
-        if len(ordered_modules) < len(selected_module_ids):
-            found_ids = {m.id for m in ordered_modules}
-            missing = [int(i) for i in selected_module_ids if int(i) not in found_ids]
+        requested_ids = {int(i) for i in selected_module_ids}
+        found_ids = {m.id for m in ordered_modules}
+        missing = requested_ids - found_ids
+        if missing:
             app.logger.warning(
                 'Correlation report: %d selected module IDs not found: %s',
-                len(missing), missing
+                len(missing), sorted(missing)
             )
             flash(f'{len(missing)} selected module(s) no longer exist and were skipped.', 'warning')
 
